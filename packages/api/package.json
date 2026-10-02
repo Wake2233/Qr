@@ -1,0 +1,26 @@
+{
+  "name": "@cp/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cp/core": "workspace:*",
+    "@cp/types": "workspace:*",
+    "@cp/validators": "workspace:*"
+  },
+  "devDependencies": {
+    "@cp/config": "workspace:*",
+    "eslint": "^9.39.5",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

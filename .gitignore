@@ -1,0 +1,46 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# turbo / tooling
+.turbo/
+.vercel/
+.eslintcache
+
+# expo
+.expo/
+expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# env
+.env
+.env*.local
+!.env.example
+
+# supabase
+supabase/.branches/
+supabase/.temp/
+
+# test output
+playwright-report/
+test-results/
+
+# os / editor
+.DS_Store
+*.log
+.idea/

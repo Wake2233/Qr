@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/* Colors + radii come from the shared design tokens (packages/design-tokens). */
+@import '@cp/design-tokens/tokens.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}

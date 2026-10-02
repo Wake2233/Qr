@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+.next
+.expo
+dist
+coverage
+apps/mobile/ios
+apps/mobile/android
+packages/types/src/database.ts
+apps/mobile/assets

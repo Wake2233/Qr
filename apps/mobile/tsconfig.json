@@ -1,0 +1,11 @@
+{
+  "extends": ["expo/tsconfig.base", "@cp/config/tsconfig/expo.json"],
+  "compilerOptions": {
+    "types": ["jest"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./assets/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
+}

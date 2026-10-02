@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Packages whose install scripts pnpm may run (pnpm >=10 blocks them by default).
+onlyBuiltDependencies:
+  - esbuild
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
