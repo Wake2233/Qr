@@ -1,2 +1,87 @@
 export { canAccessConsole, isAdmin, type AccessContext, type AppRole } from './access';
-export { formatMileage, formatPrice, type FormatPriceOptions } from './format';
+export {
+  addToCompare,
+  MAX_COMPARE,
+  MAX_RECENTLY_VIEWED,
+  pushRecentlyViewed,
+  removeFromCompare,
+  type CompareAddResult,
+} from './collections';
+export {
+  consoleNavItems,
+  type ConsoleNavContext,
+  type ConsoleNavItem,
+  type ConsoleSection,
+} from './console-nav';
+export {
+  buildTelUrl,
+  buildVehicleInquiryText,
+  buildWhatsAppAppUrl,
+  buildWhatsAppUrl,
+  DEFAULT_WHATSAPP_TEMPLATE,
+  renderWhatsAppTemplate,
+  resolveContactNumbers,
+  type ContactNumbers,
+  type InquiryVehicle,
+} from './contact';
+export { DB_ERROR_MESSAGES, parseDbError, type DbErrorCode, type ParsedDbError } from './errors';
+export {
+  amountFinancedCents,
+  aprForTier,
+  CREDIT_TIERS,
+  DEFAULT_APR_BY_TIER,
+  estimatePayment,
+  maxVehiclePriceCents,
+  monthlyPaymentCents,
+  TERM_OPTIONS,
+  totalInterestCents,
+  type AprByTier,
+  type BudgetInput,
+  type CreditTier,
+  type LoanTerms,
+  type PaymentEstimate,
+  type PurchaseCosts,
+} from './finance';
+export {
+  countActiveFilters,
+  DEFAULT_SORT,
+  inventoryHref,
+  inventoryQueryString,
+  parseInventoryFilters,
+  serializeInventoryFilters,
+  SORT_OPTIONS,
+  toggleFilterValue,
+  type InventoryFilters,
+  type InventorySort,
+  type QueryParamsLike,
+  type SearchParamsInput,
+} from './filters';
+export {
+  formatApr,
+  formatMileage,
+  formatPhone,
+  formatPrice,
+  type FormatPriceOptions,
+} from './format';
+export {
+  bodyTypeLabels,
+  conditionLabels,
+  drivetrainLabels,
+  featureCategoryLabels,
+  fuelTypeLabels,
+  groupFeatures,
+  groupVehicleSpecs,
+  listingStatusLabels,
+  priceDropCents,
+  titleStatusLabels,
+  transmissionLabels,
+  vehicleImageAlt,
+  vehicleSlug,
+  vehicleTitle,
+  type FeatureGroup,
+  type SpecGroup,
+  type SpecGroupId,
+  type SpecRow,
+  type VehicleSpecSource,
+  type VehicleTitleParts,
+} from './vehicle';

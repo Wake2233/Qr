@@ -24,3 +24,20 @@ export function formatPrice(
 export function formatMileage(miles: number, locale = 'en-US'): string {
   return `${new Intl.NumberFormat(locale).format(Math.round(miles))} mi`;
 }
+
+/** Formats basis points as a percentage, e.g. `650` → `"6.50%"`. */
+export function formatApr(bps: number): string {
+  if (!Number.isInteger(bps)) {
+    throw new TypeError(`formatApr expects integer basis points, received ${bps}`);
+  }
+  return `${(bps / 100).toFixed(2)}%`;
+}
+
+/**
+ * Formats an E.164 number for display. North American numbers get the familiar
+ * `+1 (347) 370-0570` shape; anything else is returned unchanged.
+ */
+export function formatPhone(e164: string): string {
+  const nanp = /^\+1(\d{3})(\d{3})(\d{4})$/.exec(e164);
+  return nanp ? `+1 (${nanp[1]}) ${nanp[2]}-${nanp[3]}` : e164;
+}
