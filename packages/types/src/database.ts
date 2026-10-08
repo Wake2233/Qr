@@ -561,7 +561,7 @@ isOneToOne: false
           Views: {
             "vehicle_cards": {
                   Row: {
-                    "body_type": Database["public"]['Enums']["body_type"] | null,"condition": Database["public"]['Enums']["vehicle_condition"] | null,"cover_alt": string | null,"cover_blurhash": string | null,"cover_height": number | null,"cover_path": string | null,"cover_width": number | null,"created_at": string | null,"dealer_id": string | null,"dealer_is_house": boolean | null,"dealer_name": string | null,"dealer_slug": string | null,"dealer_status": Database["public"]['Enums']["dealer_status"] | null,"drivetrain": Database["public"]['Enums']["drivetrain"] | null,"ev_range_mi": number | null,"exterior_color": string | null,"feature_slugs": (string)[] | null,"fuel_type": Database["public"]['Enums']["fuel_type"] | null,"id": string | null,"image_count": number | null,"is_featured": boolean | null,"make_id": number | null,"make_name": string | null,"make_slug": string | null,"mileage": number | null,"model_id": number | null,"model_name": string | null,"model_slug": string | null,"mpg_city": number | null,"mpg_highway": number | null,"msrp_cents": number | null,"previous_price_cents": number | null,"price_cents": number | null,"price_dropped_at": string | null,"published_at": string | null,"search_vector": unknown,"seats": number | null,"slug": string | null,"sold_at": string | null,"status": Database["public"]['Enums']["listing_status"] | null,"stock_number": string | null,"transmission": Database["public"]['Enums']["transmission"] | null,"trim": string | null,"year": number | null
+                    "body_type": Database["public"]['Enums']["body_type"] | null,"condition": Database["public"]['Enums']["vehicle_condition"] | null,"cover_alt": string | null,"cover_blurhash": string | null,"cover_height": number | null,"cover_path": string | null,"cover_width": number | null,"created_at": string | null,"dealer_id": string | null,"dealer_is_house": boolean | null,"dealer_name": string | null,"dealer_slug": string | null,"dealer_status": Database["public"]['Enums']["dealer_status"] | null,"drivetrain": Database["public"]['Enums']["drivetrain"] | null,"ev_range_mi": number | null,"exterior_color": string | null,"feature_slugs": (string)[] | null,"fuel_type": Database["public"]['Enums']["fuel_type"] | null,"id": string | null,"image_count": number | null,"is_featured": boolean | null,"make_id": number | null,"make_name": string | null,"make_slug": string | null,"mileage": number | null,"model_id": number | null,"model_name": string | null,"model_slug": string | null,"mpg_city": number | null,"mpg_highway": number | null,"msrp_cents": number | null,"previous_price_cents": number | null,"price_cents": number | null,"price_dropped_at": string | null,"published_at": string | null,"search_vector": unknown,"seats": number | null,"slug": string | null,"sold_at": string | null,"status": Database["public"]['Enums']["listing_status"] | null,"stock_number": string | null,"transmission": Database["public"]['Enums']["transmission"] | null,"trim": string | null,"updated_at": string | null,"vin": string | null,"year": number | null
                   }
                   Relationships: [
                     {
@@ -587,11 +587,42 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "apply_as_dealer":
+            "add_dealer_member":
+{ Args: { "p_dealer_id": string,"p_email": string,"p_role"?: Database["public"]['Enums']["dealer_member_role"] }; Returns: string
+                           },
+"add_vehicle_images":
+{ Args: { "p_images": Json,"p_vehicle_id": string }; Returns: {
+              "alt": string | null,
+"blurhash": string | null,
+"created_at": string,
+"height": number | null,
+"id": string,
+"position": number,
+"storage_path": string,
+"vehicle_id": string,
+"width": number | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "vehicle_images"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"admin_list_users":
+{ Args: { "p_limit"?: number,"p_offset"?: number,"p_search"?: string }; Returns: {
+              "created_at": string,"dealer_count": number,"email": string,"full_name": string,"id": string,"role": Database["public"]['Enums']["app_role"],"total_count": number
+            }[]
+                           },
+"apply_as_dealer":
 { Args: { "payload": Json }; Returns: string
                            },
 "approve_dealer":
 { Args: { "p_dealer_id": string }; Returns: undefined
+                           },
+"get_dealer_team":
+{ Args: { "p_dealer_id": string }; Returns: {
+              "created_at": string,"email": string,"full_name": string,"role": Database["public"]['Enums']["dealer_member_role"],"user_id": string
+            }[]
                            },
 "get_inventory_facets":
 { Args: { "p_filters"?: Json }; Returns: Json
@@ -607,6 +638,9 @@ isOneToOne: false
                            },
 "set_user_role":
 { Args: { "p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: undefined
+                           },
+"set_vehicle_features":
+{ Args: { "p_feature_ids": (number)[],"p_vehicle_id": string }; Returns: undefined
                            },
 "set_vehicle_status":
 { Args: { "p_status": Database["public"]['Enums']["listing_status"],"p_vehicle_id": string }; Returns: Database["public"]['Enums']["listing_status"]
