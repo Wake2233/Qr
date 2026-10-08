@@ -1,5 +1,8 @@
 import type { InventoryFilters } from '@cp/core';
 
+import type { ConsoleVehicleFilters, InventoryScope } from './console-vehicles';
+import type { DealerListFilters } from './console-dealers';
+
 /**
  * Query-key factory shared by web and mobile so invalidations hit the same cache entries.
  * Every key nests under its domain root, so `invalidateQueries({ queryKey: queryKeys.vehicles.all })`
@@ -32,5 +35,18 @@ export const queryKeys = {
   },
   settings: {
     site: () => ['settings', 'site'] as const,
+  },
+  /** Management console. Inventory mutations invalidate `console.all` *and* `vehicles.all`. */
+  console: {
+    all: ['console'] as const,
+    vehicles: (scope: InventoryScope, filters: ConsoleVehicleFilters) =>
+      [...queryKeys.console.all, 'vehicles', scope, filters] as const,
+    vehicle: (id: string) => [...queryKeys.console.all, 'vehicle', id] as const,
+    dealers: (filters: DealerListFilters) =>
+      [...queryKeys.console.all, 'dealers', filters] as const,
+    dealer: (id: string) => [...queryKeys.console.all, 'dealer', id] as const,
+    catalog: () => [...queryKeys.console.all, 'catalog'] as const,
+    users: (search: string, page: number) =>
+      [...queryKeys.console.all, 'users', search, page] as const,
   },
 } as const;

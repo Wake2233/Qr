@@ -14,7 +14,7 @@ export const DEFAULT_PAGE_SIZE = 24;
 const CARD_COLUMNS =
   'id, slug, dealer_id, status, is_featured, condition, year, make_id, make_name, make_slug, model_id, model_name, model_slug, trim, body_type, fuel_type, drivetrain, transmission, mileage, price_cents, msrp_cents, exterior_color, seats, mpg_city, mpg_highway, ev_range_mi, stock_number, published_at, sold_at, created_at, dealer_name, dealer_slug, dealer_status, dealer_is_house, cover_path, cover_blurhash, cover_alt, cover_width, cover_height, image_count, feature_slugs, previous_price_cents, price_dropped_at' as const;
 
-type CardRow = Omit<Tables<'vehicle_cards'>, 'search_vector'>;
+export type CardRow = Omit<Tables<'vehicle_cards'>, 'search_vector' | 'vin' | 'updated_at'>;
 
 /** A `vehicle_cards` row with the always-present columns narrowed, plus display fields. */
 export type VehicleCard = Omit<
@@ -31,7 +31,7 @@ export type VehicleCard = Omit<
   cover_url: string | null;
 };
 
-function toCard(client: AppSupabaseClient, row: CardRow): VehicleCard | null {
+export function toCard(client: AppSupabaseClient, row: CardRow): VehicleCard | null {
   const { id, slug, year, make_name, model_name, status } = row;
   if (!id || !slug || year === null || !make_name || !model_name || !status) return null;
   return {

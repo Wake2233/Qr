@@ -30,3 +30,38 @@ describe('parseDbError', () => {
     }
   });
 });
+
+describe('parseDbError SQLSTATE mapping', () => {
+  it('maps unique violations to the offending field', () => {
+    expect(
+      parseDbError({
+        code: '23505',
+        message: 'duplicate key value violates unique constraint "vehicles_vin_live_idx"',
+      }),
+    ).toEqual({
+      code: 'DUPLICATE',
+      message: 'Another live listing already uses this VIN.',
+      fields: ['vin'],
+    });
+    expect(
+      parseDbError({ code: '23505', message: 'violates "vehicles_dealer_id_stock_number_key"' })
+        .fields,
+    ).toEqual(['stock_number']);
+    expect(parseDbError({ code: '23505', message: 'makes_slug_key' }).fields).toEqual(['slug']);
+    expect(parseDbError({ code: '23505', message: 'something_else_key' })).toEqual({
+      code: 'DUPLICATE',
+      message: DB_ERROR_MESSAGES.DUPLICATE,
+      fields: [],
+    });
+  });
+
+  it('maps foreign-key violations to IN_USE', () => {
+    expect(parseDbError({ code: '23503', message: 'still referenced' }).code).toBe('IN_USE');
+  });
+
+  it('maps the console error codes', () => {
+    for (const code of ['TOO_MANY_IMAGES', 'INVALID_PATH', 'USER_NOT_FOUND', 'ALREADY_MEMBER']) {
+      expect(parseDbError({ code: 'P0001', message: `${code}: detail` }).code).toBe(code);
+    }
+  });
+});

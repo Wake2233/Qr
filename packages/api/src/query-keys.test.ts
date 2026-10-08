@@ -35,4 +35,18 @@ describe('queryKeys', () => {
     expect(queryKeys.catalog.makes()).toEqual(['catalog', 'makes']);
     expect(queryKeys.catalog.features()).toEqual(['catalog', 'features']);
   });
+
+  it('nests every console key under the console root', () => {
+    const scope = { kind: 'dealers', dealerIds: ['d1'] } as const;
+    const keys = [
+      queryKeys.console.vehicles(scope, { status: 'draft' }),
+      queryKeys.console.vehicle('v1'),
+      queryKeys.console.dealers({ status: 'pending' }),
+      queryKeys.console.dealer('d1'),
+      queryKeys.console.catalog(),
+      queryKeys.console.users('', 1),
+    ];
+    for (const key of keys) expect(key[0]).toBe('console');
+    expect(queryKeys.console.vehicles(scope, {})).toEqual(['console', 'vehicles', scope, {}]);
+  });
 });

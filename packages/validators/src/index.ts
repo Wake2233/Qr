@@ -8,9 +8,24 @@ export {
   type VerifyCodeInput,
 } from './auth';
 export {
+  featureSchema,
+  makeSchema,
+  modelSchema,
+  type FeatureInput,
+  type MakeInput,
+  type ModelInput,
+} from './catalog';
+export {
   dealerApplicationSchema,
+  dealerModerationSchema,
+  dealerProfileSchema,
+  teamMemberInviteSchema,
   type DealerApplication,
   type DealerApplicationInput,
+  type DealerModeration,
+  type DealerProfile,
+  type DealerProfileInput,
+  type TeamMemberInviteInput,
 } from './dealer';
 export {
   EMPLOYMENT_STATUSES,
