@@ -19,8 +19,12 @@
   },
   "devDependencies": {
     "@cp/config": "workspace:*",
+    "@supabase/supabase-js": "^2.117.3",
     "eslint": "^9.39.5",
     "typescript": "6.0.3",
     "vitest": "^4.1.11"
+  },
+  "peerDependencies": {
+    "@supabase/supabase-js": "^2.117.3"
   }
 }
