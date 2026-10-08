@@ -1,7 +1,6 @@
-import { getSessionContext } from '@cp/api';
 import type { Metadata } from 'next';
 
-import { createClient } from '@/lib/supabase/server';
+import { getSession } from '@/lib/session';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
@@ -13,7 +12,7 @@ const statusStyles: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
-  const ctx = await getSessionContext(await createClient());
+  const ctx = await getSession();
   if (!ctx) return null;
 
   return (

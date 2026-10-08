@@ -1,47 +1,34 @@
-import { AccountButton } from '@/components/auth/account-button';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+
 import { Button } from '@/components/ui/button';
-import { PriceTag } from '@/components/vehicle/price-tag';
+import { getLiveInventoryCount, getSiteInfo } from '@/lib/site';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [{ settings }, count] = await Promise.all([getSiteInfo(), getLiveInventoryCount()]);
+
   return (
-    <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 sm:px-6">
-      <header className="flex h-16 items-center justify-between">
-        <span className="font-display text-lg font-semibold tracking-tight">Car Platform</span>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <AccountButton />
-        </div>
-      </header>
-
-      <main className="flex flex-1 flex-col justify-center gap-10 py-16">
-        <div className="max-w-2xl space-y-5">
-          <p className="text-primary text-sm font-medium tracking-widest uppercase">
-            Phase 2 · Auth & data
-          </p>
-          <h1 className="font-display text-5xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Find the car you&apos;ll love driving.
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Inventory, financing and dealer tools arrive in the coming phases. This page verifies
-            the shared design tokens, theming and workspace packages.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Button size="lg">Browse inventory</Button>
-            <Button size="lg" variant="outline">
-              Get pre-qualified
-            </Button>
-          </div>
-        </div>
-
-        <div className="bg-card text-card-foreground flex max-w-md items-center justify-between rounded-xl border p-5 shadow-sm">
-          <div>
-            <p className="font-medium">2021 BMW X5 xDrive40i</p>
-            <p className="text-muted-foreground text-sm">Sample card · tokens check</p>
-          </div>
-          <PriceTag cents={4_599_000} />
-        </div>
-      </main>
-    </div>
+    <section className="flex min-h-[70dvh] flex-col justify-center gap-8 py-20">
+      <p className="text-primary text-sm font-medium tracking-widest uppercase">
+        {count ? `${count} vehicles in stock` : settings.brand_name}
+      </p>
+      <h1 className="font-display max-w-3xl text-5xl font-semibold tracking-tight text-balance sm:text-7xl">
+        Find the car you&apos;ll love driving.
+      </h1>
+      <p className="text-muted-foreground max-w-2xl text-lg">
+        Every listing shows the exact price and full specs. When you find the one, message us on
+        WhatsApp or give us a call — no checkout, no runaround.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <Button asChild size="lg">
+          <Link href="/inventory">
+            Browse inventory <ArrowRight />
+          </Link>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/financing">Get pre-qualified</Link>
+        </Button>
+      </div>
+    </section>
   );
 }
