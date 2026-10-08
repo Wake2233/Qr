@@ -28,5 +28,5 @@ export default function ManageLayout() {
     );
   }
 
-  return <Stack screenOptions={{ headerTitle: 'Manage' }} />;
+  return <Stack screenOptions={{ title: 'Manage' }} />;
 }

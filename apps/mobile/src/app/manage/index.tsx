@@ -1,5 +1,8 @@
-import { ScrollView, Text, View } from 'react-native';
+import { consoleNavItems, type ConsoleNavItem } from '@cp/core';
+import { Link } from 'expo-router';
+import { Pressable, ScrollView, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { useSession } from '@/providers/session-provider';
 
 const statusClass: Record<string, string> = {
@@ -9,42 +12,81 @@ const statusClass: Record<string, string> = {
   suspended: 'bg-destructive/15 text-destructive',
 };
 
+function SectionRow({ item }: { item: ConsoleNavItem }) {
+  return (
+    <Link href={{ pathname: '/manage/[section]', params: { section: item.id } }} asChild>
+      <Pressable
+        accessibilityRole="link"
+        className="min-h-12 flex-row items-center justify-between border-b border-border px-4 py-3 active:bg-muted"
+      >
+        <Text variant="body">{item.label}</Text>
+        <Text variant="muted">›</Text>
+      </Pressable>
+    </Link>
+  );
+}
+
 export default function ManageHomeScreen() {
   const { context } = useSession();
   if (!context) return null;
 
+  const items = consoleNavItems({
+    role: context.profile.role,
+    memberships: context.memberships.map((m) => m.role),
+  }).filter((item) => item.id !== 'overview');
+  const groups = [
+    { id: 'workspace', label: 'Workspace' },
+    { id: 'admin', label: 'Admin' },
+  ] as const;
+
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="gap-6 px-4 py-6">
       <View className="gap-1">
-        <Text className="text-2xl font-bold text-foreground">
+        <Text variant="display">
           Welcome{context.profile.full_name ? `, ${context.profile.full_name}` : ''}
         </Text>
-        <Text className="text-base text-muted-foreground">
-          Signed in as {context.profile.role}. Inventory tools arrive in Phase 4.
-        </Text>
+        <Text variant="muted">Signed in as {context.profile.role}.</Text>
       </View>
+
       {context.memberships.map((m) => (
         <View key={m.dealerId} className="gap-2 rounded-lg border border-border bg-card p-4">
           <View className="flex-row items-start justify-between gap-3">
             <View className="flex-1">
-              <Text className="text-base font-semibold text-foreground">
-                {m.dealer.display_name}
+              <Text variant="heading">{m.dealer.display_name}</Text>
+              <Text variant="caption" className="capitalize">
+                {m.role}
               </Text>
-              <Text className="text-sm capitalize text-muted-foreground">{m.role}</Text>
             </View>
             <Text
-              className={`overflow-hidden rounded-full px-2.5 py-1 text-xs font-medium capitalize ${statusClass[m.dealer.status] ?? ''}`}
+              className={`overflow-hidden rounded-full px-2.5 py-1 font-sans-medium text-xs capitalize ${statusClass[m.dealer.status] ?? ''}`}
             >
               {m.dealer.status}
             </Text>
           </View>
           {m.dealer.status === 'pending' ? (
-            <Text className="text-sm text-muted-foreground">
+            <Text variant="caption">
               Awaiting admin approval. You can prepare drafts; publishing unlocks once approved.
             </Text>
           ) : null}
         </View>
       ))}
+
+      {groups.map((group) => {
+        const groupItems = items.filter((item) => item.group === group.id);
+        if (groupItems.length === 0) return null;
+        return (
+          <View key={group.id} className="gap-2">
+            <Text variant="caption" className="px-1 font-sans-medium uppercase tracking-wide">
+              {group.label}
+            </Text>
+            <View className="overflow-hidden rounded-lg border border-border bg-card">
+              {groupItems.map((item) => (
+                <SectionRow key={item.id} item={item} />
+              ))}
+            </View>
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
