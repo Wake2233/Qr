@@ -10,21 +10,26 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "SUPABASE_TEST_URL=${SUPABASE_TEST_URL:-http://127.0.0.1:54321} SUPABASE_TEST_PUBLISHABLE_KEY=${SUPABASE_TEST_PUBLISHABLE_KEY:-sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH} vitest run integration"
   },
   "dependencies": {
     "@cp/core": "workspace:*",
     "@cp/types": "workspace:*",
-    "@cp/validators": "workspace:*"
+    "@cp/validators": "workspace:*",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@cp/config": "workspace:*",
     "@supabase/supabase-js": "^2.117.3",
+    "@tanstack/react-query": "^5.104.1",
+    "@vitest/coverage-v8": "4.1.11",
     "eslint": "^9.39.5",
     "typescript": "6.0.3",
     "vitest": "^4.1.11"
   },
   "peerDependencies": {
-    "@supabase/supabase-js": "^2.117.3"
+    "@supabase/supabase-js": "^2.117.3",
+    "@tanstack/react-query": "^5.104.1"
   }
 }

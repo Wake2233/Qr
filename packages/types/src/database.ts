@@ -51,6 +51,12 @@ isOneToOne: false
       foreignKeyName: "contact_clicks_vehicle_id_fkey"
       columns: ["vehicle_id"]
 isOneToOne: false
+      referencedRelation: "vehicle_cards"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contact_clicks_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
       referencedRelation: "vehicles"
       referencedColumns: ["id"]
     }
@@ -145,6 +151,12 @@ isOneToOne: false
       foreignKeyName: "favorites_vehicle_id_fkey"
       columns: ["vehicle_id"]
 isOneToOne: false
+      referencedRelation: "vehicle_cards"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "favorites_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
       referencedRelation: "vehicles"
       referencedColumns: ["id"]
     }
@@ -184,6 +196,12 @@ isOneToOne: false
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "finance_applications_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "vehicle_cards"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "finance_applications_vehicle_id_fkey"
@@ -246,6 +264,12 @@ isOneToOne: false
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "leads_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "vehicle_cards"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "leads_vehicle_id_fkey"
@@ -391,6 +415,12 @@ isOneToOne: false
       foreignKeyName: "vehicle_features_vehicle_id_fkey"
       columns: ["vehicle_id"]
 isOneToOne: false
+      referencedRelation: "vehicle_cards"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "vehicle_features_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
       referencedRelation: "vehicles"
       referencedColumns: ["id"]
     }
@@ -407,6 +437,12 @@ isOneToOne: false
                   }
                   Relationships: [
                     {
+      foreignKeyName: "vehicle_images_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "vehicle_cards"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "vehicle_images_vehicle_id_fkey"
       columns: ["vehicle_id"]
 isOneToOne: false
@@ -435,6 +471,12 @@ isOneToOne: false
       foreignKeyName: "vehicle_price_history_vehicle_id_fkey"
       columns: ["vehicle_id"]
 isOneToOne: false
+      referencedRelation: "vehicle_cards"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "vehicle_price_history_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
       referencedRelation: "vehicles"
       referencedColumns: ["id"]
     }
@@ -451,6 +493,12 @@ isOneToOne: false
                   }
                   Relationships: [
                     {
+      foreignKeyName: "vehicle_views_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "vehicle_cards"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "vehicle_views_vehicle_id_fkey"
       columns: ["vehicle_id"]
 isOneToOne: false
@@ -511,7 +559,32 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "vehicle_cards": {
+                  Row: {
+                    "body_type": Database["public"]['Enums']["body_type"] | null,"condition": Database["public"]['Enums']["vehicle_condition"] | null,"cover_alt": string | null,"cover_blurhash": string | null,"cover_height": number | null,"cover_path": string | null,"cover_width": number | null,"created_at": string | null,"dealer_id": string | null,"dealer_is_house": boolean | null,"dealer_name": string | null,"dealer_slug": string | null,"dealer_status": Database["public"]['Enums']["dealer_status"] | null,"drivetrain": Database["public"]['Enums']["drivetrain"] | null,"ev_range_mi": number | null,"exterior_color": string | null,"feature_slugs": (string)[] | null,"fuel_type": Database["public"]['Enums']["fuel_type"] | null,"id": string | null,"image_count": number | null,"is_featured": boolean | null,"make_id": number | null,"make_name": string | null,"make_slug": string | null,"mileage": number | null,"model_id": number | null,"model_name": string | null,"model_slug": string | null,"mpg_city": number | null,"mpg_highway": number | null,"msrp_cents": number | null,"previous_price_cents": number | null,"price_cents": number | null,"price_dropped_at": string | null,"published_at": string | null,"search_vector": unknown,"seats": number | null,"slug": string | null,"sold_at": string | null,"status": Database["public"]['Enums']["listing_status"] | null,"stock_number": string | null,"transmission": Database["public"]['Enums']["transmission"] | null,"trim": string | null,"year": number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "vehicles_dealer_id_fkey"
+      columns: ["dealer_id"]
+isOneToOne: false
+      referencedRelation: "dealers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "vehicles_make_id_fkey"
+      columns: ["make_id"]
+isOneToOne: false
+      referencedRelation: "makes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "vehicles_model_id_fkey"
+      columns: ["model_id"]
+isOneToOne: false
+      referencedRelation: "models"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Functions: {
             "apply_as_dealer":
@@ -519,6 +592,9 @@ isOneToOne: false
                            },
 "approve_dealer":
 { Args: { "p_dealer_id": string }; Returns: undefined
+                           },
+"get_inventory_facets":
+{ Args: { "p_filters"?: Json }; Returns: Json
                            },
 "record_vehicle_view":
 { Args: { "p_vehicle_id": string }; Returns: undefined

@@ -33,6 +33,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Core coverage (≥95% lines)
+        run: pnpm --filter @cp/core test:coverage
       - run: pnpm build
 
   database:
@@ -52,3 +54,20 @@ jobs:
         run: |
           supabase gen types typescript --local --schema public > packages/types/src/database.ts
           git diff --exit-code packages/types/src/database.ts
+
+  integration:
+    # @cp/api query functions against the full local stack (PostgREST + Auth) with seed data.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase
+        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,realtime
+      - run: pnpm db:seed:users
+      - run: pnpm test:integration
