@@ -139,12 +139,12 @@ sitemap.ts · robots.ts · opengraph-image.tsx
 vehicle/[id]        VDP (sticky WhatsApp/Call bar)
 compare             Compare table (horizontal scroll)
 (auth)/sign-in · verify
-(manage)/_layout    Role gate
-(manage)/index      KPIs
-(manage)/inventory · inventory/new (VIN scan) · inventory/[id] (photos, price, status)
-(manage)/leads · leads/[id]
-(manage)/finance · finance/[id]
-(manage)/dealers · dealers/[id]   [admin]
+manage/_layout      Role gate (real /manage segment; groups would collide with tabs index)
+manage/index        KPIs
+manage/inventory · inventory/new (VIN scan) · inventory/[id] (photos, price, status)
+manage/leads · leads/[id]
+manage/finance · finance/[id]
+manage/dealers · dealers/[id]   [admin]
 ```
 
 ### 1.6 Design direction ("unique, modernized")
@@ -513,16 +513,17 @@ pnpm dev:mobile   # press i → app opens, shows token-colored tabs
 
 **Goal:** the complete schema from §3 locally, with tests proving the RLS matrix and auth working in both apps.
 
-- [ ] `supabase init`, `supabase` CLI as a root devDependency, `config.toml` (auth: email OTP + magic link, site URL, redirect URLs incl. Expo scheme)
-- [ ] Migrations in order: `0001_extensions_enums` → `0002_identity_dealers` → `0003_catalog` → `0004_inventory` → `0005_crm` → `0006_finance` → `0007_platform` → `0008_rls_helpers_policies` → `0009_rpcs_triggers` → `0010_storage`
-- [ ] Every table has RLS enabled. Column grants applied (`profiles.role`, `dealers.status*`, `dealers.is_house`)
-- [ ] `seed.sql`: ~30 makes / ~200 models, ~60 features, ~40 lenders, `site_settings`, house dealer + 1 approved + 1 pending sub-dealer, ~60 vehicles across all facets
-- [ ] `scripts/seed-users.ts`: creates `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending), `buyer@` on `*.test.local` with passwords recorded in `scripts/seed-users.ts` / `.env.example`, and memberships
-- [ ] `scripts/seed-images.ts`: uploads licensed sample images to `vehicle-images` and writes `vehicle_images` rows
-- [ ] pgTAP suites: `rls_profiles`, `rls_dealers`, `rls_vehicles`, `rls_vehicle_images`, `rls_leads`, `rls_finance`, `rls_storage`, `rpc_dealer_approval`, `trigger_publish_gate`, `trigger_price_history`. Each covers anon / buyer / dealer A / dealer B / admin
-- [ ] `pnpm db:types` → `packages/types/src/database.ts` committed, with `Tables/Enums` helper re-exports
-- [ ] Web auth: `@supabase/ssr` clients, `proxy.ts` session refresh (Next 16 replaced `middleware.ts`), `/login` (email OTP), `/auth/callback`, `/dashboard` gate (dealer/admin)
-- [ ] Mobile auth: Supabase client with LargeSecureStore, AppState refresh, `(auth)` OTP screens, deep link scheme, role-gated `(manage)` layout
+- [x] `supabase init`, `supabase` CLI as a root devDependency, `config.toml` (auth: email OTP + magic link, site URL, redirect URLs incl. Expo scheme) _(+ email templates that show the 6-digit code)_
+- [x] Migrations in order: `0001_extensions_enums` → `0002_identity_dealers` → `0003_catalog` → `0004_inventory` → `0005_crm` → `0006_finance` → `0007_platform` → `0008_rls_helpers_policies` → `0009_rpcs_triggers` → `0010_storage`
+- [x] Every table has RLS enabled. Column grants applied (`profiles.role`, `dealers.status*`, `dealers.is_house`)
+- [x] `seed.sql`: ~30 makes / ~200 models, ~60 features, ~40 lenders, `site_settings`, house dealer + 1 approved + 1 pending sub-dealer, ~60 vehicles across all facets _(32 makes / 157 models / 60 features / 40 lenders / 60 vehicles; house dealer uses the real Flemington NJ address + phone)_
+- [x] `scripts/seed-users.ts`: creates `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending), `buyer@` on `*.test.local` with passwords recorded in `scripts/seed-users.ts` / `.env.example`, and memberships
+- [x] `scripts/seed-images.ts`: uploads sample images to `vehicle-images` for every `vehicle_images` row _(generated placeholder photos — no licensing/download needed; real photos come from the dashboard)_
+- [x] pgTAP suites: `rls_profiles`, `rls_dealers`, `rls_vehicles`, `rls_vehicle_images`, `rls_leads`, `rls_finance`, `rls_storage`, `rpc_dealer_approval`, `trigger_publish_gate`, `trigger_price_history`. Each covers anon / buyer / dealer A / dealer B / admin _(12 suites, 165 assertions incl. `rls_platform`; mutation-checked)_
+- [x] `pnpm db:types` → `packages/types/src/database.ts` committed, with `Tables/Enums` helper re-exports
+- [x] Web auth: `@supabase/ssr` clients, `proxy.ts` session refresh (Next 16 replaced `middleware.ts`), `/login` (email OTP), `/auth/callback`, `/dashboard` gate (dealer/admin) _(verified in browser: admin in, buyer blocked, sign-out, one-click link)_
+- [x] Mobile auth: Supabase client with LargeSecureStore, AppState refresh, `(auth)` OTP screens, deep link scheme, role-gated `manage/` layout _(verified on the Expo web build: sign-in, session persistence, console gate, sign-out)_
+- [ ] Mobile auth verified on an iOS simulator/device (native LargeSecureStore + AppState refresh paths) _(blocked locally by Xcode 15.2; do via EAS dev build)_
 
 **Verify**
 
@@ -549,7 +550,7 @@ pnpm typecheck && pnpm test
 - [ ] `@cp/validators`: Zod schemas `vehicleUpsert`, `vehiclePublishable`, `inventoryFilters`, `leadSubmit` (per type), `financeApplication`, `dealerApplication`, `siteSettings`, `phoneE164` (libphonenumber-js), `vin`
 - [ ] `@cp/api`: query keys factory, `listVehicles(client, filters, page)`, `getVehicleBySlug`, `getVehiclesByIds`, `getFacets`, favorites, dealer queries, plus React Query hooks (`useVehicles`, `useVehicle`, `useFacets`, `useFavorites` …)
 - [ ] Web shell: header/nav, footer, theme, fonts, responsive layout, `(storefront)` and `dashboard` layouts with role-aware sidebar, toasts, error/not-found pages
-- [ ] Mobile shell: tab bar + icons, `(manage)` stack, theme (dark/light), fonts, query client + persister, toasts, error boundary
+- [ ] Mobile shell: tab bar + icons, `manage/` stack, theme (dark/light), fonts, query client + persister, toasts, error boundary
 - [ ] Zustand stores (compare tray ≤4, recently viewed) on both apps, persisted
 
 **Verify**
@@ -572,7 +573,7 @@ pnpm lint && pnpm typecheck && pnpm build
   - [ ] Drag-and-drop multi-upload with progress, reorder (dnd-kit) and cover selection
   - [ ] Publish with server-side gate errors surfaced per field
   - [ ] All writes go through Server Actions
-- [ ] **Mobile `(manage)/inventory`:**
+- [ ] **Mobile `manage/inventory`:**
   - [ ] FlashList with status chips and swipe actions (price, status)
   - [ ] Editor with the same sections
   - [ ] **VIN barcode scan** (expo-camera) → decode
@@ -580,7 +581,7 @@ pnpm lint && pnpm typecheck && pnpm build
   - [ ] Publish
 - [ ] Edge Function `decode-vin` (NHTSA vPIC, cached in `vin_decodes`) with unit tests (Deno test)
 - [ ] **Dealer onboarding:** web `/sell-with-us` + mobile screen → `apply_as_dealer`. Pending state UI (drafts allowed, publish disabled with explanation)
-- [ ] **Admin approvals** (web `/dashboard/dealers` + mobile `(manage)/dealers`): queue, detail (docs via signed URL), approve/reject/suspend
+- [ ] **Admin approvals** (web `/dashboard/dealers` + mobile `manage/dealers`): queue, detail (docs via signed URL), approve/reject/suspend
 - [ ] Dealer profile & team management (owner/manager): logo, WhatsApp/phone, hours, invite member by email
 - [ ] `revalidateTag('vehicles')` / `vehicle:<id>` on every inventory mutation (web). React Query invalidation on mobile
 - [ ] Admin catalog & site settings pages (makes/models/features, default WhatsApp/phone, template, APR table, review toggle)
@@ -649,7 +650,7 @@ pnpm --filter @cp/web exec lighthouse-ci # (or `npx @lhci/cli autorun`) VDP & /i
   - [ ] Kanban + table views, filters (dealer, type, status, source, date), lead detail timeline
   - [ ] Status changes, notes, assignment, reply-via-WhatsApp/tel buttons that log an activity
   - [ ] Finance application detail with offers
-- [ ] **CRM mobile** (`(manage)/leads`, `(manage)/finance`): inbox with unread badges, detail, status/notes/assign, and one-tap WhatsApp/Call to the customer
+- [ ] **CRM mobile** (`manage/leads`, `manage/finance`): inbox with unread badges, detail, status/notes/assign, and one-tap WhatsApp/Call to the customer
 - [ ] **Dashboard KPIs** (web + mobile): active listings, leads (7/30d), WhatsApp/Call clicks, views, conversion by vehicle, avg first-response time
 - [ ] `account/inquiries` & `account/applications` for buyers
 
@@ -747,3 +748,8 @@ eas build --profile preview --platform ios     # succeeds; install on device via
 | 2026-10-02 | Mobile tabs use `expo-router/unstable-native-tabs` (SDK 57 path; becomes `expo-router/native-tabs` in SDK 58) | Native tab bar (SF Symbols / Material icons), matches the Expo 57 template                                                                |
 | 2026-10-02 | React pinned to 19.2.3 across the workspace (`pnpm.overrides`)                                                | Expo SDK 57 pins 19.2.3; mixing with web's 19.2.8 hoisted two React copies and broke `act()` in mobile tests                              |
 | 2026-10-02 | Expo SDK 57 officially requires Node ≥22.13 and Xcode ≥26.4                                                   | Bundling/tests work on Node 20.19 today, but **upgrade Node to 24 LTS and Xcode before Phase 4** (camera/VIN scan needs a dev build)      |
+| 2026-10-08 | Supabase project `car-platform` in **us-east-1** (old ap-south-1 project deleted)                             | North American buyers; region is fixed at project creation                                                                                |
+| 2026-10-08 | Hosted DB creds live in `.env.remote.local`, loaded only by `db:remote:*` scripts                             | The Supabase CLI auto-loads `.env.local` and would use the hosted password against the local stack                                        |
+| 2026-10-08 | Mobile console is a real `manage/` route (`/manage`), not a `(manage)` group                                  | A group's `index` collides with the tabs' `index` at `/`                                                                                  |
+| 2026-10-08 | Dropped `vehicles.view_count`; views come from `vehicle_views` (daily rows)                                   | Incrementing a column on every view bumped `updated_at` and fired audit triggers                                                          |
+| 2026-10-08 | Seed photos are generated placeholders (sharp), not downloaded stock                                          | Slow network + licensing; real photos are uploaded through the dashboard                                                                  |

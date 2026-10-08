@@ -9,7 +9,7 @@ Scope, schema and phases live in `PLAN.md`. Read the active phase before startin
 ```
 apps/
   web/                 Next.js (App Router) · Tailwind · shadcn/ui · buyer site + /dashboard console
-  mobile/              Expo (expo-router) · NativeWind · buyer tabs + (manage) console stack
+  mobile/              Expo (expo-router) · NativeWind · buyer tabs + `manage/` console stack (/manage)
 packages/
   types/               @cp/types: GENERATED Supabase types (database.ts) + domain type helpers
   validators/          @cp/validators: Zod schemas (vehicle, lead, finance app, dealer, filters)
@@ -49,8 +49,12 @@ pnpm db:reset                          # re-apply all migrations + seed.sql loca
 pnpm db:test                           # supabase test db (pgTAP)
 pnpm db:lint                           # supabase db lint (plpgsql checks)
 pnpm db:types                          # supabase gen types typescript --local > packages/types/src/database.ts
-pnpm db:seed:users                     # create local test users (admin, dealers, buyer) via auth admin API
+pnpm db:seed                           # db:seed:users (local test accounts) + db:seed:images (placeholder photos); local stack only
+pnpm db:remote:link                    # link CLI to the hosted project (reads .env.remote.local)
+pnpm db:remote:push                    # push migrations to hosted — ASK THE USER FIRST
 ```
+
+Local test accounts (after `pnpm db:seed`): `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending dealer), `buyer@` — all `@test.local`. Sign in with an email code; read it in Mailpit at http://127.0.0.1:54324. Hosted credentials live in `.env.remote.local` (never `.env.local`: the Supabase CLI auto-loads that and would point local commands at the hosted password).
 
 Run a single workspace with `pnpm --filter @cp/web <script>` (or `@cp/mobile`, `@cp/core`, and so on).
 Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
@@ -91,7 +95,7 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 
 ## Expo (apps/mobile)
 
-- expo-router with typed routes. Group layout: `(tabs)` for buyers, `(auth)`, and `(manage)`, which is gated in `_layout.tsx` by role. RLS still does the real enforcement.
+- expo-router with typed routes. Layout: `(tabs)` for buyers, `(auth)` (modal), and `manage/` (a real `/manage` segment, since a `(manage)` group would collide with the tabs' index route), which is gated in `manage/_layout.tsx` by role. RLS still does the real enforcement.
 - Style with NativeWind `className` only. Colors and spacing come from `@cp/design-tokens`. Use no inline `style` objects except for Reanimated values.
 - Lists use `@shopify/flash-list`. Images use `expo-image` (blurhash, `cachePolicy="memory-disk"`). Bottom sheets use `@gorhom/bottom-sheet`.
 - Store the Supabase session in an encrypted store (the Supabase "LargeSecureStore" pattern: AES key in `expo-secure-store`, payload in AsyncStorage). Register an `AppState` listener for `startAutoRefresh`/`stopAutoRefresh`.

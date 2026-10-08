@@ -1,3 +1,4 @@
+import { AccountButton } from '@/components/auth/account-button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { PriceTag } from '@/components/vehicle/price-tag';
@@ -7,13 +8,16 @@ export default function HomePage() {
     <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 sm:px-6">
       <header className="flex h-16 items-center justify-between">
         <span className="font-display text-lg font-semibold tracking-tight">Car Platform</span>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <AccountButton />
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col justify-center gap-10 py-16">
         <div className="max-w-2xl space-y-5">
           <p className="text-primary text-sm font-medium tracking-widest uppercase">
-            Phase 1 · Foundation
+            Phase 2 · Auth & data
           </p>
           <h1 className="font-display text-5xl font-semibold tracking-tight text-balance sm:text-6xl">
             Find the car you&apos;ll love driving.

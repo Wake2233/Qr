@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 
 import { useAppTheme } from '@/lib/theme';
+import { SessionProvider } from '@/providers/session-provider';
 
 export default function RootLayout() {
   const { scheme, rootStyle, native } = useAppTheme();
@@ -24,9 +25,15 @@ export default function RootLayout() {
         },
       }}
     >
-      <View style={rootStyle} className="flex-1 bg-background">
-        <Stack screenOptions={{ headerShown: false }} />
-      </View>
+      <SessionProvider>
+        <View style={rootStyle} className="flex-1 bg-background">
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="manage" options={{ headerShown: false }} />
+          </Stack>
+        </View>
+      </SessionProvider>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
   );
