@@ -35,6 +35,8 @@ jobs:
       - run: pnpm test
       - name: Core coverage (≥95% lines)
         run: pnpm --filter @cp/core test:coverage
+      - name: Edge Function tests (Deno)
+        run: pnpm test:functions
       - run: pnpm build
 
   database:
