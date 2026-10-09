@@ -40,6 +40,7 @@ pnpm test                              # Vitest (packages, web) + jest-expo (mob
 pnpm test:integration                  # @cp/api query fns against the local stack (after pnpm db:seed:users)
 pnpm test:functions                    # Deno tests for supabase/functions (deno comes from the root devDependency)
 pnpm test:e2e                          # Playwright against local web + local Supabase (after pnpm db:seed; reads codes from Mailpit)
+pnpm --filter @cp/web lighthouse       # Lighthouse budget (mobile) on home, /inventory and a VDP; needs `pnpm --filter @cp/web build` + seeded DB
 pnpm build                             # turbo build (web prod build + package builds)
 pnpm format                            # Prettier write
 pnpm verify                            # lint + typecheck + test + test:functions + db:test + test:integration: MUST be green before any commit to main
@@ -90,6 +91,10 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 - Use `@supabase/ssr` with `lib/supabase/server.ts` (cookies), `lib/supabase/client.ts` (browser) and `src/proxy.ts` (Next 16 replacement for `middleware.ts`: session refresh + `/dashboard` gate). Base server-side authz on `supabase.auth.getUser()`/`getClaims()`, **never** `getSession()`.
 - Cache Components is on (`cacheComponents: true`). Public reads use the cookie-less anon client (`lib/supabase/public.ts`) inside `'use cache'` functions with `cacheTag` + `cacheLife` (tags in `lib/cache-tags.ts`: `site-settings`, `vehicles`, `vehicle:<id>`). Server Actions invalidate with `updateTag(tag)` + `refresh()` via `lib/revalidate.ts` (read-your-own-writes); `revalidateTag(tag, 'max')` is for webhooks/background jobs. Anything that reads cookies/session/`searchParams` sits behind `<Suspense>` or a `loading.tsx` (the dev overlay flags blocking routes).
 - Filter/sort/page state lives in the URL (`nuqs`). The serialization logic lives in `@cp/core/filters` and is shared with mobile.
+- Storefront reads live in `lib/storefront.ts` (cached). Which filters feed the list vs the facet counts is defined once in `lib/inventory/filter-scopes.ts` (server prefetch and client hooks must use the same query keys).
+- VDPs are prebuilt (`generateStaticParams`), so their metadata lands in `<head>`. Keep new public detail pages static the same way.
+- **Phones first.** Design and check every storefront page at 390px wide. Touch targets are 44px below `sm` (built into `Button`/`Select`), and there is no horizontal page scroll. A horizontal scroll-snap row needs `scroll-px-*` matching its padding (otherwise the browser nudges it on load and Chrome stops reporting LCP).
+- **Storefront bundle budget:** no classic `zod` in client code (use `zod/mini` or plain checks), heavy widgets (lightbox, charts) load with `next/dynamic` on demand, and grids/rails of cards use `IntentLink` (prefetch on hover/touch, not on viewport). Don't fade in the LCP element.
 - React Query handles client-side interactivity (favorites, compare, dashboard tables). Seed it from RSC with `HydrationBoundary`.
 - Use `next/image` for every vehicle image, with explicit `sizes` and a blurhash/`placeholder`.
 - The VDP needs `generateMetadata` and JSON-LD (`schema.org/Car` + `Offer`). The inventory needs a `sitemap.ts`.
@@ -102,6 +107,7 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 - expo-router with typed routes. Layout: `(tabs)` for buyers, `(auth)` (modal), and `manage/` (a real `/manage` segment, since a `(manage)` group would collide with the tabs' index route), which is gated in `manage/_layout.tsx` by role. RLS still does the real enforcement.
 - Style with NativeWind `className` only. Colors and spacing come from `@cp/design-tokens`. Use no inline `style` objects except for Reanimated values.
 - Render text with `components/text.tsx` (`variant` + `className`, merged by `cn()` from `lib/cn.ts`); RN `Text` doesn't inherit fonts. Font families are per weight (`font-sans`, `font-sans-semibold`, `font-display-bold` …, see `tailwind.config.js`). Third-party views that need `className` are registered in `lib/interop.ts`.
+- `SafeAreaView` overrides `padding` classes: put padding on an inner `View`. `Animated.View` is registered in `lib/interop.ts`, so it takes `className`.
 - Lists use `@shopify/flash-list`. Images use `expo-image` (blurhash, `cachePolicy="memory-disk"`). Bottom sheets use `@gorhom/bottom-sheet`.
 - Store the Supabase session in an encrypted store (the Supabase "LargeSecureStore" pattern: AES key in `expo-secure-store`, payload in AsyncStorage). Register an `AppState` listener for `startAutoRefresh`/`stopAutoRefresh`.
 - Persist the React Query cache with the AsyncStorage persister for fast cold starts. Prefetch the VDP on `onPressIn`.
