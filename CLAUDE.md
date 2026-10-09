@@ -21,7 +21,8 @@ supabase/
   migrations/          timestamped SQL (the ONLY way schema changes)
   tests/               pgTAP tests (RLS per role, triggers, RPCs)
   functions/           Edge Functions (Deno): simulate-lender-match, decode-vin, notify-new-lead
-  seed.sql             catalog, lenders, demo dealers & vehicles
+  seeds/reference.sql  settings, catalog, house dealer (every environment; `pnpm db:remote:seed` for hosted)
+  seed.sql             local demo only: lenders, demo dealers & vehicles
 scripts/               seed-users.ts, seed-images.ts (service-role, local only)
 ```
 
@@ -48,7 +49,7 @@ pnpm verify                            # lint + typecheck + test + test:function
 pnpm db:start                          # supabase start (Docker)
 pnpm db:stop
 pnpm db:new <name>                     # supabase migration new <name>
-pnpm db:reset                          # re-apply all migrations + seed.sql locally
+pnpm db:reset                          # re-apply all migrations + seeds/reference.sql + seed.sql locally
 pnpm db:test                           # supabase test db (pgTAP)
 pnpm db:lint                           # supabase db lint (plpgsql checks)
 pnpm db:types                          # supabase gen types typescript --local > packages/types/src/database.ts
@@ -56,6 +57,7 @@ pnpm db:seed                           # db:seed:users (local test accounts) + d
 pnpm functions:serve                   # serve Edge Functions locally (decode-vin) on :54321/functions/v1
 pnpm db:remote:link                    # link CLI to the hosted project (reads .env.remote.local)
 pnpm db:remote:push                    # push migrations to hosted — ASK THE USER FIRST
+pnpm db:remote:seed                    # load seeds/reference.sql into hosted (idempotent; needs pnpm db:start) — ASK FIRST
 ```
 
 Local test accounts (after `pnpm db:seed`): `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending dealer), `buyer@` — all `@test.local`. Sign in with an email code; read it in Mailpit at http://127.0.0.1:54324. Hosted credentials live in `.env.remote.local` (never `.env.local`: the Supabase CLI auto-loads that and would point local commands at the hosted password).
