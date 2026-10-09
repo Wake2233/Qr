@@ -20,7 +20,6 @@ import { getDealerBySlug } from './dealers';
 import { getFacets } from './facets';
 import { addFavorite, listFavoriteIds, removeFavorite } from './favorites';
 import { queryKeys } from './query-keys';
-import { getSiteSettings } from './settings';
 import {
   getVehicleBySlug,
   getVehicleDetailsByIds,
@@ -128,7 +127,8 @@ export const settingsQueries = {
   site: (client: AppSupabaseClient) =>
     queryOptions({
       queryKey: queryKeys.settings.site(),
-      queryFn: () => getSiteSettings(client),
+      // Loaded on demand: the settings parser pulls in zod, which storefront bundles don't need.
+      queryFn: () => import('./settings').then(({ getSiteSettings }) => getSiteSettings(client)),
       staleTime: 10 * MINUTE,
     }),
 };

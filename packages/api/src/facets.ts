@@ -1,18 +1,19 @@
 import type { InventoryFilters } from '@cp/core';
 import type { Json } from '@cp/types';
-import { z } from 'zod';
+// zod/mini: this parser ships to the storefront bundle, so keep it tree-shakeable.
+import * as z from 'zod/mini';
 
 import type { AppSupabaseClient } from './client';
 
-const bucket = z.object({ value: z.string(), count: z.number().int() });
-const labeled = bucket.extend({ label: z.string() });
-const range = z.object({ min: z.number().nullable(), max: z.number().nullable() });
+const bucket = z.object({ value: z.string(), count: z.int() });
+const labeled = z.extend(bucket, { label: z.string() });
+const range = z.object({ min: z.nullable(z.number()), max: z.nullable(z.number()) });
 
 /** Response of `get_inventory_facets`; parsed so both apps get typed facet counts. */
 export const inventoryFacetsSchema = z.object({
-  total: z.number().int(),
+  total: z.int(),
   make: z.array(labeled),
-  model: z.array(labeled.extend({ make: z.string() })),
+  model: z.array(z.extend(labeled, { make: z.string() })),
   body: z.array(bucket),
   fuel: z.array(bucket),
   drivetrain: z.array(bucket),
