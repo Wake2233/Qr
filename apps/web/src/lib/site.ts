@@ -9,7 +9,7 @@ import { createPublicClient } from '@/lib/supabase/public';
 
 const FALLBACK: { settings: SiteSettings; house: null } = {
   settings: {
-    brand_name: 'Car Platform',
+    brand_name: 'DG Auto',
     default_whatsapp_e164: null,
     default_phone_e164: null,
     whatsapp_template: DEFAULT_WHATSAPP_TEMPLATE,

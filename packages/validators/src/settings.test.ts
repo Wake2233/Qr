@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { aprByTierSchema, businessHoursSchema, siteSettingsSchema } from './settings';
 
 const settings = {
-  brand_name: 'Car Platform',
+  brand_name: 'DG Auto',
   default_whatsapp_e164: '+13473700570',
   default_phone_e164: '(347) 370-0570',
   whatsapp_template: "Hi! I'm interested in the {title} (Stock #{stock}) listed at {price}. {url}",

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Car Platform",
+    "name": "DG Auto",
     "slug": "car-platform",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,9 +12,7 @@
       "bundleIdentifier": "com.carplatform.app",
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "whatsapp"
-        ]
+        "LSApplicationQueriesSchemes": ["whatsapp"]
       }
     },
     "android": {

@@ -2,12 +2,12 @@
 -- Users and dealer memberships are created by `pnpm db:seed:users`; photos by `pnpm db:seed:images`.
 
 ------------------------------------------------------------------------------
--- Site settings (placeholders until the business confirms brand/hours)
+-- Site settings (brand confirmed; hours are still placeholders)
 ------------------------------------------------------------------------------
 insert into public.site_settings (
   id, brand_name, default_whatsapp_e164, default_phone_e164, business_hours, apr_by_tier
 ) values (
-  1, 'Car Platform', '+13473700570', '+13473700570',
+  1, 'DG Auto', '+13473700570', '+13473700570',
   '{"mon":"09:00-19:00","tue":"09:00-19:00","wed":"09:00-19:00","thu":"09:00-19:00","fri":"09:00-19:00","sat":"10:00-17:00","sun":null}',
   '{"excellent":650,"good":900,"fair":1350,"rebuilding":1900}'
 );
@@ -129,7 +129,7 @@ insert into public.dealers (
   id, slug, display_name, legal_name, status, is_house, phone_e164, whatsapp_e164, email,
   address_line1, city, state, postal_code, lat, lng, description, business_hours, approved_at
 ) values
-  ('00000000-0000-4000-8000-000000000001', 'car-platform-motors', 'Car Platform Motors', null,
+  ('00000000-0000-4000-8000-000000000001', 'dg-auto', 'DG Auto', null,
    'approved', true, '+13473700570', '+13473700570', null,
    '300 NJ-31', 'Flemington', 'NJ', '08822', 40.5123, -74.8593,
    'Our flagship dealership in Flemington, New Jersey.',

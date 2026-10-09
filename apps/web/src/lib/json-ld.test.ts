@@ -28,7 +28,7 @@ const vehicle = {
   model: { id: 2, name: 'X5', slug: 'x5' },
   images: [{ url: 'https://cdn.example/x5-0.jpg' }],
   dealer: {
-    display_name: 'Car Platform Motors',
+    display_name: 'DG Auto',
     phone_e164: '+13473700570',
     address_line1: '300 NJ-31',
     city: 'Flemington',
