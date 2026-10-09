@@ -1,20 +1,25 @@
 import 'server-only';
 
-import { getFacets, getHouseDealer, getSiteSettings } from '@cp/api';
+import { getFacets, getHouseDealer, getSiteSettings, type SiteSettings } from '@cp/api';
+import { DEFAULT_WHATSAPP_TEMPLATE } from '@cp/core';
 import { cacheLife, cacheTag } from 'next/cache';
 
 import { cacheTags } from '@/lib/cache-tags';
 import { createPublicClient } from '@/lib/supabase/public';
 
-const FALLBACK = {
+const FALLBACK: { settings: SiteSettings; house: null } = {
   settings: {
     brand_name: 'Car Platform',
     default_whatsapp_e164: null,
     default_phone_e164: null,
+    whatsapp_template: DEFAULT_WHATSAPP_TEMPLATE,
     business_hours: {},
+    apr_by_tier: {},
+    lender_network_size: 0,
+    require_listing_review: false,
   },
   house: null,
-} as const;
+};
 
 /**
  * Brand, contact numbers, hours and the house dealership's address for the header/footer.

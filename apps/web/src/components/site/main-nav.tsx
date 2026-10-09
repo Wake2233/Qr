@@ -10,12 +10,18 @@ export function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function MainNav({ className }: { className?: string }) {
-  const pathname = usePathname();
+/** Nav links; `pathname` null = no active item (static fallback while the URL streams in). */
+export function MainNavLinks({
+  pathname,
+  className,
+}: {
+  pathname: string | null;
+  className?: string;
+}) {
   return (
     <nav aria-label="Main" className={cn('items-center gap-1', className)}>
       {storefrontNav.map((item) => {
-        const active = isActivePath(pathname, item.href);
+        const active = pathname !== null && isActivePath(pathname, item.href);
         return (
           <Link
             key={item.href}
@@ -32,4 +38,9 @@ export function MainNav({ className }: { className?: string }) {
       })}
     </nav>
   );
+}
+
+/** Highlights the current section. Render inside <Suspense> (the pathname is runtime data). */
+export function MainNav({ className }: { className?: string }) {
+  return <MainNavLinks pathname={usePathname()} className={className} />;
 }

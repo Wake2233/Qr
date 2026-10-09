@@ -1,6 +1,12 @@
 'use client';
 
-import { CREDIT_TIERS, DEFAULT_APR_BY_TIER, formatApr, renderWhatsAppTemplate } from '@cp/core';
+import {
+  CREDIT_TIERS,
+  creditTierLabels,
+  DEFAULT_APR_BY_TIER,
+  formatApr,
+  renderWhatsAppTemplate,
+} from '@cp/core';
 import { siteSettingsSchema, type BusinessHours, type SiteSettingsInput } from '@cp/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -16,13 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-
-const TIER_LABELS: Record<(typeof CREDIT_TIERS)[number], string> = {
-  excellent: 'Excellent (720+)',
-  good: 'Good (660–719)',
-  fair: 'Fair (600–659)',
-  rebuilding: 'Rebuilding (<600)',
-};
 
 export function SiteSettingsForm({ initial }: { initial: SiteSettingsInput }) {
   const [pending, startTransition] = useTransition();
@@ -120,7 +119,7 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettingsInput }) {
           {CREDIT_TIERS.map((tier) => (
             <Field
               key={tier}
-              label={`${TIER_LABELS[tier]} APR (%)`}
+              label={`${creditTierLabels[tier]} APR (%)`}
               error={firstErrorMessage(formState.errors.apr_by_tier?.[tier])}
             >
               {(p) => (

@@ -20,7 +20,6 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps) {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   return (
@@ -34,25 +33,7 @@ export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps
         <SheetHeader>
           <SheetTitle className="font-display">{brandName}</SheetTitle>
         </SheetHeader>
-        <nav aria-label="Mobile" className="flex flex-col px-2">
-          {storefrontNav.map((item) => {
-            const active = isActivePath(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'hover:bg-accent rounded-md px-3 py-3 text-base font-medium',
-                  active ? 'text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <MobileNavLinks onNavigate={() => setOpen(false)} />
         <div className="mt-auto flex flex-col gap-2 p-4">
           {whatsappE164 ? (
             <Button
@@ -75,5 +56,31 @@ export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Mounted only while the sheet is open, so reading the pathname never blocks prerendering. */
+function MobileNavLinks({ onNavigate }: { onNavigate: () => void }) {
+  const pathname = usePathname();
+  return (
+    <nav aria-label="Mobile" className="flex flex-col px-2">
+      {storefrontNav.map((item) => {
+        const active = isActivePath(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'hover:bg-accent rounded-md px-3 py-3 text-base font-medium',
+              active ? 'text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

@@ -1,5 +1,8 @@
+import { Suspense } from 'react';
+
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteHeader } from '@/components/site/site-header';
+import { CompareTray } from '@/components/vehicle/compare-tray';
 
 export default function StorefrontLayout({ children }: LayoutProps<'/'>) {
   return (
@@ -15,6 +18,10 @@ export default function StorefrontLayout({ children }: LayoutProps<'/'>) {
         {children}
       </main>
       <SiteFooter />
+      {/* The tray hides itself on /compare (reads the pathname, so it streams in). */}
+      <Suspense fallback={null}>
+        <CompareTray />
+      </Suspense>
     </div>
   );
 }

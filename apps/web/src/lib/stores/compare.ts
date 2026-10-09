@@ -8,6 +8,8 @@ interface CompareState {
   ids: string[];
   add: (id: string) => CompareAddResult;
   remove: (id: string) => void;
+  /** replaces the tray (opening a shared /compare link) */
+  setIds: (ids: string[]) => void;
   clear: () => void;
 }
 
@@ -22,6 +24,7 @@ export const useCompareStore = create<CompareState>()(
         return result;
       },
       remove: (id) => set({ ids: removeFromCompare(get().ids, id) }),
+      setIds: (ids) => set({ ids: ids.slice(0, MAX_COMPARE) }),
       clear: () => set({ ids: [] }),
     }),
     {

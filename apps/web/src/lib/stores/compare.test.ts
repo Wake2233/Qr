@@ -27,4 +27,9 @@ describe('useCompareStore', () => {
     useCompareStore.getState().remove('y');
     expect(useCompareStore.getState().ids).toEqual(['z']);
   });
+
+  it('replaces the tray from a shared link, capped at four', () => {
+    useCompareStore.getState().setIds(['a', 'b', 'c', 'd', 'e']);
+    expect(useCompareStore.getState().ids).toEqual(['a', 'b', 'c', 'd']);
+  });
 });
