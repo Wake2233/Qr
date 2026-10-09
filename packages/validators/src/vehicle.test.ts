@@ -89,3 +89,19 @@ describe('vehiclePublishableSchema', () => {
     expect(maxModelYear(new Date('2026-10-09'))).toBe(2027);
   });
 });
+
+describe('vehicle price sanity cap', () => {
+  it('rejects prices above $10M (typo guard) but allows exotic-car prices', async () => {
+    const { vehicleUpsertSchema } = await import('./vehicle');
+    const base = {
+      dealer_id: '00000000-0000-4000-8000-000000000001',
+      make_id: 1,
+      model_id: 1,
+      year: 2022,
+    };
+    expect(vehicleUpsertSchema.safeParse({ ...base, price_cents: 240_902_359_000 }).success).toBe(
+      false,
+    );
+    expect(vehicleUpsertSchema.safeParse({ ...base, price_cents: 350_000_000 }).success).toBe(true);
+  });
+});

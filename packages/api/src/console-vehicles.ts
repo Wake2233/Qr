@@ -267,9 +267,14 @@ export interface PhotoUploadTarget {
  */
 export async function createPhotoUpload(
   client: AppSupabaseClient,
-  { dealerId, vehicleId, fileId }: { dealerId: string; vehicleId: string; fileId: string },
+  {
+    dealerId,
+    vehicleId,
+    fileId,
+    extension = 'webp',
+  }: { dealerId: string; vehicleId: string; fileId: string; extension?: 'webp' | 'jpg' },
 ): Promise<PhotoUploadTarget> {
-  const path = vehicleImagePath(dealerId, vehicleId, fileId);
+  const path = vehicleImagePath(dealerId, vehicleId, fileId, extension);
   const { data, error } = await client.storage
     .from(VEHICLE_IMAGES_BUCKET)
     .createSignedUploadUrl(path);

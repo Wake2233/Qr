@@ -17,6 +17,12 @@ export const requiredText = (min: number, max: number, message?: string) =>
 export const cents = z.number().int('Must be whole cents').nonnegative();
 export const positiveCents = cents.positive('Must be greater than zero');
 
+/** Listing prices: catches typos like an extra "0000" (max $10,000,000). */
+export const priceCents = positiveCents.max(
+  1_000_000_000,
+  'That price looks too high. Check for extra digits.',
+);
+
 export const uuid = z.uuid();
 
 export const slug = z

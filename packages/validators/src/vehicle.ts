@@ -1,7 +1,7 @@
 import { Constants } from '@cp/types';
 import { z } from 'zod';
 
-import { optionalText, positiveCents, uuid } from './shared';
+import { optionalText, priceCents, uuid } from './shared';
 import { vinSchema } from './vin';
 
 const E = Constants.public.Enums;
@@ -29,8 +29,8 @@ export const vehicleUpsertSchema = z.object({
   stock_number: optionalText(40),
   body_type: z.enum(E.body_type).nullish(),
   mileage: z.number().int().min(0).max(2_000_000).nullish(),
-  price_cents: positiveCents.nullish(),
-  msrp_cents: positiveCents.nullish(),
+  price_cents: priceCents.nullish(),
+  msrp_cents: priceCents.nullish(),
   exterior_color: optionalText(40),
   interior_color: optionalText(40),
   fuel_type: z.enum(E.fuel_type).nullish(),

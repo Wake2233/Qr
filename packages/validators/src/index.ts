@@ -59,3 +59,10 @@ export {
   type VehicleUpsertInput,
 } from './vehicle';
 export { vinSchema, type Vin } from './vin';
+export {
+  cents as centsSchema,
+  positiveCents as positiveCentsSchema,
+  priceCents as priceCentsSchema,
+  slug as slugSchema,
+  uuid as uuidSchema,
+} from './shared';
