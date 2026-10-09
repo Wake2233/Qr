@@ -1,4 +1,4 @@
-import { dealerLogoUrl } from '@cp/api';
+import { dealerLogoUrl, listSitemapVehicles } from '@cp/api';
 import {
   formatMileage,
   formatPrice,
@@ -30,6 +30,23 @@ import { createPublicClient } from '@/lib/supabase/public';
 import { cn } from '@/lib/utils';
 
 const vehicleUrl = (slug: string) => new URL(`/inventory/${slug}`, env.NEXT_PUBLIC_SITE_URL).href;
+
+const PREBUILT_LIMIT = 500;
+
+/**
+ * Prebuilds the newest live listings so their pages (and metadata, in <head>) are static.
+ * Listings published after the build render on their first request.
+ */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  try {
+    const vehicles = await listSitemapVehicles(createPublicClient());
+    if (vehicles.length > 0) return vehicles.slice(0, PREBUILT_LIMIT).map(({ slug }) => ({ slug }));
+  } catch (error) {
+    console.error('[inventory] listings unavailable at build time:', error);
+  }
+  // Cache Components needs at least one param; a build without a database prebuilds a 404.
+  return [{ slug: 'unavailable' }];
+}
 
 export async function generateMetadata({
   params,
@@ -119,8 +136,12 @@ async function VehicleDetailView({ slug }: { slug: string }) {
         </ol>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
-        <div className="min-w-0 space-y-10">
+      {/*
+        Phones read top to bottom: photos → title, price and actions → specs → estimate and dealer.
+        From lg the summary column is sticky beside the photos and specs.
+      */}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:gap-y-10">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <VehicleGallery
             title={vehicle.title}
             images={vehicle.images.map((image) => ({
@@ -132,6 +153,8 @@ async function VehicleDetailView({ slug }: { slug: string }) {
               alt: image.alt,
             }))}
           />
+        </div>
+        <div className="order-3 min-w-0 space-y-10 lg:order-none lg:col-start-1 lg:row-start-2">
           <VehicleSpecs vehicle={specSource} />
           <VehicleFeatures features={vehicle.features} />
           {vehicle.description ? (
@@ -149,94 +172,99 @@ async function VehicleDetailView({ slug }: { slug: string }) {
           ) : null}
         </div>
 
-        <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-          <div className="space-y-3">
-            {vehicle.status !== 'active' ? (
-              <span
-                className={cn(
-                  'inline-block rounded-full px-3 py-1 text-xs font-semibold',
-                  sold ? 'bg-foreground text-background' : 'bg-amber-400 text-amber-950',
-                )}
-              >
-                {listingStatusLabels[vehicle.status]}
-              </span>
-            ) : null}
-            <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight text-balance">
-              {vehicle.year} {vehicle.make.name} {vehicle.model.name}
-              {vehicle.trim ? (
-                <span className="text-muted-foreground block text-xl font-medium">
-                  {vehicle.trim}
+        <div className="contents lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:block lg:space-y-5 lg:self-start">
+          <section aria-label="Price and contact" className="order-2 space-y-5 lg:order-none">
+            <div className="space-y-3">
+              {vehicle.status !== 'active' ? (
+                <span
+                  className={cn(
+                    'inline-block rounded-full px-3 py-1 text-xs font-semibold',
+                    sold ? 'bg-foreground text-background' : 'bg-amber-400 text-amber-950',
+                  )}
+                >
+                  {listingStatusLabels[vehicle.status]}
                 </span>
               ) : null}
-            </h1>
-            <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-              {vehicle.price_cents !== null ? (
-                <p
-                  className="font-display text-4xl font-semibold tabular-nums"
-                  data-testid="vdp-price"
-                >
-                  {formatPrice(vehicle.price_cents)}
+              <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight text-balance">
+                {vehicle.year} {vehicle.make.name} {vehicle.model.name}
+                {vehicle.trim ? (
+                  <span className="text-muted-foreground block text-xl font-medium">
+                    {vehicle.trim}
+                  </span>
+                ) : null}
+              </h1>
+              <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                {vehicle.price_cents !== null ? (
+                  <p
+                    className="font-display text-4xl font-semibold tabular-nums"
+                    data-testid="vdp-price"
+                  >
+                    {formatPrice(vehicle.price_cents)}
+                  </p>
+                ) : null}
+                {drop && vehicle.previous_price_cents !== null ? (
+                  <p className="flex items-center gap-2 pb-1 text-sm">
+                    <span className="text-muted-foreground tabular-nums line-through">
+                      {formatPrice(vehicle.previous_price_cents)}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2 py-0.5 text-xs font-semibold text-white">
+                      <TrendingDown className="size-3.5" aria-hidden /> Price drop{' '}
+                      {formatPrice(drop)}
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+              {vehicle.msrp_cents !== null ? (
+                <p className="text-muted-foreground text-sm">
+                  Original MSRP {formatPrice(vehicle.msrp_cents)}
                 </p>
               ) : null}
-              {drop && vehicle.previous_price_cents !== null ? (
-                <p className="flex items-center gap-2 pb-1 text-sm">
-                  <span className="text-muted-foreground tabular-nums line-through">
-                    {formatPrice(vehicle.previous_price_cents)}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white">
-                    <TrendingDown className="size-3.5" aria-hidden /> Price drop {formatPrice(drop)}
-                  </span>
-                </p>
+              {highlights.length > 0 ? (
+                <p className="text-muted-foreground text-sm">{highlights.join(' · ')}</p>
               ) : null}
             </div>
-            {vehicle.msrp_cents !== null ? (
-              <p className="text-muted-foreground text-sm">
-                Original MSRP {formatPrice(vehicle.msrp_cents)}
-              </p>
-            ) : null}
-            {highlights.length > 0 ? (
-              <p className="text-muted-foreground text-sm">{highlights.join(' · ')}</p>
-            ) : null}
-          </div>
 
-          {sold ? (
-            <div className="bg-muted space-y-3 rounded-2xl p-5">
-              <p className="font-medium">This vehicle has been sold.</p>
-              <p className="text-muted-foreground text-sm">
-                Take a look at similar vehicles below, or tell us what you’re looking for.
-              </p>
+            {sold ? (
+              <div className="bg-muted space-y-3 rounded-2xl p-5">
+                <p className="font-medium">This vehicle has been sold.</p>
+                <p className="text-muted-foreground text-sm">
+                  Take a look at similar vehicles below, or tell us what you’re looking for.
+                </p>
+                <ContactActions
+                  vehicleId={vehicle.id}
+                  whatsappE164={contact.whatsappE164}
+                  phoneE164={contact.phoneE164}
+                  text={`Hi! The ${vehicle.title} sold — do you have anything similar?`}
+                />
+              </div>
+            ) : (
               <ContactActions
                 vehicleId={vehicle.id}
                 whatsappE164={contact.whatsappE164}
                 phoneE164={contact.phoneE164}
-                text={`Hi! The ${vehicle.title} sold — do you have anything similar?`}
+                text={contact.text}
+                className="hidden lg:grid"
               />
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              {!sold ? (
+                <>
+                  <FavoriteButton vehicleId={vehicle.id} title={vehicle.title} variant="outline" />
+                  <CompareToggle vehicleId={vehicle.id} title={vehicle.title} variant="outline" />
+                </>
+              ) : null}
+              <ShareButton title={vehicle.title} text={contact.text} url={url} />
             </div>
-          ) : (
-            <ContactActions
-              vehicleId={vehicle.id}
-              whatsappE164={contact.whatsappE164}
-              phoneE164={contact.phoneE164}
-              text={contact.text}
-              className="hidden lg:grid"
-            />
-          )}
+          </section>
 
-          <div className="flex flex-wrap gap-2">
-            {!sold ? (
-              <>
-                <FavoriteButton vehicleId={vehicle.id} title={vehicle.title} variant="outline" />
-                <CompareToggle vehicleId={vehicle.id} title={vehicle.title} variant="outline" />
-              </>
+          <div className="order-4 space-y-5 lg:order-none">
+            {!sold && vehicle.price_cents !== null ? (
+              <PaymentEstimate priceCents={vehicle.price_cents} aprByTier={settings.apr_by_tier} />
             ) : null}
-            <ShareButton title={vehicle.title} text={contact.text} url={url} />
+            {dealer ? <DealerCard dealer={dealer} /> : null}
           </div>
-
-          {!sold && vehicle.price_cents !== null ? (
-            <PaymentEstimate priceCents={vehicle.price_cents} aprByTier={settings.apr_by_tier} />
-          ) : null}
-          {dealer ? <DealerCard dealer={dealer} /> : null}
-        </aside>
+        </div>
       </div>
 
       <VehicleRail

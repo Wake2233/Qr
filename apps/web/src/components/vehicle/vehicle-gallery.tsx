@@ -1,20 +1,19 @@
 'use client';
 
-import 'yet-another-react-lightbox/styles.css';
-import 'yet-another-react-lightbox/plugins/counter.css';
-
 import { vehicleImageAlt } from '@cp/core';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Car, ChevronLeft, ChevronRight, Expand } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
-import Lightbox from 'yet-another-react-lightbox';
-import Counter from 'yet-another-react-lightbox/plugins/counter';
-import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
-import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 
 import { blurhashDataUrl } from '@/lib/blurhash';
 import { cn } from '@/lib/utils';
+
+const loadLightbox = () => import('./vehicle-lightbox');
+const VehicleLightbox = dynamic(() => loadLightbox().then((mod) => mod.VehicleLightbox), {
+  ssr: false,
+});
 
 export interface GalleryImage {
   id: string;
@@ -85,6 +84,8 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
                     type="button"
                     className="absolute inset-0 cursor-zoom-in outline-none"
                     onClick={() => setLightbox(i)}
+                    onPointerEnter={() => void loadLightbox()}
+                    onTouchStart={() => void loadLightbox()}
                     aria-label={`Open photo ${i + 1} full screen`}
                     tabIndex={i === index ? 0 : -1}
                   >
@@ -144,22 +145,19 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
         </div>
       ) : null}
 
-      <Lightbox
-        open={lightbox !== null}
-        index={lightbox ?? 0}
-        close={() => setLightbox(null)}
-        on={{ view: ({ index: viewed }) => go(viewed) }}
-        slides={images.map((image, i) => ({
-          src: image.url,
-          alt: alt(image, i),
-          width: image.width ?? undefined,
-          height: image.height ?? undefined,
-        }))}
-        plugins={[Zoom, Fullscreen, Counter]}
-        zoom={{ maxZoomPixelRatio: 3, scrollToZoom: true }}
-        carousel={{ finite: images.length <= 1 }}
-        controller={{ closeOnBackdropClick: true }}
-      />
+      {lightbox !== null ? (
+        <VehicleLightbox
+          index={lightbox}
+          onClose={() => setLightbox(null)}
+          onView={go}
+          slides={images.map((image, i) => ({
+            src: image.url,
+            alt: alt(image, i),
+            width: image.width ?? undefined,
+            height: image.height ?? undefined,
+          }))}
+        />
+      ) : null}
     </div>
   );
 }

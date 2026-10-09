@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { storefrontNav } from '@/lib/nav';
@@ -34,6 +35,10 @@ export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps
           <SheetTitle className="font-display">{brandName}</SheetTitle>
         </SheetHeader>
         <MobileNavLinks onNavigate={() => setOpen(false)} />
+        <div className="text-muted-foreground flex items-center justify-between border-t px-5 py-2 text-base font-medium">
+          Appearance
+          <ThemeToggle />
+        </div>
         <div className="mt-auto flex flex-col gap-2 p-4">
           {whatsappE164 ? (
             <Button

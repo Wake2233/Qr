@@ -1,6 +1,7 @@
 import { bodyTypeLabels, inventoryHref } from '@cp/core';
 import type { Enums } from '@cp/types';
-import Link from 'next/link';
+
+import { IntentLink } from '@/components/site/intent-link';
 
 const ORDER: Enums<'body_type'>[] = [
   'suv',
@@ -27,7 +28,7 @@ export function BodyTypeTiles({ counts }: { counts: { value: string; count: numb
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {tiles.map((type) => (
           <li key={type}>
-            <Link
+            <IntentLink
               href={inventoryHref({ body: [type] })}
               className="bg-card hover:border-primary/60 focus-visible:ring-ring/50 group flex h-full flex-col justify-between gap-6 rounded-2xl border p-5 transition outline-none hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-[3px] motion-reduce:hover:translate-y-0"
             >
@@ -35,7 +36,7 @@ export function BodyTypeTiles({ counts }: { counts: { value: string; count: numb
               <span className="text-muted-foreground text-sm tabular-nums">
                 {byType.get(type)} in stock
               </span>
-            </Link>
+            </IntentLink>
           </li>
         ))}
       </ul>

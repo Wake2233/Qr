@@ -37,7 +37,8 @@ export default async function HomePage() {
           aria-hidden
           className="from-primary/25 via-primary/5 pointer-events-none absolute inset-x-0 -top-40 h-[520px] bg-radial-[at_50%_0%] to-transparent blur-2xl"
         />
-        <div className="animate-in fade-in slide-in-from-bottom-4 relative max-w-4xl space-y-6 duration-700 motion-reduce:animate-none">
+        {/* Slide only (no fade): the headline is the LCP element and must paint immediately. */}
+        <div className="animate-in slide-in-from-bottom-4 relative max-w-4xl space-y-6 duration-700 motion-reduce:animate-none">
           <p className="text-primary text-sm font-medium tracking-widest uppercase">
             {total ? `${total} vehicles in stock` : settings.brand_name}
           </p>

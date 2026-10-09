@@ -38,7 +38,7 @@ export async function SiteHeader() {
             </Link>
           </Button>
           <CompareLink />
-          <ThemeToggle />
+          <ThemeToggle className="hidden md:inline-flex" />
           <AccountButton />
           <MobileNav
             brandName={settings.brand_name}

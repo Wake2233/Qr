@@ -10,9 +10,9 @@ import {
 } from '@cp/core';
 import { Car, TrendingDown } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 
 import { blurhashDataUrl } from '@/lib/blurhash';
+import { IntentLink } from '@/components/site/intent-link';
 import { cn } from '@/lib/utils';
 
 import { CompareToggle } from './compare-toggle';
@@ -83,7 +83,7 @@ export function VehicleCard({
             </span>
           ) : null}
           {drop && live ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
               <TrendingDown className="size-3.5" aria-hidden /> {formatPrice(drop)} off
             </span>
           ) : null}
@@ -104,12 +104,12 @@ export function VehicleCard({
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="min-w-0">
           <h3 className="font-display truncate text-lg leading-tight font-semibold">
-            <Link
+            <IntentLink
               href={`/inventory/${card.slug}`}
               className="outline-none after:absolute after:inset-0 after:content-['']"
             >
               {card.year} {card.make_name} {card.model_name}
-            </Link>
+            </IntentLink>
           </h3>
           <p className="text-muted-foreground truncate text-sm">{card.trim ?? ' '}</p>
         </div>

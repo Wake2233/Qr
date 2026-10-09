@@ -8,7 +8,7 @@ export function BrandMark({ name, className }: { name: string; className?: strin
     <Link
       href="/"
       className={cn(
-        'font-display focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md text-lg font-semibold tracking-tight outline-none focus-visible:ring-[3px]',
+        'font-display focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md text-lg font-semibold tracking-tight whitespace-nowrap outline-none focus-visible:ring-[3px]',
         className,
       )}
     >

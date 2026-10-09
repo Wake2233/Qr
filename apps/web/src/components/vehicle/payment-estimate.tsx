@@ -132,7 +132,7 @@ export function PaymentEstimate({ priceCents, aprByTier }: PaymentEstimateProps)
       <p className="text-muted-foreground text-xs leading-relaxed">
         Simulated estimate for illustration only — not a credit decision or a loan offer. Excludes
         taxes, title and fees. Your actual rate depends on lender approval.{' '}
-        <Link href="/financing" className="text-primary underline-offset-2 hover:underline">
+        <Link href="/financing" className="text-primary underline underline-offset-2">
           Get pre-qualified
         </Link>
       </p>

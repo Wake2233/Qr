@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   // Internal workspace packages ship TypeScript source.
   transpilePackages: ['@cp/api', '@cp/core', '@cp/types', '@cp/validators'],
+  experimental: {
+    // Resolve barrel imports to the modules actually used, so storefront pages don't ship the
+    // console's zod schemas just because they import a hook from `@cp/api`.
+    optimizePackageImports: ['@cp/api', '@cp/core', '@cp/validators'],
+  },
   images: {
     remotePatterns: [
       {

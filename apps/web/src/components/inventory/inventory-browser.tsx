@@ -36,6 +36,7 @@ import {
 import { VehicleCard, VehicleCardSkeleton } from '@/components/vehicle/vehicle-card';
 import { facetFiltersOf, listFiltersOf } from '@/lib/inventory/filter-scopes';
 import { useInventoryFilters } from '@/lib/inventory/use-inventory-filters';
+import { useMediaQuery } from '@/lib/use-media-query';
 
 import { FilterPanel } from './filter-panel';
 
@@ -59,6 +60,8 @@ export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<strin
   const labels = useMemo(() => labelsOf(facets.data, dealerLabels), [facets.data, dealerLabels]);
   const chips = activeFilterChips(filters, labels);
   const activeCount = countActiveFilters(filters);
+  const desktop = useMediaQuery('(min-width: 1024px)');
+  const firstPageCount = vehicles.data?.pages[0]?.items.length ?? 0;
 
   // Infinite scroll: load the next page when the sentinel nears the viewport. A callback
   // ref (state) re-attaches the observer whenever the sentinel element is replaced.
@@ -82,14 +85,21 @@ export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<strin
         aria-label="Filters"
         className="hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-2"
       >
-        <FilterPanel
-          filters={filters}
-          facets={facets.data}
-          onChange={(next) => void setFilters(next)}
-        />
+        <h2 className="sr-only">Filters</h2>
+        {/* Phones use the sheet; mounting the rail only on desktop keeps it out of their hydration. */}
+        {desktop ? (
+          <FilterPanel
+            filters={filters}
+            facets={facets.data}
+            onChange={(next) => void setFilters(next)}
+          />
+        ) : (
+          <FilterRailSkeleton />
+        )}
       </aside>
 
       <div className="min-w-0 space-y-5">
+        <h2 className="sr-only">Results</h2>
         <div className="flex flex-wrap items-center gap-3">
           <SearchBox
             value={filters.q ?? ''}
@@ -115,7 +125,10 @@ export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<strin
                 void setFilters({ ...listFilters, sort: sort as InventorySort });
             }}
           >
-            <SelectTrigger aria-label="Sort by" className="w-full sm:w-52">
+            <SelectTrigger
+              aria-label="Sort by"
+              className="w-auto min-w-0 flex-1 sm:w-52 sm:flex-none"
+            >
               <SelectValue>{sortLabels[filters.sort ?? 'newest']}</SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
@@ -193,7 +206,12 @@ export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<strin
               {cards.map((card, index) => (
                 <li
                   key={card.id}
-                  className="animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none"
+                  // Server-rendered cards paint immediately (LCP); only later pages animate in.
+                  className={
+                    index < firstPageCount
+                      ? undefined
+                      : 'animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none'
+                  }
                 >
                   <VehicleCard card={card} priority={index < 3} className="h-full" />
                 </li>
@@ -231,6 +249,20 @@ function labelsOf(facets: InventoryFacets | undefined, dealer?: Record<string, s
     feature: toMap(facets?.feature),
     dealer,
   };
+}
+
+function FilterRailSkeleton() {
+  return (
+    <div className="space-y-6" aria-hidden>
+      {[0, 1, 2, 3].map((group) => (
+        <div key={group} className="space-y-3">
+          <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+          <div className="bg-muted h-9 animate-pulse rounded-md" />
+          <div className="bg-muted h-9 animate-pulse rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
@@ -317,7 +349,7 @@ function MobileFilters({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" className="h-10 lg:hidden">
+        <Button variant="outline" className="lg:hidden">
           <SlidersHorizontal /> Filters
           {activeCount > 0 ? (
             <span className="bg-primary text-primary-foreground grid size-5 place-items-center rounded-full text-xs">

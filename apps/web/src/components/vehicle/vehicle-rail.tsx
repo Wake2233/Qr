@@ -40,7 +40,7 @@ export function VehicleRail({
           </Link>
         ) : null}
       </div>
-      <ul className="-mx-4 flex snap-x snap-mandatory [scrollbar-width:thin] gap-4 overflow-x-auto scroll-smooth px-4 pb-4 sm:-mx-6 sm:px-6">
+      <ul className="-mx-4 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:thin] gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:scroll-px-6 sm:px-6">
         {cards.map((card) => (
           <li key={card.id} className="w-[280px] shrink-0 snap-start sm:w-[320px]">
             <VehicleCard card={card} sizes="320px" className="h-full" />
