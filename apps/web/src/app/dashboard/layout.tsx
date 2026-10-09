@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense, type ReactNode } from 'react';
 
-import { signOut } from '@/app/auth/actions';
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { ConsoleMobileNav } from '@/components/dashboard/console-mobile-nav';
 import { ConsoleSidebar } from '@/components/dashboard/console-sidebar';
 import { ConsoleSkeleton } from '@/components/dashboard/console-skeleton';
@@ -41,11 +41,7 @@ async function ConsoleShell({ children }: { children: ReactNode }) {
           <Button asChild variant="outline">
             <Link href="/">Back to the store</Link>
           </Button>
-          <form action={signOut}>
-            <Button variant="ghost" type="submit">
-              Sign out
-            </Button>
-          </form>
+          <SignOutButton variant="ghost" />
         </div>
       </main>
     );
@@ -72,11 +68,7 @@ async function ConsoleShell({ children }: { children: ReactNode }) {
               <Link href="/">View store</Link>
             </Button>
             <ThemeToggle />
-            <form action={signOut}>
-              <Button variant="outline" size="sm" type="submit">
-                Sign out
-              </Button>
-            </form>
+            <SignOutButton variant="outline" size="sm" />
           </div>
         </header>
         <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">

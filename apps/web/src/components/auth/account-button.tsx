@@ -2,8 +2,8 @@
 
 import { Heart, LayoutDashboard, LogOut, UserRound } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-import { signOut } from '@/app/auth/actions';
 import { useAuth } from '@/components/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +17,8 @@ import {
 
 /** Header auth control. Client-side so public pages stay statically renderable. */
 export function AccountButton() {
-  const { user, context } = useAuth();
+  const { user, context, supabase } = useAuth();
+  const router = useRouter();
 
   if (user === undefined) return <div className="h-9 w-20" aria-hidden />;
   if (!user) {
@@ -51,7 +52,15 @@ export function AccountButton() {
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void signOut()}>
+        <DropdownMenuItem
+          onSelect={() => {
+            // Browser sign-out clears the auth cookies and notifies every listener.
+            void supabase.auth.signOut().then(() => {
+              router.push('/');
+              router.refresh();
+            });
+          }}
+        >
           <LogOut /> Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

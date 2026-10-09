@@ -2,7 +2,7 @@
 
 import { getSessionContext, type AppSupabaseClient, type SessionContext } from '@cp/api';
 import type { User } from '@supabase/supabase-js';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -12,6 +12,8 @@ interface AuthState {
   /** profile + memberships once loaded (null when signed out) */
   context: SessionContext | null;
   supabase: AppSupabaseClient;
+  /** Re-reads the session (after a Server Action signed the user in via cookies). */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -25,13 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [context, setContext] = useState<SessionContext | null>(null);
 
+  const refresh = useCallback(async () => {
+    const { data } = await supabase.auth.getUser();
+    setUser(data.user);
+  }, [supabase]);
+
   useEffect(() => {
-    void supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    void refresh();
     const { data } = supabase.auth.onAuthStateChange((_event, session) =>
       setUser(session?.user ?? null),
     );
     return () => data.subscription.unsubscribe();
-  }, [supabase]);
+  }, [supabase, refresh]);
 
   const userId = user?.id ?? null;
   useEffect(() => {
@@ -49,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, userId]);
 
   return (
-    <AuthContext.Provider value={{ user, context: userId ? context : null, supabase }}>
+    <AuthContext.Provider value={{ user, context: userId ? context : null, supabase, refresh }}>
       {children}
     </AuthContext.Provider>
   );

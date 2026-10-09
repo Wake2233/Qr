@@ -7,6 +7,7 @@ import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { requestSignInCode, verifySignInCode } from '@/app/(auth)/login/actions';
+import { useAuth } from '@/components/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ interface LoginFormProps {
 
 export function LoginForm({ next, initialError }: LoginFormProps) {
   const router = useRouter();
+  const { refresh: refreshAuth } = useAuth();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [error, setError] = useState<string | undefined>(initialError);
   const [sentTo, setSentTo] = useState('');
@@ -54,6 +56,8 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
         setError(result.fieldErrors?.code?.[0] ?? result.error);
         return;
       }
+      // The session cookie was set by the Server Action; let client widgets pick it up.
+      await refreshAuth();
       router.replace(result.data.redirectTo);
       router.refresh();
     });
