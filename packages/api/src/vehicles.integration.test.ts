@@ -5,6 +5,7 @@ import type { AppSupabaseClient } from './client';
 import { getFacets } from './facets';
 import { addFavorite, listFavoriteIds, mergeFavorites, removeFavorite } from './favorites';
 import { getSiteSettings } from './settings';
+import { listSitemapDealers, listSitemapVehicles } from './sitemap';
 import { anonClient, hasTestDb, signedInClient } from './test-clients';
 import {
   getVehicleBySlug,
@@ -192,5 +193,16 @@ describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
       expect(detail.images[0]?.position).toBe(0);
     }
     expect(await getVehicleDetailsByIds(client, [])).toEqual([]);
+  });
+  it('lists public vehicle and dealer slugs for the sitemap', async () => {
+    const [vehicles, dealers, page] = await Promise.all([
+      listSitemapVehicles(client),
+      listSitemapDealers(client),
+      listVehicles(client),
+    ]);
+    expect(vehicles).toHaveLength(page.total);
+    expect(vehicles.every((v) => v.slug.length > 0 && v.updated_at)).toBe(true);
+    expect(dealers.length).toBeGreaterThan(0);
+    expect(dealers.map((d) => d.slug)).not.toContain('hudson-valley-cars');
   });
 });

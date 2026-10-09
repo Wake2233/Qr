@@ -107,6 +107,7 @@ export {
 export { queryKeys } from './query-keys';
 export { getSessionContext, type DealerMembership, type SessionContext } from './session';
 export { getSiteSettings, type SiteSettings } from './settings';
+export { listSitemapDealers, listSitemapVehicles } from './sitemap';
 export { VEHICLE_IMAGES_BUCKET, vehicleImageUrl } from './storage';
 export { recordVehicleView, trackContactClick } from './tracking';
 export {
