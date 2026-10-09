@@ -33,12 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
-    void refresh();
+    void supabase.auth.getUser().then(({ data }) => setUser(data.user));
     const { data } = supabase.auth.onAuthStateChange((_event, session) =>
       setUser(session?.user ?? null),
     );
     return () => data.subscription.unsubscribe();
-  }, [supabase, refresh]);
+  }, [supabase]);
 
   const userId = user?.id ?? null;
   useEffect(() => {
