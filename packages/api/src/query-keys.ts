@@ -18,6 +18,10 @@ export const queryKeys = {
     detail: (slug: string) => [...queryKeys.vehicles.all, 'detail', slug] as const,
     byIds: (ids: readonly string[]) => [...queryKeys.vehicles.all, 'by-ids', [...ids]] as const,
     facets: (filters: InventoryFilters) => [...queryKeys.vehicles.all, 'facets', filters] as const,
+    rail: (name: 'featured' | 'price-drops' | 'recently-sold') =>
+      [...queryKeys.vehicles.all, 'rail', name] as const,
+    similar: (id: string) => [...queryKeys.vehicles.all, 'similar', id] as const,
+    compare: (ids: readonly string[]) => [...queryKeys.vehicles.all, 'compare', [...ids]] as const,
   },
   catalog: {
     all: ['catalog'] as const,

@@ -1,4 +1,10 @@
-import { priceDropCents, vehicleTitle, type InventoryFilters, type InventorySort } from '@cp/core';
+import {
+  buildSearchQuery,
+  priceDropCents,
+  vehicleTitle,
+  type InventoryFilters,
+  type InventorySort,
+} from '@cp/core';
 import type { Enums, Tables } from '@cp/types';
 
 import type { AppSupabaseClient } from './client';
@@ -79,8 +85,9 @@ export async function listVehicles(
     .in('status', STOREFRONT_STATUSES)
     .eq('dealer_status', 'approved');
 
-  if (filters.q)
-    query = query.textSearch('search_vector', filters.q, { type: 'websearch', config: 'simple' });
+  // Prefix search ("cam" → Camry); same tsquery as get_inventory_facets via private.search_query.
+  const tsquery = buildSearchQuery(filters.q);
+  if (tsquery) query = query.textSearch('search_vector', tsquery, { config: 'simple' });
   if (filters.make?.length) query = query.in('make_slug', filters.make);
   if (filters.model?.length) query = query.in('model_slug', filters.model);
   if (filters.body?.length) query = query.in('body_type', filters.body);
@@ -143,6 +150,71 @@ export async function listFeaturedVehicles(client: AppSupabaseClient, limit = 8)
   return data.flatMap((row) => toCard(client, row) ?? []);
 }
 
+/** Live listings whose price was just reduced (newest drop first). */
+export async function listPriceDrops(client: AppSupabaseClient, limit = 8) {
+  const { data, error } = await client
+    .from('vehicle_cards')
+    .select(CARD_COLUMNS)
+    .in('status', STOREFRONT_STATUSES)
+    .eq('dealer_status', 'approved')
+    .not('previous_price_cents', 'is', null)
+    .order('price_dropped_at', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.flatMap((row) => toCard(client, row) ?? []);
+}
+
+/** Sold in the last 30 days (RLS hides older sales), newest first. */
+export async function listRecentlySold(client: AppSupabaseClient, limit = 8) {
+  const { data, error } = await client
+    .from('vehicle_cards')
+    .select(CARD_COLUMNS)
+    .eq('status', 'sold')
+    .eq('dealer_status', 'approved')
+    .order('sold_at', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.flatMap((row) => toCard(client, row) ?? []);
+}
+
+export interface SimilarTo {
+  id: string;
+  makeId: number;
+  bodyType: Enums<'body_type'> | null;
+  priceCents: number;
+}
+
+/**
+ * "You may also like": live listings of the same body style or make within ±40% of the
+ * price, closest price first.
+ */
+export async function listSimilarVehicles(
+  client: AppSupabaseClient,
+  vehicle: SimilarTo,
+  limit = 8,
+) {
+  const sameKind = vehicle.bodyType
+    ? `body_type.eq.${vehicle.bodyType},make_id.eq.${vehicle.makeId}`
+    : `make_id.eq.${vehicle.makeId}`;
+  const { data, error } = await client
+    .from('vehicle_cards')
+    .select(CARD_COLUMNS)
+    .in('status', STOREFRONT_STATUSES)
+    .eq('dealer_status', 'approved')
+    .neq('id', vehicle.id)
+    .or(sameKind)
+    .gte('price_cents', Math.floor(vehicle.priceCents * 0.6))
+    .lte('price_cents', Math.ceil(vehicle.priceCents * 1.4))
+    .order('published_at', { ascending: false, nullsFirst: false })
+    .limit(limit * 3);
+  if (error) throw error;
+  const distance = (card: VehicleCard) => Math.abs((card.price_cents ?? 0) - vehicle.priceCents);
+  return data
+    .flatMap((row) => toCard(client, row) ?? [])
+    .sort((a, b) => distance(a) - distance(b))
+    .slice(0, limit);
+}
+
 const DETAIL_COLUMNS = `
   id, slug, dealer_id, status, is_featured, condition, year, trim, stock_number, vin,
   body_type, mileage, price_cents, msrp_cents, exterior_color, interior_color, fuel_type,
@@ -158,19 +230,18 @@ const DETAIL_COLUMNS = `
   price_history:vehicle_price_history(old_price_cents, new_price_cents, changed_at)
 ` as const;
 
-/** Full vehicle for the VDP, or null when it doesn't exist or isn't visible to the caller. */
-export async function getVehicleBySlug(client: AppSupabaseClient, slug: string) {
-  const { data, error } = await client
+type DetailRow = NonNullable<Awaited<ReturnType<typeof selectDetails>>['data']>[number];
+
+function selectDetails(client: AppSupabaseClient) {
+  return client
     .from('vehicles')
     .select(DETAIL_COLUMNS)
-    .eq('slug', slug)
     .order('position', { referencedTable: 'images', ascending: true })
     .order('changed_at', { referencedTable: 'price_history', ascending: false })
-    .limit(10, { referencedTable: 'price_history' })
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
+    .limit(10, { referencedTable: 'price_history' });
+}
 
+function toDetail(client: AppSupabaseClient, data: DetailRow) {
   const { make, model, images, features, price_history, ...vehicle } = data;
   const title = vehicleTitle({
     year: vehicle.year,
@@ -195,6 +266,22 @@ export async function getVehicleBySlug(client: AppSupabaseClient, slug: string) 
     previous_price_cents: dropped ? last.old_price_cents : null,
     price_dropped_at: dropped ? last.changed_at : null,
   };
+}
+
+/** Full vehicle for the VDP, or null when it doesn't exist or isn't visible to the caller. */
+export async function getVehicleBySlug(client: AppSupabaseClient, slug: string) {
+  const { data, error } = await selectDetails(client).eq('slug', slug).maybeSingle();
+  if (error) throw error;
+  return data ? toDetail(client, data) : null;
+}
+
+/** Full details for the compare table, in the order requested (RLS decides visibility). */
+export async function getVehicleDetailsByIds(client: AppSupabaseClient, ids: readonly string[]) {
+  if (ids.length === 0) return [];
+  const { data, error } = await selectDetails(client).in('id', [...ids]);
+  if (error) throw error;
+  const byId = new Map(data.map((row) => [row.id, toDetail(client, row)]));
+  return ids.flatMap((id) => byId.get(id) ?? []);
 }
 
 export type VehicleDetail = NonNullable<Awaited<ReturnType<typeof getVehicleBySlug>>>;

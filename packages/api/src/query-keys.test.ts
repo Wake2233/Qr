@@ -10,6 +10,9 @@ describe('queryKeys', () => {
       queryKeys.vehicles.detail('2021-bmw-x5'),
       queryKeys.vehicles.byIds(['a']),
       queryKeys.vehicles.facets({}),
+      queryKeys.vehicles.rail('price-drops'),
+      queryKeys.vehicles.similar('v1'),
+      queryKeys.vehicles.compare(['a']),
     ];
     for (const key of keys) expect(key[0]).toBe(queryKeys.vehicles.all[0]);
     expect(queryKeys.vehicles.list({ make: ['bmw'] })).toEqual([

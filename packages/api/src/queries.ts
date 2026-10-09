@@ -21,7 +21,17 @@ import { getFacets } from './facets';
 import { addFavorite, listFavoriteIds, removeFavorite } from './favorites';
 import { queryKeys } from './query-keys';
 import { getSiteSettings } from './settings';
-import { getVehicleBySlug, getVehiclesByIds, listVehicles } from './vehicles';
+import {
+  getVehicleBySlug,
+  getVehicleDetailsByIds,
+  getVehiclesByIds,
+  listFeaturedVehicles,
+  listPriceDrops,
+  listRecentlySold,
+  listSimilarVehicles,
+  listVehicles,
+  type SimilarTo,
+} from './vehicles';
 
 const MINUTE = 60_000;
 
@@ -54,6 +64,33 @@ export const vehicleQueries = {
     queryOptions({
       queryKey: queryKeys.vehicles.facets(filters),
       queryFn: () => getFacets(client, filters),
+      placeholderData: keepPreviousData,
+    }),
+  featured: (client: AppSupabaseClient) =>
+    queryOptions({
+      queryKey: queryKeys.vehicles.rail('featured'),
+      queryFn: () => listFeaturedVehicles(client),
+    }),
+  priceDrops: (client: AppSupabaseClient) =>
+    queryOptions({
+      queryKey: queryKeys.vehicles.rail('price-drops'),
+      queryFn: () => listPriceDrops(client),
+    }),
+  recentlySold: (client: AppSupabaseClient) =>
+    queryOptions({
+      queryKey: queryKeys.vehicles.rail('recently-sold'),
+      queryFn: () => listRecentlySold(client),
+    }),
+  similar: (client: AppSupabaseClient, vehicle: SimilarTo) =>
+    queryOptions({
+      queryKey: queryKeys.vehicles.similar(vehicle.id),
+      queryFn: () => listSimilarVehicles(client, vehicle),
+    }),
+  compare: (client: AppSupabaseClient, ids: readonly string[]) =>
+    queryOptions({
+      queryKey: queryKeys.vehicles.compare(ids),
+      queryFn: () => getVehicleDetailsByIds(client, ids),
+      enabled: ids.length > 0,
       placeholderData: keepPreviousData,
     }),
 };
@@ -117,6 +154,10 @@ export const useVehiclesByIds = (client: AppSupabaseClient, ids: readonly string
   useQuery(vehicleQueries.byIds(client, ids));
 export const useFacets = (client: AppSupabaseClient, filters: InventoryFilters) =>
   useQuery(vehicleQueries.facets(client, filters));
+export const useCompareVehicles = (client: AppSupabaseClient, ids: readonly string[]) =>
+  useQuery(vehicleQueries.compare(client, ids));
+export const useDealer = (client: AppSupabaseClient, slug: string) =>
+  useQuery(dealerQueries.detail(client, slug));
 export const useMakes = (client: AppSupabaseClient) => useQuery(catalogQueries.makes(client));
 export const useSiteSettings = (client: AppSupabaseClient) =>
   useQuery(settingsQueries.site(client));

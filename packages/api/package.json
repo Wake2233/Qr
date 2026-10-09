@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:integration": "SUPABASE_TEST_URL=${SUPABASE_TEST_URL:-http://127.0.0.1:54321} SUPABASE_TEST_PUBLISHABLE_KEY=${SUPABASE_TEST_PUBLISHABLE_KEY:-sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH} vitest run integration"
+    "test:integration": "SUPABASE_TEST_URL=${SUPABASE_TEST_URL:-http://127.0.0.1:54321} SUPABASE_TEST_PUBLISHABLE_KEY=${SUPABASE_TEST_PUBLISHABLE_KEY:-sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH} vitest run integration --no-file-parallelism"
   },
   "dependencies": {
     "@cp/core": "workspace:*",

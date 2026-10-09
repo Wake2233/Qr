@@ -6,7 +6,16 @@ import { getFacets } from './facets';
 import { addFavorite, listFavoriteIds, mergeFavorites, removeFavorite } from './favorites';
 import { getSiteSettings } from './settings';
 import { anonClient, hasTestDb, signedInClient } from './test-clients';
-import { getVehicleBySlug, getVehiclesByIds, listFeaturedVehicles, listVehicles } from './vehicles';
+import {
+  getVehicleBySlug,
+  getVehicleDetailsByIds,
+  getVehiclesByIds,
+  listFeaturedVehicles,
+  listPriceDrops,
+  listRecentlySold,
+  listSimilarVehicles,
+  listVehicles,
+} from './vehicles';
 
 describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
   let client: AppSupabaseClient;
@@ -123,5 +132,65 @@ describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
     await removeFavorite(buyer, userId, a);
     await removeFavorite(buyer, userId, b);
     expect(await listFavoriteIds(buyer, userId)).toEqual([]);
+  });
+  it('searches as you type: a partial model name matches, and agrees with the facets', async () => {
+    const all = await listVehicles(client);
+    const model = all.items[0]?.model_name ?? '';
+    const prefix = model.slice(0, Math.max(2, Math.min(3, model.length)));
+    const [page, facets] = await Promise.all([
+      listVehicles(client, { q: prefix }),
+      getFacets(client, { q: prefix }),
+    ]);
+    expect(page.items.map((c) => c.id)).toContain(all.items[0]?.id);
+    expect(page.total).toBe(facets.total);
+
+    const none = await listVehicles(client, { q: '%%%' });
+    expect(none.total).toBe(all.total); // punctuation only = no text filter
+  });
+
+  it('lists price drops and recently sold rails', async () => {
+    const [drops, sold] = await Promise.all([listPriceDrops(client), listRecentlySold(client)]);
+    expect(drops.length).toBeGreaterThan(0);
+    for (const card of drops) {
+      expect(card.previous_price_cents ?? 0).toBeGreaterThan(card.price_cents ?? 0);
+      expect(['active', 'reserved']).toContain(card.status);
+    }
+    expect(sold.length).toBeGreaterThan(0);
+    expect(sold.every((c) => c.status === 'sold')).toBe(true);
+    const soldAt = sold.map((c) => c.sold_at ?? '');
+    expect(soldAt).toEqual([...soldAt].sort().reverse());
+  });
+
+  it('suggests similar live vehicles near the price, never the vehicle itself', async () => {
+    const { items } = await listVehicles(client);
+    const base = items[0];
+    expect(base).toBeDefined();
+    const priceCents = base?.price_cents ?? 0;
+    const similar = await listSimilarVehicles(client, {
+      id: base?.id ?? '',
+      makeId: base?.make_id ?? 0,
+      bodyType: base?.body_type ?? null,
+      priceCents,
+    });
+    for (const card of similar) {
+      expect(card.id).not.toBe(base?.id);
+      expect(card.body_type === base?.body_type || card.make_id === base?.make_id).toBe(true);
+      expect(card.price_cents ?? 0).toBeGreaterThanOrEqual(Math.floor(priceCents * 0.6));
+      expect(card.price_cents ?? 0).toBeLessThanOrEqual(Math.ceil(priceCents * 1.4));
+    }
+    const gaps = similar.map((c) => Math.abs((c.price_cents ?? 0) - priceCents));
+    expect(gaps).toEqual([...gaps].sort((a, b) => a - b));
+  });
+
+  it('loads full details for compare in the requested order', async () => {
+    const { items } = await listVehicles(client, { sort: 'price_desc' });
+    const ids = items.slice(0, 3).map((c) => c.id);
+    const details = await getVehicleDetailsByIds(client, [...ids].reverse());
+    expect(details.map((d) => d.id)).toEqual([...ids].reverse());
+    for (const detail of details) {
+      expect(detail.title).toContain(detail.make.name);
+      expect(detail.images[0]?.position).toBe(0);
+    }
+    expect(await getVehicleDetailsByIds(client, [])).toEqual([]);
   });
 });
