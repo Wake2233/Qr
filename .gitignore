@@ -39,6 +39,7 @@ supabase/.temp/
 # test output
 playwright-report/
 test-results/
+.lighthouseci/
 
 # os / editor
 .DS_Store

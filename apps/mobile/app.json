@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Car Platform",
+    "name": "DG Auto",
     "slug": "car-platform",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.carplatform.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["whatsapp"]
+      }
     },
     "android": {
       "package": "com.carplatform.app",
@@ -35,6 +38,20 @@
           "backgroundColor": "#09090B",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera to scan VIN barcodes and photograph vehicles.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to choose vehicle photos from your library.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to photograph vehicles for your listings."
         }
       ]
     ],

@@ -139,12 +139,12 @@ sitemap.ts · robots.ts · opengraph-image.tsx
 vehicle/[id]        VDP (sticky WhatsApp/Call bar)
 compare             Compare table (horizontal scroll)
 (auth)/sign-in · verify
-(manage)/_layout    Role gate
-(manage)/index      KPIs
-(manage)/inventory · inventory/new (VIN scan) · inventory/[id] (photos, price, status)
-(manage)/leads · leads/[id]
-(manage)/finance · finance/[id]
-(manage)/dealers · dealers/[id]   [admin]
+manage/_layout      Role gate (real /manage segment; groups would collide with tabs index)
+manage/index        KPIs
+manage/inventory · inventory/new (VIN scan) · inventory/[id] (photos, price, status)
+manage/leads · leads/[id]
+manage/finance · finance/[id]
+manage/dealers · dealers/[id]   [admin]
 ```
 
 ### 1.6 Design direction ("unique, modernized")
@@ -513,16 +513,17 @@ pnpm dev:mobile   # press i → app opens, shows token-colored tabs
 
 **Goal:** the complete schema from §3 locally, with tests proving the RLS matrix and auth working in both apps.
 
-- [ ] `supabase init`, `supabase` CLI as a root devDependency, `config.toml` (auth: email OTP + magic link, site URL, redirect URLs incl. Expo scheme)
-- [ ] Migrations in order: `0001_extensions_enums` → `0002_identity_dealers` → `0003_catalog` → `0004_inventory` → `0005_crm` → `0006_finance` → `0007_platform` → `0008_rls_helpers_policies` → `0009_rpcs_triggers` → `0010_storage`
-- [ ] Every table has RLS enabled. Column grants applied (`profiles.role`, `dealers.status*`, `dealers.is_house`)
-- [ ] `seed.sql`: ~30 makes / ~200 models, ~60 features, ~40 lenders, `site_settings`, house dealer + 1 approved + 1 pending sub-dealer, ~60 vehicles across all facets
-- [ ] `scripts/seed-users.ts`: creates `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending), `buyer@` on `*.test.local` with passwords recorded in `scripts/seed-users.ts` / `.env.example`, and memberships
-- [ ] `scripts/seed-images.ts`: uploads licensed sample images to `vehicle-images` and writes `vehicle_images` rows
-- [ ] pgTAP suites: `rls_profiles`, `rls_dealers`, `rls_vehicles`, `rls_vehicle_images`, `rls_leads`, `rls_finance`, `rls_storage`, `rpc_dealer_approval`, `trigger_publish_gate`, `trigger_price_history`. Each covers anon / buyer / dealer A / dealer B / admin
-- [ ] `pnpm db:types` → `packages/types/src/database.ts` committed, with `Tables/Enums` helper re-exports
-- [ ] Web auth: `@supabase/ssr` clients, `proxy.ts` session refresh (Next 16 replaced `middleware.ts`), `/login` (email OTP), `/auth/callback`, `/dashboard` gate (dealer/admin)
-- [ ] Mobile auth: Supabase client with LargeSecureStore, AppState refresh, `(auth)` OTP screens, deep link scheme, role-gated `(manage)` layout
+- [x] `supabase init`, `supabase` CLI as a root devDependency, `config.toml` (auth: email OTP + magic link, site URL, redirect URLs incl. Expo scheme) _(+ email templates that show the 6-digit code)_
+- [x] Migrations in order: `0001_extensions_enums` → `0002_identity_dealers` → `0003_catalog` → `0004_inventory` → `0005_crm` → `0006_finance` → `0007_platform` → `0008_rls_helpers_policies` → `0009_rpcs_triggers` → `0010_storage`
+- [x] Every table has RLS enabled. Column grants applied (`profiles.role`, `dealers.status*`, `dealers.is_house`)
+- [x] `seed.sql`: ~30 makes / ~200 models, ~60 features, ~40 lenders, `site_settings`, house dealer + 1 approved + 1 pending sub-dealer, ~60 vehicles across all facets _(32 makes / 157 models / 60 features / 40 lenders / 60 vehicles; house dealer uses the real Flemington NJ address + phone)_
+- [x] `scripts/seed-users.ts`: creates `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending), `buyer@` on `*.test.local` with passwords recorded in `scripts/seed-users.ts` / `.env.example`, and memberships
+- [x] `scripts/seed-images.ts`: uploads sample images to `vehicle-images` for every `vehicle_images` row _(generated placeholder photos — no licensing/download needed; real photos come from the dashboard)_
+- [x] pgTAP suites: `rls_profiles`, `rls_dealers`, `rls_vehicles`, `rls_vehicle_images`, `rls_leads`, `rls_finance`, `rls_storage`, `rpc_dealer_approval`, `trigger_publish_gate`, `trigger_price_history`. Each covers anon / buyer / dealer A / dealer B / admin _(12 suites, 165 assertions incl. `rls_platform`; mutation-checked)_
+- [x] `pnpm db:types` → `packages/types/src/database.ts` committed, with `Tables/Enums` helper re-exports
+- [x] Web auth: `@supabase/ssr` clients, `proxy.ts` session refresh (Next 16 replaced `middleware.ts`), `/login` (email OTP), `/auth/callback`, `/dashboard` gate (dealer/admin) _(verified in browser: admin in, buyer blocked, sign-out, one-click link)_
+- [x] Mobile auth: Supabase client with LargeSecureStore, AppState refresh, `(auth)` OTP screens, deep link scheme, role-gated `manage/` layout _(verified on the Expo web build: sign-in, session persistence, console gate, sign-out)_
+- [ ] Mobile auth verified on an iOS simulator/device (native LargeSecureStore + AppState refresh paths) _(blocked locally by Xcode 15.2; do via EAS dev build)_
 
 **Verify**
 
@@ -540,24 +541,25 @@ pnpm typecheck && pnpm test
 
 **Goal:** all shared business logic is implemented and tested, and both apps have navigation, layout and design-system foundations.
 
-- [ ] `@cp/core`:
-  - [ ] `finance.ts`: monthly payment (amortization), total interest, affordability (budget→max price), APR-by-tier lookup
-  - [ ] `format.ts`: price, mileage, phone
-  - [ ] `contact.ts`: `buildWhatsAppUrl({ phoneE164, vehicle, url, template })`, `buildWhatsAppAppUrl`, `buildTelUrl`
-  - [ ] `filters.ts`: `InventoryFilters` ⇄ URLSearchParams round-trip
-  - [ ] `vehicle.ts`: title, slug, spec grouping for display
-- [ ] `@cp/validators`: Zod schemas `vehicleUpsert`, `vehiclePublishable`, `inventoryFilters`, `leadSubmit` (per type), `financeApplication`, `dealerApplication`, `siteSettings`, `phoneE164` (libphonenumber-js), `vin`
-- [ ] `@cp/api`: query keys factory, `listVehicles(client, filters, page)`, `getVehicleBySlug`, `getVehiclesByIds`, `getFacets`, favorites, dealer queries, plus React Query hooks (`useVehicles`, `useVehicle`, `useFacets`, `useFavorites` …)
-- [ ] Web shell: header/nav, footer, theme, fonts, responsive layout, `(storefront)` and `dashboard` layouts with role-aware sidebar, toasts, error/not-found pages
-- [ ] Mobile shell: tab bar + icons, `(manage)` stack, theme (dark/light), fonts, query client + persister, toasts, error boundary
-- [ ] Zustand stores (compare tray ≤4, recently viewed) on both apps, persisted
+- [x] `@cp/core`:
+  - [x] `finance.ts`: monthly payment (amortization), total interest, affordability (budget→max price), APR-by-tier lookup
+  - [x] `format.ts`: price, mileage, phone (+ APR)
+  - [x] `contact.ts`: `buildWhatsAppUrl(phoneE164, text)`, `buildWhatsAppAppUrl`, `buildTelUrl`, `buildVehicleInquiryText({ vehicle, url, template })`, `resolveContactNumbers`
+  - [x] `filters.ts`: `InventoryFilters` ⇄ URL query round-trip (no `URLSearchParams` dependency, so it runs on React Native)
+  - [x] `vehicle.ts`: title, slug, spec grouping for display (+ feature grouping, enum labels)
+  - [x] Also: `errors.ts` (`CODE: message` DB errors → friendly copy), `collections.ts` (compare/recently-viewed reducers), `console-nav.ts` (role-aware console sections, shared by both apps)
+- [x] `@cp/validators`: Zod schemas `vehicleUpsert`, `vehiclePublishable`, `inventoryFilters`, `leadSubmit` (per type), `financeApplication` (+ per-step schemas), `dealerApplication`, `siteSettings` (+ `businessHours`, `aprByTier`), `phoneE164` (libphonenumber-js), `vin`
+- [x] `@cp/api`: query keys factory, `listVehicles(client, filters, page)`, `getVehicleBySlug`, `getVehiclesByIds`, `getFacets`, favorites, dealer queries, site settings, fire-and-forget tracking, plus React Query options + hooks (`useVehicles`, `useInfiniteVehicles`, `useVehicle`, `useFacets`, `useFavoriteIds`, `useToggleFavorite` …). Backed by the new `vehicle_cards` view + `get_inventory_facets` RPC (migration `20261008205514`, pgTAP `read_models.test.sql`)
+- [x] Web shell: header/nav (+ mobile sheet, Call/WhatsApp), footer (address, hours), theme, fonts, responsive layout, `(storefront)` and `dashboard` layouts with role-aware sidebar, toasts, error/not-found pages, placeholder routes for later phases
+- [x] Mobile shell: tab bar + icons, `manage/` stack (role-aware section list), theme (dark/light), fonts (Inter + Sora per weight), query client + AsyncStorage persister, toasts (sonner-native), error boundary — verified on the Expo web build; **native iOS run still pending** (needs an EAS dev build, see Phase 2 note)
+- [x] Zustand stores (compare tray ≤4, recently viewed) on both apps, persisted
 
 **Verify**
 
 ```bash
 pnpm --filter @cp/core test -- --coverage        # ≥95% lines on core
 pnpm --filter @cp/validators test
-pnpm --filter @cp/api test                        # query fns against local Supabase
+pnpm test:integration                            # @cp/api query fns against local Supabase (needs pnpm db:seed:users)
 pnpm lint && pnpm typecheck && pnpm build
 ```
 
@@ -565,61 +567,65 @@ pnpm lint && pnpm typecheck && pnpm build
 
 **Goal:** admins and dealers can fully manage inventory from either device, and sub-dealers can apply and be approved.
 
-- [ ] **Web `/dashboard/inventory`:** DataTable (search, status/dealer filters, sort), inline price edit, status menu, bulk archive/feature (admin)
-- [ ] **Web vehicle editor** (`new`, `[id]`):
-  - [ ] Sectioned form (Basics / Powertrain / Body & Interior / History / Features / Description / Photos)
-  - [ ] VIN decode button (`decode-vin` Edge Function → autofill)
-  - [ ] Drag-and-drop multi-upload with progress, reorder (dnd-kit) and cover selection
-  - [ ] Publish with server-side gate errors surfaced per field
-  - [ ] All writes go through Server Actions
-- [ ] **Mobile `(manage)/inventory`:**
-  - [ ] FlashList with status chips and swipe actions (price, status)
-  - [ ] Editor with the same sections
-  - [ ] **VIN barcode scan** (expo-camera) → decode
-  - [ ] Camera / library multi-upload with compression and progress, long-press reorder
-  - [ ] Publish
-- [ ] Edge Function `decode-vin` (NHTSA vPIC, cached in `vin_decodes`) with unit tests (Deno test)
-- [ ] **Dealer onboarding:** web `/sell-with-us` + mobile screen → `apply_as_dealer`. Pending state UI (drafts allowed, publish disabled with explanation)
-- [ ] **Admin approvals** (web `/dashboard/dealers` + mobile `(manage)/dealers`): queue, detail (docs via signed URL), approve/reject/suspend
-- [ ] Dealer profile & team management (owner/manager): logo, WhatsApp/phone, hours, invite member by email
-- [ ] `revalidateTag('vehicles')` / `vehicle:<id>` on every inventory mutation (web). React Query invalidation on mobile
-- [ ] Admin catalog & site settings pages (makes/models/features, default WhatsApp/phone, template, APR table, review toggle)
+- [x] **Web `/dashboard/inventory`:** DataTable (search, status/dealer filters, sort), inline price edit, status menu, bulk archive/feature (admin)
+- [x] **Web vehicle editor** (`new`, `[id]`):
+  - [x] Sectioned form (Basics / Powertrain / Body & Interior / History / Features / Description / Photos)
+  - [x] VIN decode button (`decode-vin` Edge Function → autofill)
+  - [x] Drag-and-drop multi-upload with progress, reorder (dnd-kit) and cover selection
+  - [x] Publish with server-side gate errors surfaced per field
+  - [x] All writes go through Server Actions
+- [x] **Mobile `manage/inventory`:**
+  - [x] FlashList with status chips and swipe actions (price, status)
+  - [x] Editor with the same sections
+  - [x] **VIN barcode scan** (expo-camera) → decode
+  - [x] Camera / library multi-upload with compression and progress, long-press reorder
+  - [x] Publish
+- [x] Edge Function `decode-vin` (NHTSA vPIC, cached in `vin_decodes`) with unit tests (Deno test)
+- [x] **Dealer onboarding:** web `/sell-with-us` + mobile screen → `apply_as_dealer`. Pending state UI (drafts allowed, publish disabled with explanation)
+- [x] **Admin approvals** (web `/dashboard/dealers` + mobile `manage/dealers`): queue, detail (docs via signed URL), approve/reject/suspend
+- [x] Dealer profile & team management (owner/manager): logo, WhatsApp/phone, hours, invite member by email
+- [x] `revalidateTag('vehicles')` / `vehicle:<id>` on every inventory mutation (web). React Query invalidation on mobile
+- [x] Admin catalog & site settings pages (makes/models/features, default WhatsApp/phone, template, APR table, review toggle)
+- [ ] Mobile console verified on a device / EAS dev build (VIN barcode scan, camera + library upload, haptics) _(blocked locally by Xcode 15.2; verified in Expo web)_
 
 **Verify**
 
 ```bash
-pnpm db:test                                       # incl. new tests for any added policy/RPC
+pnpm db:test                                       # incl. console_inventory (photos, features, team, users, featuring)
 pnpm test && pnpm typecheck && pnpm lint
-pnpm test:e2e -- dashboard-inventory.spec.ts       # dealer creates → uploads 3 photos → publishes → visible publicly
-pnpm test:e2e -- dealer-approval.spec.ts           # apply → admin approves → dealer can publish
-supabase functions serve decode-vin & deno test supabase/functions/decode-vin
-# Manual (iOS sim): scan a printed VIN barcode, upload 3 photos, publish, then see it on web /inventory.
-# Manual: dealer A cannot see/edit dealer B's vehicle by editing the URL/ID (web + mobile).
+pnpm test:functions                                # decode-vin: Deno tests (mapping + handler)
+pnpm test:integration                              # @cp/api console fns: publish gate, cross-dealer isolation, admin queues
+pnpm test:e2e                                      # dashboard-inventory.spec.ts + dealer-approval.spec.ts (web + local Supabase)
+pnpm functions:serve                               # then: decode a real VIN from the editor (web or Expo web)
+# Manual (iOS sim / device build): scan a printed VIN barcode, upload 3 photos, publish, then see it on web /inventory.
+#   Still open: needs an EAS dev build (local Xcode 15.2 can't build SDK 57). Same flows verified in Expo web.
+# Manual: dealer A cannot see/edit dealer B's vehicle by editing the URL/ID: covered by dashboard-inventory.spec.ts (web)
+#   and the mobile editor's membership check + RLS (integration tests).
 ```
 
 ### Phase 5: Buyer Marketplace (Web + Mobile)
 
 **Goal:** the refined browsing experience, from discover through filters, VDP, gallery, compare and favorites, ending in the WhatsApp/Call conversion.
 
-- [ ] `get_inventory_facets` RPC + `vehicle_cards` view finalized and tested
-- [ ] **Web home:** hero search, body-type tiles, featured / price-drop / recently-sold rails, trust strip, financing teaser
-- [ ] **Web `/inventory`:**
-  - [ ] Filter rail (desktop) / sheet (mobile web), live facet counts, active-filter chips, sort, text search
-  - [ ] URL state via `nuqs`, infinite grid with skeletons and blurhash, empty state with "clear filters"
-- [ ] **Web VDP:**
-  - [ ] Embla gallery + thumbnails + fullscreen zoom lightbox
-  - [ ] Price block, price-drop badge, all spec groups, features by category, history, description, dealer card
-  - [ ] Inline payment estimate
-  - [ ] **Sticky WhatsApp + Call CTAs** (logged with `track_contact_click`), share, favorite, add-to-compare
-  - [ ] `record_vehicle_view`, JSON-LD, OG image, `generateMetadata`
-- [ ] **Web `/compare`:** ≤4 columns, sticky header with photo/price/CTAs, diff highlighting, "hide identical", shareable `?ids=`
-- [ ] **Web dealer storefront** `/dealers/[slug]` and `account/favorites` (synced when logged in, local when anonymous; merged on login)
-- [ ] **Mobile Discover / Search / VDP / Compare / Saved:**
-  - [ ] Same capabilities, with FlashList and the filter bottom sheet
-  - [ ] Pinch-zoom gallery pager
-  - [ ] **Sticky bottom bar: WhatsApp (whatsapp:// → wa.me fallback) + Call (tel:)**, with haptics
-  - [ ] Share sheet, prefetch on press-in
-- [ ] `sitemap.ts`, `robots.ts`, canonical URLs. Lighthouse budget defined
+- [x] `get_inventory_facets` RPC + `vehicle_cards` view finalized and tested
+- [x] **Web home:** hero search, body-type tiles, featured / price-drop / recently-sold rails, trust strip, financing teaser
+- [x] **Web `/inventory`:**
+  - [x] Filter rail (desktop) / sheet (mobile web), live facet counts, active-filter chips, sort, text search
+  - [x] URL state via `nuqs`, infinite grid with skeletons and blurhash, empty state with "clear filters"
+- [x] **Web VDP:**
+  - [x] Embla gallery + thumbnails + fullscreen zoom lightbox
+  - [x] Price block, price-drop badge, all spec groups, features by category, history, description, dealer card
+  - [x] Inline payment estimate
+  - [x] **Sticky WhatsApp + Call CTAs** (logged with `track_contact_click`), share, favorite, add-to-compare
+  - [x] `record_vehicle_view`, JSON-LD, OG image, `generateMetadata`
+- [x] **Web `/compare`:** ≤4 columns, sticky header with photo/price/CTAs, diff highlighting, "hide identical", shareable `?ids=`
+- [x] **Web dealer storefront** `/dealers/[slug]` and `account/favorites` (synced when logged in, local when anonymous; merged on login)
+- [x] **Mobile Discover / Search / VDP / Compare / Saved:**
+  - [x] Same capabilities, with FlashList and the filter bottom sheet
+  - [x] Pinch-zoom gallery pager
+  - [x] **Sticky bottom bar: WhatsApp (whatsapp:// → wa.me fallback) + Call (tel:)**, with haptics
+  - [x] Share sheet, prefetch on press-in
+- [x] `sitemap.ts`, `robots.ts`, canonical URLs. Lighthouse budget defined
 
 **Verify**
 
@@ -631,6 +637,11 @@ pnpm --filter @cp/web exec lighthouse-ci # (or `npx @lhci/cli autorun`) VDP & /i
 # Manual (iOS sim): tap WhatsApp → opens WhatsApp (or wa.me in Safari) with prefilled text; tap Call → dialer prompt.
 # Manual: every non-null spec column of a seeded vehicle appears on both web and mobile VDP.
 ```
+
+**Status (2026-10-10):** lint, typecheck, unit (core 136, web, mobile 22), Deno, pgTAP 228, integration 24 and all 7 E2E specs green; `pnpm build` green.
+Lighthouse (`pnpm --filter @cp/web lighthouse`, mobile profile): **A11y 100, SEO 100, Best Practices 100** on home, `/inventory` and a VDP.
+**Performance is still open:** 63–74 on the dev laptop with calibrated throttling (`LHCI_CPU_SLOWDOWN=2`; benchmarkIndex 550–1400 under load), so the ≥90 budget is checked by the CI `lighthouse` job on standard hardware.
+Mobile app screens are verified on Expo web only; the iOS-simulator/device checks are deferred while the mobile web storefront is the priority.
 
 ### Phase 6: Financing Portal, Lead Capture & CRM (Web + Mobile)
 
@@ -649,7 +660,7 @@ pnpm --filter @cp/web exec lighthouse-ci # (or `npx @lhci/cli autorun`) VDP & /i
   - [ ] Kanban + table views, filters (dealer, type, status, source, date), lead detail timeline
   - [ ] Status changes, notes, assignment, reply-via-WhatsApp/tel buttons that log an activity
   - [ ] Finance application detail with offers
-- [ ] **CRM mobile** (`(manage)/leads`, `(manage)/finance`): inbox with unread badges, detail, status/notes/assign, and one-tap WhatsApp/Call to the customer
+- [ ] **CRM mobile** (`manage/leads`, `manage/finance`): inbox with unread badges, detail, status/notes/assign, and one-tap WhatsApp/Call to the customer
 - [ ] **Dashboard KPIs** (web + mobile): active listings, leads (7/30d), WhatsApp/Call clicks, views, conversion by vehicle, avg first-response time
 - [ ] `account/inquiries` & `account/applications` for buyers
 
@@ -730,20 +741,58 @@ eas build --profile preview --platform ios     # succeeds; install on device via
 
 ## 7. Decisions log
 
-| Date       | Decision                                                                                                      | Why                                                                                                                                       |
-| ---------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-02 | Web **and** mobile include the full management console (admin + dealer)                                       | User requirement                                                                                                                          |
-| 2026-10-02 | No checkout. Conversion via WhatsApp deep link + Call on every VDP                                            | User requirement                                                                                                                          |
-| 2026-10-02 | Share logic, not UI (shadcn on web, NativeWind on mobile)                                                     | User choice. Avoids react-native-web complexity                                                                                           |
-| 2026-10-02 | Supabase local CLI + hosted staging/prod, pgTAP RLS tests                                                     | User choice                                                                                                                               |
-| 2026-10-02 | Every vehicle belongs to a dealer. The house dealer has `is_house = true`                                     | Uniform RLS and ownership                                                                                                                 |
-| 2026-10-02 | Money in cents, APR in bps                                                                                    | Avoids float errors                                                                                                                       |
-| 2026-10-02 | pnpm pinned to 10.x (`packageManager: pnpm@10.34.6`)                                                          | pnpm 12 ships a native binary that corepack 0.33 (bundled with Node 20) cannot launch                                                     |
-| 2026-10-02 | TypeScript pinned to 6.0.3 (root `pnpm.overrides`)                                                            | typescript-eslint 8.x supports `<6.1`; TS 7 not yet supported by the lint toolchain                                                       |
-| 2026-10-02 | ESLint 9.x (not 10)                                                                                           | eslint-plugin-react (via eslint-config-next / -expo) peers on `^9.7`                                                                      |
-| 2026-10-02 | Vitest 4.x + jsdom 27                                                                                         | Vitest 5 / jsdom 30 require Node ≥22; local machine runs Node 20.19.5. **Recommend upgrading to Node 24 LTS (Node 20 is EOL)**, then bump |
-| 2026-10-02 | Mobile: NativeWind 4.2.7 + Tailwind 3.4; web: Tailwind 4                                                      | NativeWind 4 requires Tailwind 3. Shared tokens are plain RGB channels in `@cp/design-tokens` (built to JS presets + `tokens.css`)        |
-| 2026-10-02 | Next.js 16: session/gate logic lives in `src/proxy.ts`                                                        | Next 16 renamed `middleware.ts` → `proxy.ts`                                                                                              |
-| 2026-10-02 | Mobile tabs use `expo-router/unstable-native-tabs` (SDK 57 path; becomes `expo-router/native-tabs` in SDK 58) | Native tab bar (SF Symbols / Material icons), matches the Expo 57 template                                                                |
-| 2026-10-02 | React pinned to 19.2.3 across the workspace (`pnpm.overrides`)                                                | Expo SDK 57 pins 19.2.3; mixing with web's 19.2.8 hoisted two React copies and broke `act()` in mobile tests                              |
-| 2026-10-02 | Expo SDK 57 officially requires Node ≥22.13 and Xcode ≥26.4                                                   | Bundling/tests work on Node 20.19 today, but **upgrade Node to 24 LTS and Xcode before Phase 4** (camera/VIN scan needs a dev build)      |
+| Date       | Decision                                                                                                                                                                                                 | Why                                                                                                                                                                                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-02 | Web **and** mobile include the full management console (admin + dealer)                                                                                                                                  | User requirement                                                                                                                                                                                                                                                 |
+| 2026-10-02 | No checkout. Conversion via WhatsApp deep link + Call on every VDP                                                                                                                                       | User requirement                                                                                                                                                                                                                                                 |
+| 2026-10-02 | Share logic, not UI (shadcn on web, NativeWind on mobile)                                                                                                                                                | User choice. Avoids react-native-web complexity                                                                                                                                                                                                                  |
+| 2026-10-02 | Supabase local CLI + hosted staging/prod, pgTAP RLS tests                                                                                                                                                | User choice                                                                                                                                                                                                                                                      |
+| 2026-10-02 | Every vehicle belongs to a dealer. The house dealer has `is_house = true`                                                                                                                                | Uniform RLS and ownership                                                                                                                                                                                                                                        |
+| 2026-10-02 | Money in cents, APR in bps                                                                                                                                                                               | Avoids float errors                                                                                                                                                                                                                                              |
+| 2026-10-02 | pnpm pinned to 10.x (`packageManager: pnpm@10.34.6`)                                                                                                                                                     | pnpm 12 ships a native binary that corepack 0.33 (bundled with Node 20) cannot launch                                                                                                                                                                            |
+| 2026-10-02 | TypeScript pinned to 6.0.3 (root `pnpm.overrides`)                                                                                                                                                       | typescript-eslint 8.x supports `<6.1`; TS 7 not yet supported by the lint toolchain                                                                                                                                                                              |
+| 2026-10-02 | ESLint 9.x (not 10)                                                                                                                                                                                      | eslint-plugin-react (via eslint-config-next / -expo) peers on `^9.7`                                                                                                                                                                                             |
+| 2026-10-02 | Vitest 4.x + jsdom 27                                                                                                                                                                                    | Vitest 5 / jsdom 30 require Node ≥22; local machine runs Node 20.19.5. **Recommend upgrading to Node 24 LTS (Node 20 is EOL)**, then bump                                                                                                                        |
+| 2026-10-02 | Mobile: NativeWind 4.2.7 + Tailwind 3.4; web: Tailwind 4                                                                                                                                                 | NativeWind 4 requires Tailwind 3. Shared tokens are plain RGB channels in `@cp/design-tokens` (built to JS presets + `tokens.css`)                                                                                                                               |
+| 2026-10-02 | Next.js 16: session/gate logic lives in `src/proxy.ts`                                                                                                                                                   | Next 16 renamed `middleware.ts` → `proxy.ts`                                                                                                                                                                                                                     |
+| 2026-10-02 | Mobile tabs use `expo-router/unstable-native-tabs` (SDK 57 path; becomes `expo-router/native-tabs` in SDK 58)                                                                                            | Native tab bar (SF Symbols / Material icons), matches the Expo 57 template                                                                                                                                                                                       |
+| 2026-10-02 | React pinned to 19.2.3 across the workspace (`pnpm.overrides`)                                                                                                                                           | Expo SDK 57 pins 19.2.3; mixing with web's 19.2.8 hoisted two React copies and broke `act()` in mobile tests                                                                                                                                                     |
+| 2026-10-02 | Expo SDK 57 officially requires Node ≥22.13 and Xcode ≥26.4                                                                                                                                              | Bundling/tests work on Node 20.19 today, but **upgrade Node to 24 LTS and Xcode before Phase 4** (camera/VIN scan needs a dev build)                                                                                                                             |
+| 2026-10-08 | Supabase project `car-platform` in **us-east-1** (old ap-south-1 project deleted)                                                                                                                        | North American buyers; region is fixed at project creation                                                                                                                                                                                                       |
+| 2026-10-08 | Hosted DB creds live in `.env.remote.local`, loaded only by `db:remote:*` scripts                                                                                                                        | The Supabase CLI auto-loads `.env.local` and would use the hosted password against the local stack                                                                                                                                                               |
+| 2026-10-08 | Mobile console is a real `manage/` route (`/manage`), not a `(manage)` group                                                                                                                             | A group's `index` collides with the tabs' `index` at `/`                                                                                                                                                                                                         |
+| 2026-10-08 | Dropped `vehicles.view_count`; views come from `vehicle_views` (daily rows)                                                                                                                              | Incrementing a column on every view bumped `updated_at` and fired audit triggers                                                                                                                                                                                 |
+| 2026-10-08 | Seed photos are generated placeholders (sharp), not downloaded stock                                                                                                                                     | Slow network + licensing; real photos are uploaded through the dashboard                                                                                                                                                                                         |
+| 2026-10-08 | Storefront read models: `vehicle_cards` view (security_invoker) + `get_inventory_facets(jsonb)` RPC built in Phase 3                                                                                     | `@cp/api` (`listVehicles`, `getFacets`) needs them; Phase 5 only tunes them. Storefront queries also filter `status in (active, reserved)` + approved dealer, so signed-in dealers/admins never see drafts in the shop                                           |
+| 2026-10-08 | Web uses Next 16 **Cache Components** (`cacheComponents: true`): `'use cache'` + `cacheTag` for public reads, `<Suspense>`/`loading.tsx` around session reads                                            | `unstable_cache` is superseded in Next 16. Cached site info falls back to defaults for seconds (not hours) if Supabase is unreachable, so CI builds without a DB still pass                                                                                      |
+| 2026-10-08 | `revalidateTag(tag, 'max')` (two-argument form) for cache invalidation                                                                                                                                   | Single-argument `revalidateTag` is deprecated in Next 16                                                                                                                                                                                                         |
+| 2026-10-08 | `@cp/core` depends on `@cp/types` (enum `Constants` + row types)                                                                                                                                         | Avoids duplicating DB enum lists; both are pure TS and Deno-importable                                                                                                                                                                                           |
+| 2026-10-08 | `buildWhatsAppUrl(phoneE164, text)` + `buildVehicleInquiryText(...)` instead of one `buildWhatsAppUrl({ phoneE164, vehicle, url, template })`                                                            | Same link builder serves vehicle CTAs and generic "WhatsApp us" buttons                                                                                                                                                                                          |
+| 2026-10-08 | Mobile adds `tailwind-merge@2` (`cn()` in `src/lib/cn.ts`)                                                                                                                                               | NativeWind doesn't guarantee CSS order, so variant + caller classes must be de-conflicted; v2 is the Tailwind 3 line                                                                                                                                             |
+| 2026-10-08 | Mobile drops the supabase-js `lock: processLock` option                                                                                                                                                  | Deprecated in supabase-js 2.117 (lockless session refresh)                                                                                                                                                                                                       |
+| 2026-10-08 | `pnpm verify` now also runs `pnpm test:integration`; CI has an `integration` job (full local stack + seeded users)                                                                                       | DoD requires `@cp/api` query fns tested against local Supabase                                                                                                                                                                                                   |
+| 2026-10-09 | Console table uses shadcn `Table` + our own selection state, not TanStack Table                                                                                                                          | TanStack Table 9 (latest) replaced the v8 API; sorting/filtering/paging are server-side via URL params, so client row models add nothing                                                                                                                         |
+| 2026-10-09 | Photo bytes go browser/app → Storage via **signed upload URLs**; the row is written by a Server Action / `add_vehicle_images` RPC                                                                        | Server Actions cap request bodies (~1 MB) and can't stream progress; signed URLs are checked against Storage RLS when issued and let XHR report progress on web and React Native                                                                                 |
+| 2026-10-09 | Client-side resize to 2400px WebP (JPEG where the browser can't encode WebP, e.g. Safari) with canvas; no `browser-image-compression`                                                                    | One small helper instead of a dependency; `blurhash` encodes the placeholder in the browser, `expo-image` on device                                                                                                                                              |
+| 2026-10-09 | Server Actions invalidate with `updateTag(tag)` + `refresh()` instead of `revalidateTag(tag, 'max')`                                                                                                     | Next 16: `updateTag` is the read-your-own-writes variant for Server Actions (the dealer sees the change on the next render); `revalidateTag` stays for webhooks/background jobs                                                                                  |
+| 2026-10-09 | Team invites add **existing accounts** by email (`add_dealer_member`); no invite emails yet                                                                                                              | Sending invites needs the service-role key (Edge Function) and a mail provider; deferred to Phase 6 with `notify-new-lead`                                                                                                                                       |
+| 2026-10-09 | Only admins can feature listings (trigger), and a live listing must keep ≥1 photo                                                                                                                        | `is_featured` drives the home rail (platform-controlled); deleting the last photo would leave a broken card                                                                                                                                                      |
+| 2026-10-09 | `decode-vin` authenticates the caller itself (`verify_jwt = false`) and caches raw vPIC payloads forever                                                                                                 | Works with asymmetric JWT signing keys; specs for a VIN never change. The cache is re-mapped on read, so mapping fixes apply to old decodes                                                                                                                      |
+| 2026-10-09 | Deno comes from the official `deno` npm package (root devDependency)                                                                                                                                     | Same version locally and in CI with no global install                                                                                                                                                                                                            |
+| 2026-10-09 | Playwright runs on the installed Google Chrome locally (`channel: 'chrome'`); CI uses bundled Chromium                                                                                                   | Playwright 1.64's Chromium doesn't support macOS 13                                                                                                                                                                                                              |
+| 2026-10-09 | Mobile console covers inventory, VIN scan, photos, publishing and dealer approvals; dealer profile/team, catalog, site settings and users stay web-only                                                  | Phone-first jobs on the lot vs desk work; the mobile `[section]` screen points to the web console for the rest                                                                                                                                                   |
+| 2026-10-09 | Mobile photo reorder = long-press to select, then Earlier / Later / Make cover / Delete (no drag)                                                                                                        | Accessible with VoiceOver/TalkBack and needs no extra drag-and-drop dependency on Reanimated 4                                                                                                                                                                   |
+| 2026-10-09 | Listing prices are capped at $10M in `@cp/validators`                                                                                                                                                    | Catches typos (an appended price turned $24,090 into $2.4B during testing)                                                                                                                                                                                       |
+| 2026-10-09 | Search is prefix-matching (`word:* & …`, max 8 words) over a punctuation-normalized `search_vector` with compact model tokens (`f150`)                                                                   | Buyers type partial words (`f15`); the default parser split `F-150` into `f` + `-150`                                                                                                                                                                            |
+| 2026-10-09 | `nuqs` parsers are generated from `@cp/core` `FILTER_PARAM_KEYS` + `parseInventoryFilters`/`serializeInventoryFilters`                                                                                   | One URL format for web and mobile; nuqs only adds shallow history updates                                                                                                                                                                                        |
+| 2026-10-09 | Blurhash placeholders decode to an 8×6 BMP data URL (`lib/blurhash.ts`)                                                                                                                                  | Works on server and client without canvas; `next/image` accepts it as `blurDataURL`                                                                                                                                                                              |
+| 2026-10-09 | Mobile VDP route is `vehicle/[slug]` (not `[id]`); mobile filters live in route params                                                                                                                   | Same slugs and query format as the web URLs, so shared links and deep links line up                                                                                                                                                                              |
+| 2026-10-09 | Storefront sign-out happens in the browser client; the login form calls `refresh()` on the auth context                                                                                                  | A Server Action sign-in/out left the client auth context stale (favorites merge, account menu)                                                                                                                                                                   |
+| 2026-10-09 | Mobile icons use `expo-symbols` (SF Symbols on iOS, Material on Android/web)                                                                                                                             | Already in the SDK; no icon-font dependency                                                                                                                                                                                                                      |
+| 2026-10-10 | Business name is **DG Auto** (seed, `site_settings` default via migration, code fallbacks, house dealer slug `dg-auto`)                                                                                  | Confirmed by the owner. Hours and admin emails are still placeholders                                                                                                                                                                                            |
+| 2026-10-10 | Priority is the **mobile web** storefront; the native app's device checks wait                                                                                                                           | Owner decision: the site must work very well in phone browsers first                                                                                                                                                                                             |
+| 2026-10-10 | VDPs are prebuilt with `generateStaticParams` (newest 500 live listings; a DB-less build prebuilds one 404)                                                                                              | Static VDPs put metadata in `<head>` (Next streams it into `<body>` for dynamic routes) and load faster; listings published later render on first request                                                                                                        |
+| 2026-10-10 | Phone-first sizing: shadcn `Button`/`Select` are 44px below `sm`, compact from `sm` up; the theme toggle lives in the mobile menu                                                                        | WCAG 2.2 / CLAUDE.md ≥44pt touch targets without making the desktop console bulky                                                                                                                                                                                |
+| 2026-10-10 | Storefront bundle rules: no classic zod on the client (`env.ts` validates by hand, facets use `zod/mini`), lightbox + motion features load on demand, card/tile links prefetch on intent (`IntentLink`)  | Every KB and long task counts on mid-range phones; viewport prefetch of every card cost ~350ms of main thread                                                                                                                                                    |
+| 2026-10-10 | Lighthouse budget lives in `apps/web/lighthouserc.json`, run by `pnpm --filter @cp/web lighthouse` (starts `next start`, picks a VDP from the sitemap) and a CI job                                      | The plan's `lighthouse-ci` command needs a known VDP URL; `LHCI_CPU_SLOWDOWN` calibrates throttling on slower machines                                                                                                                                           |
+| 2026-10-10 | Hosted DB (`rzguysagrmqgvauiubmp`) got all migrations; seed split into `seeds/reference.sql` (settings, catalog, house dealer; loaded hosted via `pnpm db:remote:seed`) and `seed.sql` (local demo only) | The live site needs real reference data but never demo cars or fictional dealers. Advisors: 0 security issues; 34 `multiple_permissive_policies` warnings kept by owner decision (one policy per audience, see CLAUDE.md), 42 unused-index notes on the empty DB |

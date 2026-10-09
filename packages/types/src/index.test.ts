@@ -1,6 +1,6 @@
-import { describe, expectTypeOf, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { ActionResult, Brand } from './index';
+import { Constants, type ActionResult, type Brand, type Enums, type Tables } from './index';
 
 describe('shared types', () => {
   it('narrows ActionResult on ok', () => {
@@ -11,5 +11,16 @@ describe('shared types', () => {
 
   it('keeps branded types distinct from their base', () => {
     expectTypeOf<Brand<string, 'VehicleId'>>().not.toEqualTypeOf<string>();
+  });
+
+  it('exposes generated row and enum types', () => {
+    expectTypeOf<Tables<'vehicles'>['price_cents']>().toEqualTypeOf<number | null>();
+    expectTypeOf<Enums<'listing_status'>>().toEqualTypeOf<
+      'draft' | 'pending_review' | 'active' | 'reserved' | 'sold' | 'archived'
+    >();
+  });
+
+  it('exports enum values at runtime for UI pickers', () => {
+    expect(Constants.public.Enums.fuel_type).toContain('electric');
   });
 });

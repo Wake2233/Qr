@@ -1,0 +1,109 @@
+-- Shared pgTAP helpers, included at the top of each test with `\ir _helpers.psql`.
+-- Everything here lives inside the test's transaction and is rolled back afterwards.
+
+create extension if not exists pgtap with schema extensions;
+create schema if not exists tests;
+
+-- Creates an auth user (profile row is created by the on_auth_user_created trigger).
+create or replace function tests.create_user(p_email text, p_role public.app_role default 'buyer')
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+  -- Own domain so fixtures never collide with users created by `pnpm db:seed:users`.
+  v_email text := split_part(p_email, '@', 1) || '@pgtap.test';
+begin
+  insert into auth.users (id, instance_id, email, aud, role, raw_user_meta_data, created_at, updated_at)
+  values (v_id, '00000000-0000-0000-0000-000000000000', v_email, 'authenticated', 'authenticated',
+          jsonb_build_object('full_name', split_part(p_email, '@', 1)), now(), now());
+  update public.profiles set role = p_role where id = v_id;
+  return v_id;
+end;
+$$;
+
+-- Creates a dealer with the given status and an owner (or other role) membership.
+create or replace function tests.create_dealer(
+  p_slug text, p_status public.dealer_status, p_owner uuid, p_member_role public.dealer_member_role default 'owner'
+)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid;
+begin
+  insert into public.dealers (slug, display_name, status, phone_e164, whatsapp_e164)
+  values (p_slug, initcap(replace(p_slug, '-', ' ')), p_status, '+12015550100', '+12015550100')
+  returning id into v_id;
+  insert into public.dealer_private (dealer_id) values (v_id);
+  if p_owner is not null then
+    insert into public.dealer_members (dealer_id, user_id, role) values (v_id, p_owner, p_member_role);
+  end if;
+  return v_id;
+end;
+$$;
+
+-- Creates a fully specified vehicle (draft) for a dealer, optionally with one image, then sets status.
+create or replace function tests.create_vehicle(
+  p_dealer uuid, p_status public.listing_status default 'active', p_with_image boolean default true
+)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid;
+begin
+  insert into public.vehicles (
+    dealer_id, make_id, model_id, year, mileage, price_cents, body_type, fuel_type,
+    drivetrain, transmission, exterior_color, stock_number
+  )
+  select p_dealer, m.make_id, m.id, 2022, 12000, 2599000, 'sedan', 'gasoline', 'fwd', 'automatic', 'Black',
+         'T' || substr(md5(gen_random_uuid()::text), 1, 8)
+  from public.models m order by m.id limit 1
+  returning id into v_id;
+
+  if p_with_image then
+    insert into public.vehicle_images (vehicle_id, storage_path, position)
+    values (v_id, p_dealer || '/' || v_id || '/0.jpg', 0);
+  end if;
+  if p_status <> 'draft' then
+    update public.vehicles set status = p_status where id = v_id;
+  end if;
+  return v_id;
+end;
+$$;
+
+-- Switch the session to an authenticated user / anon / back to the superuser.
+create or replace function tests.authenticate_as(p_user uuid)
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal1')::text, true);
+end;
+$$;
+
+create or replace function tests.authenticate_as_anon()
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+end;
+$$;
+
+create or replace function tests.clear_authentication()
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;
+
+grant usage on schema tests to anon, authenticated;
+grant execute on all functions in schema tests to anon, authenticated;

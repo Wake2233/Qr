@@ -22,6 +22,8 @@ export function useAppTheme() {
       muted: hex(palette['muted-foreground']),
       card: hex(palette.card),
       border: hex(palette.border),
+      primaryForeground: hex(palette['primary-foreground']),
+      whatsappForeground: hex(palette['whatsapp-foreground']),
     },
   };
 }

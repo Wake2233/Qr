@@ -1,0 +1,25 @@
+{
+  "name": "@cp/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed:users": "tsx seed-users.ts",
+    "seed:images": "tsx seed-images.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cp/types": "workspace:*",
+    "@supabase/supabase-js": "^2.117.3",
+    "blurhash": "^2.0.5",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@cp/config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.39.5",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3"
+  }
+}

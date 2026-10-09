@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - scripts
 
 # Packages whose install scripts pnpm may run (pnpm >=10 blocks them by default).
 onlyBuiltDependencies:
