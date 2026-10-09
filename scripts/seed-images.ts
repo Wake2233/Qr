@@ -2,6 +2,7 @@
  * Generates placeholder photos for every `vehicle_images` row and uploads them through the
  * Storage API (local stack only). Real photography replaces these via the dashboard.
  */
+import { encode } from 'blurhash';
 import sharp from 'sharp';
 
 import { localAdminClient } from './lib/local-supabase';
@@ -42,7 +43,7 @@ async function main() {
   const supabase = localAdminClient();
   const { data: images, error } = await supabase
     .from('vehicle_images')
-    .select('storage_path, alt, vehicles(exterior_color)')
+    .select('id, storage_path, alt, vehicles(exterior_color)')
     .order('storage_path');
   if (error) throw error;
 
@@ -50,13 +51,24 @@ async function main() {
   for (const image of images) {
     const [title = 'Vehicle', view = 'photo'] = (image.alt ?? '').split(' – ');
     const color = image.vehicles?.exterior_color ?? '';
-    const jpeg = await sharp(Buffer.from(placeholderSvg(title, view, color)))
-      .jpeg({ quality: 80, mozjpeg: true })
-      .toBuffer();
+    const svg = Buffer.from(placeholderSvg(title, view, color));
+    const jpeg = await sharp(svg).jpeg({ quality: 80, mozjpeg: true }).toBuffer();
+    // Same 4×3 components as the console uploader, from a small RGBA thumbnail.
+    const { data: pixels, info } = await sharp(svg)
+      .resize(32, 21, { fit: 'fill' })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const blurhash = encode(new Uint8ClampedArray(pixels), info.width, info.height, 4, 3);
     const { error: uploadError } = await supabase.storage
       .from('vehicle-images')
       .upload(image.storage_path, jpeg, { contentType: 'image/jpeg', upsert: true });
     if (uploadError) throw uploadError;
+    const { error: rowError } = await supabase
+      .from('vehicle_images')
+      .update({ blurhash })
+      .eq('id', image.id);
+    if (rowError) throw rowError;
     uploaded += 1;
   }
   console.log(`✓ uploaded ${uploaded} placeholder photos to vehicle-images`);
