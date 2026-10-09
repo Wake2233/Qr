@@ -53,7 +53,9 @@ export default function DiscoverScreen() {
       >
         <View className="gap-4 px-4">
           <Text className="font-sans-medium text-sm uppercase tracking-widest text-primary">
-            {facets.data ? `${facets.data.total} vehicles in stock` : (settings.data?.brand_name ?? ' ')}
+            {facets.data
+              ? `${facets.data.total} vehicles in stock`
+              : (settings.data?.brand_name ?? ' ')}
           </Text>
           <Text className="font-display-bold text-4xl leading-tight text-foreground">
             Find the car you&apos;ll love driving.

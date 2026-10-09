@@ -17,7 +17,13 @@ interface ContactBarProps {
 }
 
 /** Sticky VDP conversion bar: WhatsApp (app, else wa.me) + Call, with haptics. */
-export function ContactBar({ vehicleId, priceCents, whatsappE164, phoneE164, text }: ContactBarProps) {
+export function ContactBar({
+  vehicleId,
+  priceCents,
+  whatsappE164,
+  phoneE164,
+  text,
+}: ContactBarProps) {
   if (!whatsappE164 && !phoneE164) return null;
   const open = (channel: 'whatsapp' | 'call', phone: string) => {
     contactAbout(vehicleId, channel, phone, text).catch(() =>
@@ -32,7 +38,9 @@ export function ContactBar({ vehicleId, priceCents, whatsappE164, phoneE164, tex
     >
       <View className="flex-row items-center gap-3 px-4 py-3">
         {priceCents !== null ? (
-          <Text className="font-display-bold text-lg text-foreground">{formatPrice(priceCents)}</Text>
+          <Text className="font-display-bold text-lg text-foreground">
+            {formatPrice(priceCents)}
+          </Text>
         ) : null}
         {whatsappE164 ? (
           <Pressable

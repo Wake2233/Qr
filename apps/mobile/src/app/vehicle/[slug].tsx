@@ -78,7 +78,12 @@ export default function VehicleScreen() {
   }
 
   const contact = settings.data
-    ? vehicleContact({ vehicle: v, dealer: v.dealer, settings: settings.data, url: vehicleWebUrl(slug) })
+    ? vehicleContact({
+        vehicle: v,
+        dealer: v.dealer,
+        settings: settings.data,
+        url: vehicleWebUrl(slug),
+      })
     : null;
   const drop = priceDropCents(v.previous_price_cents, v.price_cents);
   const sold = v.status === 'sold';
@@ -94,7 +99,9 @@ export default function VehicleScreen() {
       <Stack.Screen
         options={{
           title: `${v.year} ${v.make.name} ${v.model.name}`,
-          headerRight: () => <HeaderActions id={v.id} title={v.title} price={price} slug={slug} sold={sold} />,
+          headerRight: () => (
+            <HeaderActions id={v.id} title={v.title} price={price} slug={slug} sold={sold} />
+          ),
         }}
       />
       <ScrollView contentContainerClassName={sold ? 'pb-12' : 'pb-32'}>
@@ -110,8 +117,18 @@ export default function VehicleScreen() {
         <View className="gap-6 px-4 pt-5">
           <View className="gap-2">
             {v.status !== 'active' ? (
-              <View className={cn('self-start rounded-full px-3 py-1', sold ? 'bg-foreground' : 'bg-amber-400')}>
-                <Text className={cn('font-sans-semibold text-xs', sold ? 'text-background' : 'text-amber-950')}>
+              <View
+                className={cn(
+                  'self-start rounded-full px-3 py-1',
+                  sold ? 'bg-foreground' : 'bg-amber-400',
+                )}
+              >
+                <Text
+                  className={cn(
+                    'font-sans-semibold text-xs',
+                    sold ? 'text-background' : 'text-amber-950',
+                  )}
+                >
                   {listingStatusLabels[v.status]}
                 </Text>
               </View>
@@ -131,7 +148,9 @@ export default function VehicleScreen() {
             {drop ? (
               <View className="flex-row items-center gap-1 self-start rounded-full bg-emerald-600 px-2.5 py-1">
                 <Icon name="priceDrop" size={12} tone="white" />
-                <Text className="font-sans-semibold text-xs text-white">Price drop {formatPrice(drop)}</Text>
+                <Text className="font-sans-semibold text-xs text-white">
+                  Price drop {formatPrice(drop)}
+                </Text>
               </View>
             ) : null}
             {v.msrp_cents !== null ? (
@@ -143,7 +162,9 @@ export default function VehicleScreen() {
           {sold ? (
             <View className="gap-1 rounded-2xl bg-muted p-4">
               <Text variant="heading">This vehicle has been sold.</Text>
-              <Text variant="caption">See similar vehicles below, or tell us what you’re looking for.</Text>
+              <Text variant="caption">
+                See similar vehicles below, or tell us what you’re looking for.
+              </Text>
             </View>
           ) : null}
 
@@ -171,7 +192,9 @@ export default function VehicleScreen() {
               <Text variant="heading">{v.dealer.display_name}</Text>
               {v.dealer.address_line1 ? (
                 <Text variant="caption">
-                  {[v.dealer.address_line1, v.dealer.city, v.dealer.state].filter(Boolean).join(', ')}
+                  {[v.dealer.address_line1, v.dealer.city, v.dealer.state]
+                    .filter(Boolean)
+                    .join(', ')}
                 </Text>
               ) : null}
               <Link href={{ pathname: '/search', params: { dealer: v.dealer.slug } }} asChild>
@@ -185,7 +208,11 @@ export default function VehicleScreen() {
           ) : null}
         </View>
         <View className="pt-8">
-          <VehicleRail title="Similar vehicles" subtitle="Same style or make, similar price." cards={similar.data ?? []} />
+          <VehicleRail
+            title="Similar vehicles"
+            subtitle="Same style or make, similar price."
+            cards={similar.data ?? []}
+          />
         </View>
       </ScrollView>
 

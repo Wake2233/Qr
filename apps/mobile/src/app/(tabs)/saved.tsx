@@ -39,7 +39,11 @@ export default function SavedScreen() {
             <Text className="flex-1 font-sans-medium">
               {compareIds.length} {compareIds.length === 1 ? 'vehicle' : 'vehicles'} in compare
             </Text>
-            <Pressable accessibilityRole="button" onPress={clearCompare} className="min-h-11 justify-center px-2">
+            <Pressable
+              accessibilityRole="button"
+              onPress={clearCompare}
+              className="min-h-11 justify-center px-2"
+            >
               <Text className="font-sans-medium text-sm text-muted-foreground">Clear</Text>
             </Pressable>
             <Link href="/compare" asChild>
@@ -60,7 +64,12 @@ export default function SavedScreen() {
                 tab === t.id ? 'bg-foreground' : 'bg-muted',
               )}
             >
-              <Text className={cn('font-sans-medium text-sm', tab === t.id ? 'text-background' : 'text-foreground')}>
+              <Text
+                className={cn(
+                  'font-sans-medium text-sm',
+                  tab === t.id ? 'text-background' : 'text-foreground',
+                )}
+              >
                 {t.label}
               </Text>
             </Pressable>

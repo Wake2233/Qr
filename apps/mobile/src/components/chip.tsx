@@ -22,7 +22,9 @@ export function Chip({
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
-      accessibilityLabel={accessibilityLabel ?? (count === undefined ? label : `${label}, ${count}`)}
+      accessibilityLabel={
+        accessibilityLabel ?? (count === undefined ? label : `${label}, ${count}`)
+      }
       onPress={() => {
         void Haptics.selectionAsync();
         onPress();

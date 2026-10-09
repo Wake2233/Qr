@@ -38,7 +38,10 @@ export function VehicleCard({ card, className }: { card: Card; className?: strin
       accessibilityLabel={`${card.title}, ${card.price_cents === null ? '' : formatPrice(card.price_cents)}`}
       onPressIn={() => void queryClient.prefetchQuery(vehicleQueries.detail(supabase, card.slug))}
       onPress={() => router.push({ pathname: '/vehicle/[slug]', params: { slug: card.slug } })}
-      className={cn('overflow-hidden rounded-2xl border border-border bg-card active:opacity-90', className)}
+      className={cn(
+        'overflow-hidden rounded-2xl border border-border bg-card active:opacity-90',
+        className,
+      )}
     >
       <View className="aspect-[4/3] w-full bg-muted">
         {card.cover_url ? (

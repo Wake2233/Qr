@@ -33,7 +33,11 @@ export default function CompareScreen() {
   const settings = useSiteSettings(supabase);
   const [hideIdentical, setHideIdentical] = useState(false);
 
-  const columns = (vehicles.data ?? []).map((v) => ({ ...v, make: v.make.name, model: v.model.name }));
+  const columns = (vehicles.data ?? []).map((v) => ({
+    ...v,
+    make: v.make.name,
+    model: v.model.name,
+  }));
   const all = buildCompareSections(columns);
   const sections = hideIdentical ? onlyDifferences(all) : all;
 
@@ -104,7 +108,10 @@ export default function CompareScreen() {
                           <Icon name="close" size={14} />
                         </Pressable>
                       </View>
-                      <Link href={{ pathname: '/vehicle/[slug]', params: { slug: v.slug ?? '' } }} asChild>
+                      <Link
+                        href={{ pathname: '/vehicle/[slug]', params: { slug: v.slug ?? '' } }}
+                        asChild
+                      >
                         <Pressable accessibilityRole="link">
                           <Text className="font-sans-semibold text-sm" numberOfLines={2}>
                             {v.title}
@@ -112,21 +119,28 @@ export default function CompareScreen() {
                         </Pressable>
                       </Link>
                       {v.price_cents !== null ? (
-                        <Text className="font-display-bold text-lg">{formatPrice(v.price_cents)}</Text>
+                        <Text className="font-display-bold text-lg">
+                          {formatPrice(v.price_cents)}
+                        </Text>
                       ) : null}
                       {contact?.whatsappE164 && v.status !== 'sold' ? (
                         <Pressable
                           accessibilityRole="button"
                           accessibilityLabel={`WhatsApp about the ${v.title}`}
                           onPress={() =>
-                            void contactAbout(v.id, 'whatsapp', contact.whatsappE164 ?? '', contact.text).catch(
-                              () => undefined,
-                            )
+                            void contactAbout(
+                              v.id,
+                              'whatsapp',
+                              contact.whatsappE164 ?? '',
+                              contact.text,
+                            ).catch(() => undefined)
                           }
                           className="h-11 flex-row items-center justify-center gap-1.5 rounded-lg bg-whatsapp"
                         >
                           <Icon name="whatsapp" size={14} tone="onWhatsapp" />
-                          <Text className="font-sans-semibold text-sm text-whatsapp-foreground">WhatsApp</Text>
+                          <Text className="font-sans-semibold text-sm text-whatsapp-foreground">
+                            WhatsApp
+                          </Text>
                         </Pressable>
                       ) : null}
                     </View>
@@ -137,12 +151,17 @@ export default function CompareScreen() {
               {sections.map((section) => (
                 <View key={section.id}>
                   <View className="bg-muted/60 px-3 py-2">
-                    <Text className="font-sans-semibold text-xs uppercase tracking-wider">{section.title}</Text>
+                    <Text className="font-sans-semibold text-xs uppercase tracking-wider">
+                      {section.title}
+                    </Text>
                   </View>
                   {section.rows.map((row) => (
                     <View
                       key={row.key}
-                      className={cn('flex-row border-t border-border', row.differs && 'bg-primary/5')}
+                      className={cn(
+                        'flex-row border-t border-border',
+                        row.differs && 'bg-primary/5',
+                      )}
                     >
                       <Text variant="caption" className={cn(LABEL_COL, 'px-3 py-2.5')}>
                         {row.label}
@@ -152,7 +171,11 @@ export default function CompareScreen() {
                           key={columns[i]?.id ?? i}
                           accessible
                           accessibilityLabel={`${columns[i]?.title ?? ''}: ${
-                            value === null ? 'not listed' : value === FEATURE_INCLUDED ? 'included' : value
+                            value === null
+                              ? 'not listed'
+                              : value === FEATURE_INCLUDED
+                                ? 'included'
+                                : value
                           }`}
                           className={cn(VALUE_COL, 'justify-center px-3 py-2.5')}
                         >
@@ -161,7 +184,9 @@ export default function CompareScreen() {
                           ) : value === FEATURE_INCLUDED ? (
                             <Icon name="check" size={16} tone="primary" />
                           ) : (
-                            <Text className={cn('text-sm', row.differs && 'font-sans-semibold')}>{value}</Text>
+                            <Text className={cn('text-sm', row.differs && 'font-sans-semibold')}>
+                              {value}
+                            </Text>
                           )}
                         </View>
                       ))}

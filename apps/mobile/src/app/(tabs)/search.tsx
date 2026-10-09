@@ -10,7 +10,15 @@ import {
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { FlashList } from '@shopify/flash-list';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, TextInput, View, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -53,7 +61,10 @@ export default function SearchScreen() {
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <View className="gap-3 px-4 pb-2 pt-2">
-        <SearchField value={filters.q ?? ''} onChange={(q) => setFilters({ ...listFilters, q: q || undefined })} />
+        <SearchField
+          value={filters.q ?? ''}
+          onChange={(q) => setFilters({ ...listFilters, q: q || undefined })}
+        />
         <View className="flex-row items-center gap-2">
           <ToolbarButton
             icon="filters"
@@ -70,7 +81,11 @@ export default function SearchScreen() {
           </Text>
         </View>
         {chips.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-2"
+          >
             {chips.map((chip) => (
               <Pressable
                 key={chip.id}
@@ -114,7 +129,15 @@ export default function SearchScreen() {
           numColumns={columns}
           keyExtractor={(card) => card.id}
           renderItem={({ item, index }) => (
-            <View className={columns === 2 ? (index % 2 === 0 ? 'pb-4 pl-4 pr-2' : 'pb-4 pl-2 pr-4') : 'px-4 pb-4'}>
+            <View
+              className={
+                columns === 2
+                  ? index % 2 === 0
+                    ? 'pb-4 pl-4 pr-2'
+                    : 'pb-4 pl-2 pr-4'
+                  : 'px-4 pb-4'
+              }
+            >
               <VehicleCard card={item} />
             </View>
           )}

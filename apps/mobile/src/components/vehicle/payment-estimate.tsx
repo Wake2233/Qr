@@ -63,7 +63,11 @@ export function PaymentEstimate({
       </View>
       <View className="gap-1.5">
         <Text variant="label">Term</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-2"
+        >
           {TERM_OPTIONS.map((months) => (
             <Chip
               key={months}
@@ -79,7 +83,12 @@ export function PaymentEstimate({
         <Text variant="label">Credit</Text>
         <View className="flex-row flex-wrap gap-2">
           {CREDIT_TIERS.map((t) => (
-            <Chip key={t} label={creditTierLabels[t]} selected={tier === t} onPress={() => setTier(t)} />
+            <Chip
+              key={t}
+              label={creditTierLabels[t]}
+              selected={tier === t}
+              onPress={() => setTier(t)}
+            />
           ))}
         </View>
       </View>
