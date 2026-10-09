@@ -1,5 +1,6 @@
 import '../global.css';
 
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useFonts } from 'expo-font';
 import {
@@ -16,6 +17,7 @@ import { View } from 'react-native';
 import { Toaster } from 'sonner-native';
 
 import { ErrorFallback } from '@/components/error-fallback';
+import { FavoritesSync } from '@/components/favorites-sync';
 import { appFonts } from '@/lib/fonts';
 import { GestureHandlerRootView } from '@/lib/interop';
 import { persistOptions, queryClient } from '@/lib/query-client';
@@ -59,16 +61,24 @@ export default function RootLayout() {
       >
         <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
           <SessionProvider>
+            <FavoritesSync />
             <View style={rootStyle} className="flex-1 bg-background">
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
-                <Stack.Screen name="manage" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="sell-with-us"
-                  options={{ headerShown: true, title: 'Sell with us' }}
-                />
-              </Stack>
+              <BottomSheetModalProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="manage" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="sell-with-us"
+                    options={{ headerShown: true, title: 'Sell with us' }}
+                  />
+                  <Stack.Screen
+                    name="vehicle/[slug]"
+                    options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
+                  />
+                  <Stack.Screen name="compare" options={{ headerShown: true, title: 'Compare' }} />
+                </Stack>
+              </BottomSheetModalProvider>
             </View>
             <Toaster theme={scheme} position="top-center" richColors />
           </SessionProvider>
