@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   amountFinancedCents,
+  CREDIT_TIERS,
+  creditTierLabels,
   aprForTier,
   DEFAULT_APR_BY_TIER,
   ESTIMATE_DEFAULTS,
@@ -156,5 +158,11 @@ describe('suggestedDownPaymentCents', () => {
 
   it('defaults to a term the calculator offers', () => {
     expect(TERM_OPTIONS).toContain(ESTIMATE_DEFAULTS.termMonths);
+  });
+});
+
+describe('creditTierLabels', () => {
+  it('labels every tier', () => {
+    expect(Object.keys(creditTierLabels).sort()).toEqual([...CREDIT_TIERS].sort());
   });
 });

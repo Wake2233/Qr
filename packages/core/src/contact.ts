@@ -101,3 +101,47 @@ export function resolveContactNumbers(
     phoneE164: dealer?.phone_e164 ?? settings.default_phone_e164,
   };
 }
+
+export interface VehicleContact extends ContactNumbers {
+  /** Prefilled WhatsApp message (title, price, stock #, link). */
+  text: string;
+}
+
+/**
+ * Everything a VDP needs for its WhatsApp/Call buttons: the dealer's numbers (or the site
+ * defaults) and the prefilled message from the admin-editable template.
+ */
+export function vehicleContact({
+  vehicle,
+  dealer,
+  settings,
+  url,
+}: {
+  vehicle: {
+    title: string;
+    price_cents: number | null;
+    stock_number: string | null;
+    vin?: string | null;
+  };
+  dealer: { whatsapp_e164: string | null; phone_e164: string | null } | null;
+  settings: {
+    default_whatsapp_e164: string | null;
+    default_phone_e164: string | null;
+    whatsapp_template?: string | null;
+  };
+  url?: string;
+}): VehicleContact {
+  return {
+    ...resolveContactNumbers(dealer, settings),
+    text: buildVehicleInquiryText({
+      vehicle: {
+        title: vehicle.title,
+        priceCents: vehicle.price_cents,
+        stockNumber: vehicle.stock_number,
+        vin: vehicle.vin ?? null,
+      },
+      url,
+      template: settings.whatsapp_template || DEFAULT_WHATSAPP_TEMPLATE,
+    }),
+  };
+}

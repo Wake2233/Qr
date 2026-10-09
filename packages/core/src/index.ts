@@ -31,8 +31,10 @@ export {
   DEFAULT_WHATSAPP_TEMPLATE,
   renderWhatsAppTemplate,
   resolveContactNumbers,
+  vehicleContact,
   type ContactNumbers,
   type InquiryVehicle,
+  type VehicleContact,
 } from './contact';
 export {
   fitWithin,
@@ -51,6 +53,7 @@ export {
   amountFinancedCents,
   aprForTier,
   CREDIT_TIERS,
+  creditTierLabels,
   DEFAULT_APR_BY_TIER,
   ESTIMATE_DEFAULTS,
   estimatePayment,
@@ -71,6 +74,7 @@ export {
   clearFilters,
   countActiveFilters,
   DEFAULT_SORT,
+  FILTER_PARAM_KEYS,
   inventoryHref,
   inventoryQueryString,
   MILEAGE_STEPS,

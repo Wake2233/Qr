@@ -4,6 +4,7 @@ import {
   activeFilterChips,
   clearFilters,
   countActiveFilters,
+  FILTER_PARAM_KEYS,
   MILEAGE_STEPS,
   PRICE_STEPS_CENTS,
   SORT_OPTIONS,
@@ -192,5 +193,41 @@ describe('filter presets', () => {
     expect([...PRICE_STEPS_CENTS]).toEqual([...PRICE_STEPS_CENTS].sort((a, b) => a - b));
     expect([...MILEAGE_STEPS]).toEqual([...MILEAGE_STEPS].sort((a, b) => a - b));
     expect(Object.keys(sortLabels)).toEqual([...SORT_OPTIONS]);
+  });
+});
+
+describe('FILTER_PARAM_KEYS', () => {
+  it('maps every filter to the param that parse/serialize use', () => {
+    const filters: Required<InventoryFilters> = {
+      q: 'x5',
+      make: ['bmw'],
+      model: ['x5'],
+      body: ['suv'],
+      fuel: ['diesel'],
+      drivetrain: ['awd'],
+      transmission: ['manual'],
+      condition: ['used'],
+      color: ['Black'],
+      feature: ['sunroof'],
+      yearMin: 2019,
+      yearMax: 2023,
+      priceMinCents: 1_000_000,
+      priceMaxCents: 4_000_000,
+      mileageMax: 50_000,
+      seatsMin: 5,
+      dealer: 'garden-state',
+      sort: 'price_asc',
+      page: 2,
+    };
+    const params = serializeInventoryFilters(filters);
+    for (const [key, param] of Object.entries(FILTER_PARAM_KEYS)) {
+      const single = serializeInventoryFilters({
+        [key]: filters[key as keyof InventoryFilters],
+      } as InventoryFilters);
+      expect(single[param]).toBe(params[param]);
+      expect(
+        parseInventoryFilters({ [param]: params[param] })[key as keyof InventoryFilters],
+      ).toEqual(filters[key as keyof InventoryFilters]);
+    }
   });
 });

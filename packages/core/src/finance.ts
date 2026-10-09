@@ -9,6 +9,14 @@ export type AprByTier = Record<CreditTier, number>;
 
 export const CREDIT_TIERS = Constants.public.Enums.credit_tier;
 
+/** Display labels with the usual score bands (calculators and the admin APR table). */
+export const creditTierLabels: Record<CreditTier, string> = {
+  excellent: 'Excellent (720+)',
+  good: 'Good (660–719)',
+  fair: 'Fair (600–659)',
+  rebuilding: 'Rebuilding (<600)',
+};
+
 /** Loan terms offered by the calculators, in months. */
 export const TERM_OPTIONS = [24, 36, 48, 60, 72, 84] as const;
 

@@ -7,6 +7,7 @@ import {
   buildWhatsAppUrl,
   renderWhatsAppTemplate,
   resolveContactNumbers,
+  vehicleContact,
 } from './contact';
 
 const vehicle = {
@@ -102,5 +103,45 @@ describe('resolveContactNumbers', () => {
       whatsappE164: '+13473700570',
       phoneE164: '+13473700571',
     });
+  });
+});
+
+describe('vehicleContact', () => {
+  const vehicle = {
+    title: '2021 BMW X5 xDrive40i',
+    price_cents: 4_599_000,
+    stock_number: 'A123',
+    vin: '5UXCR6C05L9B12345',
+  };
+  const settings = {
+    default_whatsapp_e164: '+13473700570',
+    default_phone_e164: '+13473700570',
+    whatsapp_template: null,
+  };
+
+  it('uses the dealer numbers and the default template', () => {
+    const contact = vehicleContact({
+      vehicle,
+      dealer: { whatsapp_e164: '+12015550100', phone_e164: '+12015550101' },
+      settings,
+      url: 'https://example.com/inventory/x5',
+    });
+    expect(contact).toEqual({
+      whatsappE164: '+12015550100',
+      phoneE164: '+12015550101',
+      text: "Hi! I'm interested in the 2021 BMW X5 xDrive40i (Stock #A123) listed at $45,990. https://example.com/inventory/x5",
+    });
+  });
+
+  it('falls back to site numbers and honours a custom template', () => {
+    const contact = vehicleContact({
+      vehicle: { ...vehicle, stock_number: null },
+      dealer: null,
+      settings: { ...settings, whatsapp_template: 'Is the {title} (VIN {vin}) still available?' },
+    });
+    expect(contact.whatsappE164).toBe('+13473700570');
+    expect(contact.text).toBe(
+      'Is the 2021 BMW X5 xDrive40i (VIN 5UXCR6C05L9B12345) still available?',
+    );
   });
 });

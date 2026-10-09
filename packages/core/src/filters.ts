@@ -124,6 +124,24 @@ const PARAM_ORDER = [
 
 const MAX_LIST_VALUES = 30;
 
+/** Filter key → URL param name (e.g. `priceMaxCents` → `price_max`), for URL-state libraries. */
+export const FILTER_PARAM_KEYS = {
+  q: 'q',
+  make: 'make',
+  model: 'model',
+  body: 'body',
+  fuel: 'fuel',
+  drivetrain: 'drivetrain',
+  transmission: 'transmission',
+  condition: 'condition',
+  color: 'color',
+  feature: 'feature',
+  ...NUMBER_PARAMS,
+  ...PRICE_PARAMS,
+  dealer: 'dealer',
+  sort: 'sort',
+} as const satisfies Record<keyof InventoryFilters, string>;
+
 /** Anything with `getAll` (URLSearchParams, Next's ReadonlyURLSearchParams). */
 export interface QueryParamsLike {
   getAll(key: string): string[];
@@ -348,17 +366,19 @@ type ScalarKey =
   | 'seatsMin'
   | 'dealer';
 
-const SCALAR_LABELS: Record<ScalarKey, (filters: InventoryFilters, labels: FilterLabels) => string> =
-  {
-    q: (f) => `“${f.q ?? ''}”`,
-    yearMin: (f) => `${f.yearMin} or newer`,
-    yearMax: (f) => `${f.yearMax} or older`,
-    priceMinCents: (f) => `From ${formatPrice(f.priceMinCents ?? 0)}`,
-    priceMaxCents: (f) => `Up to ${formatPrice(f.priceMaxCents ?? 0)}`,
-    mileageMax: (f) => `Under ${formatMileage(f.mileageMax ?? 0)}`,
-    seatsMin: (f) => `${f.seatsMin}+ seats`,
-    dealer: (f, l) => l.dealer?.[f.dealer ?? ''] ?? f.dealer ?? '',
-  };
+const SCALAR_LABELS: Record<
+  ScalarKey,
+  (filters: InventoryFilters, labels: FilterLabels) => string
+> = {
+  q: (f) => `“${f.q ?? ''}”`,
+  yearMin: (f) => `${f.yearMin} or newer`,
+  yearMax: (f) => `${f.yearMax} or older`,
+  priceMinCents: (f) => `From ${formatPrice(f.priceMinCents ?? 0)}`,
+  priceMaxCents: (f) => `Up to ${formatPrice(f.priceMaxCents ?? 0)}`,
+  mileageMax: (f) => `Under ${formatMileage(f.mileageMax ?? 0)}`,
+  seatsMin: (f) => `${f.seatsMin}+ seats`,
+  dealer: (f, l) => l.dealer?.[f.dealer ?? ''] ?? f.dealer ?? '',
+};
 
 /** One removable chip per active refinement, in URL order. Sort and page are not chips. */
 export function activeFilterChips(
