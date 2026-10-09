@@ -48,7 +48,7 @@ select is((select count(*)::int from public.push_tokens), 0, 'push tokens are pr
 -- VIN decode cache: dealers only, read-only
 select is((select count(*)::int from public.vin_decodes), 0, 'buyers cannot read the VIN cache');
 select tests.authenticate_as(:'owner');
-select is((select count(*)::int from public.vin_decodes), 1, 'dealers can read the VIN cache');
+select is((select count(*)::int from public.vin_decodes where vin = '1HGCM82633A004352'), 1, 'dealers can read the VIN cache');
 select throws_ok($$insert into public.vin_decodes (vin, payload) values ('1HGCM82633A004353', '{}')$$, '42501', null, 'VIN cache is written by the edge function only');
 
 -- catalog is admin-managed

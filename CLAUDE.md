@@ -38,10 +38,11 @@ pnpm lint                              # ESLint across workspaces
 pnpm typecheck                         # tsc --noEmit across workspaces
 pnpm test                              # Vitest (packages, web) + jest-expo (mobile)
 pnpm test:integration                  # @cp/api query fns against the local stack (after pnpm db:seed:users)
-pnpm test:e2e                          # Playwright against local web + local Supabase
+pnpm test:functions                    # Deno tests for supabase/functions (deno comes from the root devDependency)
+pnpm test:e2e                          # Playwright against local web + local Supabase (after pnpm db:seed; reads codes from Mailpit)
 pnpm build                             # turbo build (web prod build + package builds)
 pnpm format                            # Prettier write
-pnpm verify                            # lint + typecheck + test + db:test + test:integration: MUST be green before any commit to main
+pnpm verify                            # lint + typecheck + test + test:functions + db:test + test:integration: MUST be green before any commit to main
 
 pnpm db:start                          # supabase start (Docker)
 pnpm db:stop
@@ -51,6 +52,7 @@ pnpm db:test                           # supabase test db (pgTAP)
 pnpm db:lint                           # supabase db lint (plpgsql checks)
 pnpm db:types                          # supabase gen types typescript --local > packages/types/src/database.ts
 pnpm db:seed                           # db:seed:users (local test accounts) + db:seed:images (placeholder photos); local stack only
+pnpm functions:serve                   # serve Edge Functions locally (decode-vin) on :54321/functions/v1
 pnpm db:remote:link                    # link CLI to the hosted project (reads .env.remote.local)
 pnpm db:remote:push                    # push migrations to hosted — ASK THE USER FIRST
 ```
@@ -86,13 +88,14 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 - Use **Server Components by default.** Put `'use client'` only on leaf components that need state, effects or browser APIs.
 - **All mutations go through Server Actions** (`app/**/actions.ts`, `'use server'`). The pattern is: parse with the shared Zod schema → call Supabase with the **user's** session client → `revalidateTag`/`revalidatePath` → return `ActionResult`. Use Route Handlers only for the OAuth/magic-link callback, webhooks and OG images.
 - Use `@supabase/ssr` with `lib/supabase/server.ts` (cookies), `lib/supabase/client.ts` (browser) and `src/proxy.ts` (Next 16 replacement for `middleware.ts`: session refresh + `/dashboard` gate). Base server-side authz on `supabase.auth.getUser()`/`getClaims()`, **never** `getSession()`.
-- Cache Components is on (`cacheComponents: true`). Public reads use the cookie-less anon client (`lib/supabase/public.ts`) inside `'use cache'` functions with `cacheTag` + `cacheLife` (tags in `lib/cache-tags.ts`: `site-settings`, `vehicles`, `vehicle:<id>`). Mutations call `revalidateTag(tag, 'max')`. Anything that reads cookies/session/`searchParams` sits behind `<Suspense>` or a `loading.tsx` (the dev overlay flags blocking routes).
+- Cache Components is on (`cacheComponents: true`). Public reads use the cookie-less anon client (`lib/supabase/public.ts`) inside `'use cache'` functions with `cacheTag` + `cacheLife` (tags in `lib/cache-tags.ts`: `site-settings`, `vehicles`, `vehicle:<id>`). Server Actions invalidate with `updateTag(tag)` + `refresh()` via `lib/revalidate.ts` (read-your-own-writes); `revalidateTag(tag, 'max')` is for webhooks/background jobs. Anything that reads cookies/session/`searchParams` sits behind `<Suspense>` or a `loading.tsx` (the dev overlay flags blocking routes).
 - Filter/sort/page state lives in the URL (`nuqs`). The serialization logic lives in `@cp/core/filters` and is shared with mobile.
 - React Query handles client-side interactivity (favorites, compare, dashboard tables). Seed it from RSC with `HydrationBoundary`.
 - Use `next/image` for every vehicle image, with explicit `sizes` and a blurhash/`placeholder`.
 - The VDP needs `generateMetadata` and JSON-LD (`schema.org/Car` + `Offer`). The inventory needs a `sitemap.ts`.
 - shadcn/ui primitives go in `components/ui/`. Add them with `pnpm dlx shadcn@latest add <c>`. Compose them in `components/<feature>/` instead of rewriting primitives.
-- Forms use react-hook-form + `zodResolver(sharedSchema)`. Validate again on the server in the action.
+- Forms use react-hook-form + `zodResolver(sharedSchema)`. Validate again on the server in the action. Console actions use `requireConsole()`/`requireAdmin()` (`lib/console.ts`) and `attempt()`/`dbFailure()` (`lib/action-result.ts`) so DB errors (`MISSING_FIELDS`, unique violations…) come back as `fieldErrors`.
+- File uploads (vehicle photos, dealer docs, logos): a Server Action issues a signed Storage upload URL, the browser PUTs the bytes with progress (`lib/images.ts`), then a Server Action writes the row. Never send file bytes through a Server Action.
 
 ## Expo (apps/mobile)
 
@@ -103,7 +106,8 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 - Store the Supabase session in an encrypted store (the Supabase "LargeSecureStore" pattern: AES key in `expo-secure-store`, payload in AsyncStorage). Register an `AppState` listener for `startAutoRefresh`/`stopAutoRefresh`.
 - Persist the React Query cache with the AsyncStorage persister for fast cold starts. Prefetch the VDP on `onPressIn`.
 - For WhatsApp, use `Linking.canOpenURL('whatsapp://send?...')`, fall back to `https://wa.me/...`, and use `tel:` for calls. Fire a haptic on CTA press.
-- Photo upload pipeline: `expo-image-picker` (multi-select / camera) → `expo-image-manipulator` (max 2400px long edge, JPEG/WebP q≈0.8) → upload the ArrayBuffer to Storage at `{dealer_id}/{vehicle_id}/{uuid}.webp`.
+- Photo upload pipeline: `expo-image-picker` (multi-select / camera) → `expo-image-manipulator` (max 2400px long edge, WebP q≈0.8; `lib/photos.ts`) → signed upload URL from `createPhotoUpload` → XHR PUT with progress → `add_vehicle_images`. Paths are `{dealer_id}/{vehicle_id}/{uuid}.webp` (the RPC rejects anything else).
+- Mobile console mutations call `@cp/api` hooks (`useSaveVehicle`, `useVehiclePhotos`, …), which invalidate both `console` and `vehicles` query keys. Desk-only sections (dealer profile/team, catalog, settings, users) live on the web console.
 - Env vars must be `EXPO_PUBLIC_*`, read once in `src/lib/env.ts` and validated with Zod.
 
 ## Supabase / SQL

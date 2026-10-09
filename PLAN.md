@@ -567,36 +567,40 @@ pnpm lint && pnpm typecheck && pnpm build
 
 **Goal:** admins and dealers can fully manage inventory from either device, and sub-dealers can apply and be approved.
 
-- [ ] **Web `/dashboard/inventory`:** DataTable (search, status/dealer filters, sort), inline price edit, status menu, bulk archive/feature (admin)
-- [ ] **Web vehicle editor** (`new`, `[id]`):
-  - [ ] Sectioned form (Basics / Powertrain / Body & Interior / History / Features / Description / Photos)
-  - [ ] VIN decode button (`decode-vin` Edge Function → autofill)
-  - [ ] Drag-and-drop multi-upload with progress, reorder (dnd-kit) and cover selection
-  - [ ] Publish with server-side gate errors surfaced per field
-  - [ ] All writes go through Server Actions
-- [ ] **Mobile `manage/inventory`:**
-  - [ ] FlashList with status chips and swipe actions (price, status)
-  - [ ] Editor with the same sections
-  - [ ] **VIN barcode scan** (expo-camera) → decode
-  - [ ] Camera / library multi-upload with compression and progress, long-press reorder
-  - [ ] Publish
-- [ ] Edge Function `decode-vin` (NHTSA vPIC, cached in `vin_decodes`) with unit tests (Deno test)
-- [ ] **Dealer onboarding:** web `/sell-with-us` + mobile screen → `apply_as_dealer`. Pending state UI (drafts allowed, publish disabled with explanation)
-- [ ] **Admin approvals** (web `/dashboard/dealers` + mobile `manage/dealers`): queue, detail (docs via signed URL), approve/reject/suspend
-- [ ] Dealer profile & team management (owner/manager): logo, WhatsApp/phone, hours, invite member by email
-- [ ] `revalidateTag('vehicles')` / `vehicle:<id>` on every inventory mutation (web). React Query invalidation on mobile
-- [ ] Admin catalog & site settings pages (makes/models/features, default WhatsApp/phone, template, APR table, review toggle)
+- [x] **Web `/dashboard/inventory`:** DataTable (search, status/dealer filters, sort), inline price edit, status menu, bulk archive/feature (admin)
+- [x] **Web vehicle editor** (`new`, `[id]`):
+  - [x] Sectioned form (Basics / Powertrain / Body & Interior / History / Features / Description / Photos)
+  - [x] VIN decode button (`decode-vin` Edge Function → autofill)
+  - [x] Drag-and-drop multi-upload with progress, reorder (dnd-kit) and cover selection
+  - [x] Publish with server-side gate errors surfaced per field
+  - [x] All writes go through Server Actions
+- [x] **Mobile `manage/inventory`:**
+  - [x] FlashList with status chips and swipe actions (price, status)
+  - [x] Editor with the same sections
+  - [x] **VIN barcode scan** (expo-camera) → decode
+  - [x] Camera / library multi-upload with compression and progress, long-press reorder
+  - [x] Publish
+- [x] Edge Function `decode-vin` (NHTSA vPIC, cached in `vin_decodes`) with unit tests (Deno test)
+- [x] **Dealer onboarding:** web `/sell-with-us` + mobile screen → `apply_as_dealer`. Pending state UI (drafts allowed, publish disabled with explanation)
+- [x] **Admin approvals** (web `/dashboard/dealers` + mobile `manage/dealers`): queue, detail (docs via signed URL), approve/reject/suspend
+- [x] Dealer profile & team management (owner/manager): logo, WhatsApp/phone, hours, invite member by email
+- [x] `revalidateTag('vehicles')` / `vehicle:<id>` on every inventory mutation (web). React Query invalidation on mobile
+- [x] Admin catalog & site settings pages (makes/models/features, default WhatsApp/phone, template, APR table, review toggle)
+- [ ] Mobile console verified on a device / EAS dev build (VIN barcode scan, camera + library upload, haptics) _(blocked locally by Xcode 15.2; verified in Expo web)_
 
 **Verify**
 
 ```bash
-pnpm db:test                                       # incl. new tests for any added policy/RPC
+pnpm db:test                                       # incl. console_inventory (photos, features, team, users, featuring)
 pnpm test && pnpm typecheck && pnpm lint
-pnpm test:e2e -- dashboard-inventory.spec.ts       # dealer creates → uploads 3 photos → publishes → visible publicly
-pnpm test:e2e -- dealer-approval.spec.ts           # apply → admin approves → dealer can publish
-supabase functions serve decode-vin & deno test supabase/functions/decode-vin
-# Manual (iOS sim): scan a printed VIN barcode, upload 3 photos, publish, then see it on web /inventory.
-# Manual: dealer A cannot see/edit dealer B's vehicle by editing the URL/ID (web + mobile).
+pnpm test:functions                                # decode-vin: Deno tests (mapping + handler)
+pnpm test:integration                              # @cp/api console fns: publish gate, cross-dealer isolation, admin queues
+pnpm test:e2e                                      # dashboard-inventory.spec.ts + dealer-approval.spec.ts (web + local Supabase)
+pnpm functions:serve                               # then: decode a real VIN from the editor (web or Expo web)
+# Manual (iOS sim / device build): scan a printed VIN barcode, upload 3 photos, publish, then see it on web /inventory.
+#   Still open: needs an EAS dev build (local Xcode 15.2 can't build SDK 57). Same flows verified in Expo web.
+# Manual: dealer A cannot see/edit dealer B's vehicle by editing the URL/ID: covered by dashboard-inventory.spec.ts (web)
+#   and the mobile editor's membership check + RLS (integration tests).
 ```
 
 ### Phase 5: Buyer Marketplace (Web + Mobile)
@@ -762,3 +766,15 @@ eas build --profile preview --platform ios     # succeeds; install on device via
 | 2026-10-08 | Mobile adds `tailwind-merge@2` (`cn()` in `src/lib/cn.ts`)                                                                                                    | NativeWind doesn't guarantee CSS order, so variant + caller classes must be de-conflicted; v2 is the Tailwind 3 line                                                                                                   |
 | 2026-10-08 | Mobile drops the supabase-js `lock: processLock` option                                                                                                       | Deprecated in supabase-js 2.117 (lockless session refresh)                                                                                                                                                             |
 | 2026-10-08 | `pnpm verify` now also runs `pnpm test:integration`; CI has an `integration` job (full local stack + seeded users)                                            | DoD requires `@cp/api` query fns tested against local Supabase                                                                                                                                                         |
+| 2026-10-09 | Console table uses shadcn `Table` + our own selection state, not TanStack Table                                                                               | TanStack Table 9 (latest) replaced the v8 API; sorting/filtering/paging are server-side via URL params, so client row models add nothing                                                                               |
+| 2026-10-09 | Photo bytes go browser/app → Storage via **signed upload URLs**; the row is written by a Server Action / `add_vehicle_images` RPC                             | Server Actions cap request bodies (~1 MB) and can't stream progress; signed URLs are checked against Storage RLS when issued and let XHR report progress on web and React Native                                       |
+| 2026-10-09 | Client-side resize to 2400px WebP (JPEG where the browser can't encode WebP, e.g. Safari) with canvas; no `browser-image-compression`                         | One small helper instead of a dependency; `blurhash` encodes the placeholder in the browser, `expo-image` on device                                                                                                    |
+| 2026-10-09 | Server Actions invalidate with `updateTag(tag)` + `refresh()` instead of `revalidateTag(tag, 'max')`                                                          | Next 16: `updateTag` is the read-your-own-writes variant for Server Actions (the dealer sees the change on the next render); `revalidateTag` stays for webhooks/background jobs                                        |
+| 2026-10-09 | Team invites add **existing accounts** by email (`add_dealer_member`); no invite emails yet                                                                   | Sending invites needs the service-role key (Edge Function) and a mail provider; deferred to Phase 6 with `notify-new-lead`                                                                                             |
+| 2026-10-09 | Only admins can feature listings (trigger), and a live listing must keep ≥1 photo                                                                             | `is_featured` drives the home rail (platform-controlled); deleting the last photo would leave a broken card                                                                                                            |
+| 2026-10-09 | `decode-vin` authenticates the caller itself (`verify_jwt = false`) and caches raw vPIC payloads forever                                                      | Works with asymmetric JWT signing keys; specs for a VIN never change. The cache is re-mapped on read, so mapping fixes apply to old decodes                                                                            |
+| 2026-10-09 | Deno comes from the official `deno` npm package (root devDependency)                                                                                          | Same version locally and in CI with no global install                                                                                                                                                                  |
+| 2026-10-09 | Playwright runs on the installed Google Chrome locally (`channel: 'chrome'`); CI uses bundled Chromium                                                        | Playwright 1.64's Chromium doesn't support macOS 13                                                                                                                                                                    |
+| 2026-10-09 | Mobile console covers inventory, VIN scan, photos, publishing and dealer approvals; dealer profile/team, catalog, site settings and users stay web-only       | Phone-first jobs on the lot vs desk work; the mobile `[section]` screen points to the web console for the rest                                                                                                         |
+| 2026-10-09 | Mobile photo reorder = long-press to select, then Earlier / Later / Make cover / Delete (no drag)                                                             | Accessible with VoiceOver/TalkBack and needs no extra drag-and-drop dependency on Reanimated 4                                                                                                                         |
+| 2026-10-09 | Listing prices are capped at $10M in `@cp/validators`                                                                                                         | Catches typos (an appended price turned $24,090 into $2.4B during testing)                                                                                                                                             |
