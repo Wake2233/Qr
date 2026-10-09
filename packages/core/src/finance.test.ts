@@ -4,9 +4,12 @@ import {
   amountFinancedCents,
   aprForTier,
   DEFAULT_APR_BY_TIER,
+  ESTIMATE_DEFAULTS,
   estimatePayment,
   maxVehiclePriceCents,
   monthlyPaymentCents,
+  suggestedDownPaymentCents,
+  TERM_OPTIONS,
   totalInterestCents,
 } from './finance';
 
@@ -137,5 +140,21 @@ describe('aprForTier', () => {
     expect(aprForTier('good', { good: 799 })).toBe(799);
     expect(aprForTier('fair', { good: 799 })).toBe(DEFAULT_APR_BY_TIER.fair);
     expect(aprForTier('excellent')).toBe(650);
+  });
+});
+
+describe('suggestedDownPaymentCents', () => {
+  it('takes 10% by default, rounded down to whole $100s', () => {
+    expect(suggestedDownPaymentCents(4_599_000)).toBe(450_000);
+    expect(suggestedDownPaymentCents(999_900, 20)).toBe(190_000);
+    expect(suggestedDownPaymentCents(0)).toBe(0);
+  });
+
+  it('rejects non-cent prices', () => {
+    expect(() => suggestedDownPaymentCents(10.5)).toThrow(RangeError);
+  });
+
+  it('defaults to a term the calculator offers', () => {
+    expect(TERM_OPTIONS).toContain(ESTIMATE_DEFAULTS.termMonths);
   });
 });

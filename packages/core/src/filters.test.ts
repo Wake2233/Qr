@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  activeFilterChips,
+  clearFilters,
   countActiveFilters,
+  MILEAGE_STEPS,
+  PRICE_STEPS_CENTS,
+  SORT_OPTIONS,
+  sortLabels,
   inventoryHref,
   inventoryQueryString,
   parseInventoryFilters,
@@ -117,5 +123,74 @@ describe('countActiveFilters', () => {
   it('counts each list value and each range, but not sort/page', () => {
     expect(countActiveFilters({})).toBe(0);
     expect(countActiveFilters(full)).toBe(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 7);
+  });
+});
+
+describe('activeFilterChips', () => {
+  it('describes every refinement with readable labels and a removal target', () => {
+    const filters = parseInventoryFilters(
+      'q=x5&make=bmw&body=suv&fuel=plug_in_hybrid&price_min=20000&price_max=40000&year_min=2019&year_max=2023&mileage_max=50000&seats_min=7&dealer=garden-state&sort=price_asc&page=3',
+    );
+    const chips = activeFilterChips(filters, {
+      make: { bmw: 'BMW' },
+      dealer: { 'garden-state': 'Garden State Motors' },
+    });
+    expect(chips.map((c) => [c.id, c.label])).toEqual([
+      ['q', '“x5”'],
+      ['make:bmw', 'BMW'],
+      ['body:suv', 'SUV'],
+      ['fuel:plug_in_hybrid', 'Plug-in hybrid'],
+      ['yearMin', '2019 or newer'],
+      ['yearMax', '2023 or older'],
+      ['priceMinCents', 'From $20,000'],
+      ['priceMaxCents', 'Up to $40,000'],
+      ['mileageMax', 'Under 50,000 mi'],
+      ['seatsMin', '7+ seats'],
+      ['dealer', 'Garden State Motors'],
+    ]);
+    const make = chips.find((c) => c.id === 'make:bmw');
+    expect(make?.next.make).toBeUndefined();
+    expect(make?.next.sort).toBe('price_asc');
+    expect(chips.every((c) => c.next.page === undefined)).toBe(true);
+  });
+
+  it('falls back to slugs when no labels are known', () => {
+    const chips = activeFilterChips({ model: ['x5'], feature: ['sunroof'], color: ['Black'] });
+    expect(chips.map((c) => c.label)).toEqual(['x5', 'Black', 'sunroof']);
+  });
+
+  it('removes one value of a multi-select facet at a time', () => {
+    const [audi] = activeFilterChips({ make: ['audi', 'bmw'] });
+    expect(audi?.next).toEqual({ make: ['bmw'] });
+  });
+
+  it('labels every enum facet', () => {
+    const labels = activeFilterChips({
+      drivetrain: ['awd'],
+      transmission: ['cvt'],
+      condition: ['certified'],
+    }).map((c) => c.label);
+    expect(labels).toEqual(['All-wheel drive (AWD)', 'CVT', 'Certified pre-owned']);
+  });
+
+  it('has no chips without refinements', () => {
+    expect(activeFilterChips({ sort: 'price_desc', page: 2 })).toEqual([]);
+  });
+});
+
+describe('clearFilters', () => {
+  it('keeps only the sort', () => {
+    expect(clearFilters({ make: ['bmw'], sort: 'price_asc', page: 2 })).toEqual({
+      sort: 'price_asc',
+    });
+    expect(clearFilters({ make: ['bmw'] })).toEqual({});
+  });
+});
+
+describe('filter presets', () => {
+  it('are ascending and labelled for every sort', () => {
+    expect([...PRICE_STEPS_CENTS]).toEqual([...PRICE_STEPS_CENTS].sort((a, b) => a - b));
+    expect([...MILEAGE_STEPS]).toEqual([...MILEAGE_STEPS].sort((a, b) => a - b));
+    expect(Object.keys(sortLabels)).toEqual([...SORT_OPTIONS]);
   });
 });

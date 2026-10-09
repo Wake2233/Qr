@@ -7,6 +7,15 @@
  */
 import { Constants, type Enums } from '@cp/types';
 
+import { formatMileage, formatPrice } from './format';
+import {
+  bodyTypeLabels,
+  conditionLabels,
+  drivetrainLabels,
+  fuelTypeLabels,
+  transmissionLabels,
+} from './vehicle';
+
 const E = Constants.public.Enums;
 
 export const SORT_OPTIONS = [
@@ -18,6 +27,14 @@ export const SORT_OPTIONS = [
 ] as const;
 export type InventorySort = (typeof SORT_OPTIONS)[number];
 export const DEFAULT_SORT: InventorySort = 'newest';
+
+export const sortLabels: Record<InventorySort, string> = {
+  newest: 'Newest listings',
+  price_asc: 'Price: low to high',
+  price_desc: 'Price: high to low',
+  mileage_asc: 'Lowest mileage',
+  year_desc: 'Newest model year',
+};
 
 export interface InventoryFilters {
   q?: string;
@@ -283,4 +300,91 @@ export function countActiveFilters(filters: InventoryFilters): number {
     if (filters[key] !== undefined) count += 1;
   }
   return count;
+}
+
+/** Budget / price steps (cents) for the hero search, filter rail and mobile sheet. */
+export const PRICE_STEPS_CENTS = [
+  1_000_000, 1_500_000, 2_000_000, 2_500_000, 3_000_000, 4_000_000, 5_000_000, 7_500_000,
+  10_000_000,
+] as const;
+/** "Mileage up to" steps. */
+export const MILEAGE_STEPS = [10_000, 25_000, 50_000, 75_000, 100_000, 150_000] as const;
+
+export interface FilterLabels {
+  /** slug → display name, usually from the facet response */
+  make?: Readonly<Record<string, string>>;
+  model?: Readonly<Record<string, string>>;
+  feature?: Readonly<Record<string, string>>;
+  dealer?: Readonly<Record<string, string>>;
+}
+
+export interface FilterChip {
+  /** stable React key, e.g. `make:bmw` */
+  id: string;
+  label: string;
+  /** filters with this refinement removed (page reset) */
+  next: InventoryFilters;
+}
+
+const LIST_LABELS: Record<ListKey, (value: string, labels: FilterLabels) => string> = {
+  make: (v, l) => l.make?.[v] ?? v,
+  model: (v, l) => l.model?.[v] ?? v,
+  body: (v) => bodyTypeLabels[v as Enums<'body_type'>],
+  fuel: (v) => fuelTypeLabels[v as Enums<'fuel_type'>],
+  drivetrain: (v) => drivetrainLabels[v as Enums<'drivetrain'>],
+  transmission: (v) => transmissionLabels[v as Enums<'transmission'>],
+  condition: (v) => conditionLabels[v as Enums<'vehicle_condition'>],
+  color: (v) => v,
+  feature: (v, l) => l.feature?.[v] ?? v,
+};
+
+type ScalarKey =
+  | 'q'
+  | 'yearMin'
+  | 'yearMax'
+  | 'priceMinCents'
+  | 'priceMaxCents'
+  | 'mileageMax'
+  | 'seatsMin'
+  | 'dealer';
+
+const SCALAR_LABELS: Record<ScalarKey, (filters: InventoryFilters, labels: FilterLabels) => string> =
+  {
+    q: (f) => `“${f.q ?? ''}”`,
+    yearMin: (f) => `${f.yearMin} or newer`,
+    yearMax: (f) => `${f.yearMax} or older`,
+    priceMinCents: (f) => `From ${formatPrice(f.priceMinCents ?? 0)}`,
+    priceMaxCents: (f) => `Up to ${formatPrice(f.priceMaxCents ?? 0)}`,
+    mileageMax: (f) => `Under ${formatMileage(f.mileageMax ?? 0)}`,
+    seatsMin: (f) => `${f.seatsMin}+ seats`,
+    dealer: (f, l) => l.dealer?.[f.dealer ?? ''] ?? f.dealer ?? '',
+  };
+
+/** One removable chip per active refinement, in URL order. Sort and page are not chips. */
+export function activeFilterChips(
+  filters: InventoryFilters,
+  labels: FilterLabels = {},
+): FilterChip[] {
+  const { page: _page, ...base } = filters;
+  const chips: FilterChip[] = [];
+  if (base.q) chips.push({ id: 'q', label: SCALAR_LABELS.q(base, labels), next: omit(base, 'q') });
+  for (const key of Object.keys(LIST_PARAMS) as ListKey[]) {
+    for (const value of base[key] ?? []) {
+      chips.push({
+        id: `${key}:${value}`,
+        label: LIST_LABELS[key](value, labels),
+        next: toggleFilterValue(base, key, value as never),
+      });
+    }
+  }
+  for (const key of Object.keys(SCALAR_LABELS) as ScalarKey[]) {
+    if (key === 'q' || base[key] === undefined) continue;
+    chips.push({ id: key, label: SCALAR_LABELS[key](base, labels), next: omit(base, key) });
+  }
+  return chips;
+}
+
+/** "Clear all": drops every refinement but keeps the chosen sort. */
+export function clearFilters(filters: InventoryFilters): InventoryFilters {
+  return filters.sort ? { sort: filters.sort } : {};
 }

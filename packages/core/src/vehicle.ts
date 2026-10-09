@@ -155,8 +155,21 @@ export type VehicleSpecSource = Pick<
 
 type Row = [key: string, label: string, value: string | null];
 
-function rows(entries: Row[]): SpecRow[] {
-  return entries.flatMap(([key, label, value]) => (value === null ? [] : [{ key, label, value }]));
+/** A spec row that may be empty: compare tables keep every row so columns line up. */
+export interface SpecCell {
+  key: string;
+  label: string;
+  value: string | null;
+}
+
+export interface SpecGrid {
+  id: SpecGroupId;
+  title: string;
+  rows: SpecCell[];
+}
+
+function rows(entries: Row[]): SpecCell[] {
+  return entries.map(([key, label, value]) => ({ key, label, value }));
 }
 
 const str = <T>(value: T | null, fn: (v: T) => string): string | null =>
@@ -169,9 +182,9 @@ function fuelEconomy(city: number | null, highway: number | null): string | null
   return null;
 }
 
-/** Overview / Powertrain / Body & Interior / History, omitting empty rows and groups. */
-export function groupVehicleSpecs(v: VehicleSpecSource): SpecGroup[] {
-  const groups: SpecGroup[] = [
+/** Every spec row in display order, including empty ones (same shape for every vehicle). */
+export function vehicleSpecGrid(v: VehicleSpecSource): SpecGrid[] {
+  return [
     {
       id: 'overview',
       title: 'Overview',
@@ -233,7 +246,16 @@ export function groupVehicleSpecs(v: VehicleSpecSource): SpecGroup[] {
       ]),
     },
   ];
-  return groups.filter((group) => group.rows.length > 0);
+}
+
+/** Overview / Powertrain / Body & Interior / History, omitting empty rows and groups. */
+export function groupVehicleSpecs(v: VehicleSpecSource): SpecGroup[] {
+  return vehicleSpecGrid(v).flatMap(({ id, title, rows: cells }) => {
+    const filled = cells.flatMap(({ key, label, value }) =>
+      value === null ? [] : [{ key, label, value }],
+    );
+    return filled.length > 0 ? [{ id, title, rows: filled }] : [];
+  });
 }
 
 export interface FeatureGroup {

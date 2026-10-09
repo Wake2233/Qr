@@ -153,3 +153,19 @@ export function maxVehiclePriceCents({
 export function aprForTier(tier: CreditTier, table: Partial<AprByTier> = {}): number {
   return table[tier] ?? DEFAULT_APR_BY_TIER[tier];
 }
+
+/** Starting assumptions for the VDP payment estimate (the buyer can change all of them). */
+export const ESTIMATE_DEFAULTS = {
+  termMonths: 72,
+  creditTier: 'good',
+  downPaymentPct: 10,
+} as const satisfies { termMonths: number; creditTier: CreditTier; downPaymentPct: number };
+
+/** Suggested down payment: a percentage of the price, rounded down to whole $100s. */
+export function suggestedDownPaymentCents(
+  priceCents: number,
+  pct: number = ESTIMATE_DEFAULTS.downPaymentPct,
+): number {
+  assertCents('priceCents', priceCents);
+  return Math.floor((priceCents * pct) / 100 / 10_000) * 10_000;
+}
