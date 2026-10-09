@@ -283,15 +283,34 @@ export async function createPhotoUpload(
 }
 
 /** Upload without progress reporting (tests, scripts, small files). */
+/** The Blob members we need; @cp/api has no DOM lib (Blob exists in browsers, RN and Node). */
+interface BlobLike {
+  readonly size: number;
+  readonly type: string;
+  slice(start?: number, end?: number, contentType?: string): BlobLike;
+}
+
+const isBlobLike = (value: unknown): value is BlobLike =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as Partial<BlobLike>).slice === 'function' &&
+  typeof (value as Partial<BlobLike>).type === 'string';
+
 export async function uploadPhoto(
   client: AppSupabaseClient,
   target: Pick<PhotoUploadTarget, 'path' | 'token'>,
   body: ArrayBuffer | Blob,
   contentType = 'image/webp',
 ) {
+  // storage-js sends a Blob as multipart using the Blob's own type and ignores `contentType`;
+  // an untyped Blob would arrive as application/octet-stream and be rejected by the bucket.
+  const typed =
+    isBlobLike(body) && !body.type
+      ? (body.slice(0, body.size, contentType) as unknown as Blob) // slice() re-types the bytes
+      : body;
   const { error } = await client.storage
     .from(VEHICLE_IMAGES_BUCKET)
-    .uploadToSignedUrl(target.path, target.token, body, { contentType });
+    .uploadToSignedUrl(target.path, target.token, typed, { contentType });
   if (error) throw error;
 }
 

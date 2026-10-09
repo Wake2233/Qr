@@ -25,6 +25,7 @@ import { getVehicleBySlug } from './vehicles';
 // @cp/api has no DOM/Node lib types; these globals exist in the vitest (Node 24) runtime.
 declare const atob: (data: string) => string;
 declare const crypto: { randomUUID(): string };
+declare const Blob: { new (parts: ArrayBuffer[]): Blob };
 
 // 1×1 transparent PNG; the bucket checks the declared content type, not the bytes.
 const PIXEL = Uint8Array.from(
@@ -130,6 +131,13 @@ describe.skipIf(!hasTestDb)('management console (local Supabase + seed)', () => 
       fileId: fileId(),
     });
     await uploadPhoto(owner, target, PIXEL, 'image/webp');
+    // Regression: an untyped Blob takes the declared content type (not octet-stream).
+    const blobTarget = await createPhotoUpload(owner, {
+      dealerId,
+      vehicleId: created.id,
+      fileId: fileId(),
+    });
+    await uploadPhoto(owner, blobTarget, new Blob([PIXEL]), 'image/webp');
     const [image] = await addVehicleImages(owner, created.id, [
       { storage_path: target.path, width: 1, height: 1 },
     ]);
