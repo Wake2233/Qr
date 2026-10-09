@@ -44,24 +44,25 @@ export function dealerDocumentPath(dealerId: string, fileId: string, fileName: s
   return `${dealerId}/${fileId}-${safe || 'document'}`;
 }
 
-/** Uploads one supporting document (license, insurance…) and records it on the dealer. */
-export async function uploadDealerDocument(
+/** Signed upload URL for one supporting document (license, insurance…) in the private bucket. */
+export async function createDealerDocumentUpload(
   client: AppSupabaseClient,
   dealerId: string,
-  file: {
-    fileId: string;
-    name: string;
-    size: number | null;
-    body: ArrayBuffer | Blob;
-    contentType: string;
-  },
-): Promise<DealerDocument> {
-  const path = dealerDocumentPath(dealerId, file.fileId, file.name);
-  const upload = await client.storage
-    .from(DEALER_DOCS_BUCKET)
-    .upload(path, file.body, { contentType: file.contentType, upsert: false });
-  if (upload.error) throw upload.error;
+  { fileId, name }: { fileId: string; name: string },
+): Promise<{ path: string; signedUrl: string; token: string }> {
+  const path = dealerDocumentPath(dealerId, fileId, name);
+  const { data, error } = await client.storage.from(DEALER_DOCS_BUCKET).createSignedUploadUrl(path);
+  if (error) throw error;
+  return { path: data.path, signedUrl: data.signedUrl, token: data.token };
+}
 
+/** Records an uploaded document on `dealer_private.documents` (owners/managers and admins). */
+export async function recordDealerDocument(
+  client: AppSupabaseClient,
+  dealerId: string,
+  file: { path: string; name: string; size: number | null },
+): Promise<DealerDocument> {
+  if (!file.path.startsWith(`${dealerId}/`)) throw new Error('INVALID_PATH: document path');
   const { data: current, error: readError } = await client
     .from('dealer_private')
     .select('documents')
@@ -69,7 +70,7 @@ export async function uploadDealerDocument(
     .single();
   if (readError) throw readError;
   const document: DealerDocument = {
-    path,
+    path: file.path,
     name: file.name.slice(0, 200),
     size: file.size,
     uploaded_at: new Date().toISOString(),
@@ -81,6 +82,30 @@ export async function uploadDealerDocument(
     .eq('dealer_id', dealerId);
   if (error) throw error;
   return document;
+}
+
+/** Upload + record in one call (no progress reporting; tests and small files). */
+export async function uploadDealerDocument(
+  client: AppSupabaseClient,
+  dealerId: string,
+  file: {
+    fileId: string;
+    name: string;
+    size: number | null;
+    body: ArrayBuffer | Blob;
+    contentType: string;
+  },
+): Promise<DealerDocument> {
+  const target = await createDealerDocumentUpload(client, dealerId, file);
+  const upload = await client.storage
+    .from(DEALER_DOCS_BUCKET)
+    .uploadToSignedUrl(target.path, target.token, file.body, { contentType: file.contentType });
+  if (upload.error) throw upload.error;
+  return recordDealerDocument(client, dealerId, {
+    path: target.path,
+    name: file.name,
+    size: file.size,
+  });
 }
 
 /** Short-lived links for reviewing private dealer documents (members and admins only). */
@@ -175,27 +200,44 @@ export async function updateDealerProfile(
   profile: DealerProfile,
 ) {
   const { business_hours, ...fields } = profile;
-  const { error } = await client
+  const { data, error } = await client
     .from('dealers')
     .update({ ...fields, business_hours })
-    .eq('id', dealerId);
+    .eq('id', dealerId)
+    .select('id');
   if (error) throw error;
+  if (data.length === 0) throw new Error('FORBIDDEN: you cannot edit this dealer');
 }
 
-/** Uploads a new logo to dealer-assets and points the dealer at it. */
-export async function uploadDealerLogo(
+/** Signed upload URL for a new logo in the public dealer-assets bucket (owners/managers). */
+export async function createDealerLogoUpload(
   client: AppSupabaseClient,
   dealerId: string,
-  { fileId, body, contentType }: { fileId: string; body: ArrayBuffer | Blob; contentType: string },
-): Promise<string> {
-  const path = `${dealerId}/logo-${fileId}.webp`;
-  const upload = await client.storage
+  fileId: string,
+  extension: 'webp' | 'jpg' | 'png' = 'webp',
+): Promise<{ path: string; signedUrl: string }> {
+  const path = `${dealerId}/logo-${fileId}.${extension}`;
+  const { data, error } = await client.storage
     .from(DEALER_ASSETS_BUCKET)
-    .upload(path, body, { contentType, upsert: false });
-  if (upload.error) throw upload.error;
-  const { error } = await client.from('dealers').update({ logo_path: path }).eq('id', dealerId);
+    .createSignedUploadUrl(path);
   if (error) throw error;
-  return path;
+  return { path: data.path, signedUrl: data.signedUrl };
+}
+
+/** Points the dealer at an uploaded logo (column grant: owners/managers via RLS). */
+export async function setDealerLogo(
+  client: AppSupabaseClient,
+  dealerId: string,
+  path: string | null,
+) {
+  if (path !== null && !path.startsWith(`${dealerId}/`)) throw new Error('INVALID_PATH: logo path');
+  const { data, error } = await client
+    .from('dealers')
+    .update({ logo_path: path })
+    .eq('id', dealerId)
+    .select('id');
+  if (error) throw error;
+  if (data.length === 0) throw new Error('FORBIDDEN: you cannot edit this dealer');
 }
 
 export function dealerLogoUrl(client: AppSupabaseClient, path: string | null): string | null {

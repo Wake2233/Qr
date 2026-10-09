@@ -186,3 +186,15 @@ export function OptionSelect<T extends string | number>({
 /** `{ a: 'A' }` → `[{ value: 'a', label: 'A' }]` for enum label maps. */
 export const optionsOf = <T extends string>(labels: Record<T, string>) =>
   (Object.entries(labels) as [T, string][]).map(([value, label]) => ({ value, label }));
+
+/** Errors on nested record fields (e.g. business_hours.mon) → the first message. */
+export function firstErrorMessage(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  if ('message' in error && typeof error.message === 'string' && error.message)
+    return error.message;
+  for (const value of Object.values(error)) {
+    const nested = firstErrorMessage(value);
+    if (nested) return nested;
+  }
+  return undefined;
+}

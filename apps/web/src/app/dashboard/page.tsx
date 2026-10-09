@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { getSession } from '@/lib/session';
 
@@ -22,8 +23,11 @@ export default async function DashboardPage() {
           Welcome{ctx.profile.full_name ? `, ${ctx.profile.full_name}` : ''}
         </h1>
         <p className="text-muted-foreground">
-          Signed in as <span className="font-medium capitalize">{ctx.profile.role}</span>. Inventory
-          tools arrive in Phase 4.
+          Signed in as <span className="font-medium capitalize">{ctx.profile.role}</span>.{' '}
+          <Link href="/dashboard/inventory" className="underline underline-offset-4">
+            Manage inventory
+          </Link>
+          . Lead and finance KPIs arrive with the CRM.
         </p>
       </div>
 

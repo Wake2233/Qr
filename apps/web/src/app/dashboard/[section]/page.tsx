@@ -12,7 +12,17 @@ import { getSession } from '@/lib/session';
  * Placeholder for console sections built in later phases. Real routes (e.g.
  * dashboard/inventory/page.tsx) take precedence over this dynamic segment as they land.
  */
-const SECTIONS = Object.keys(consoleRoutes).filter((s) => s !== 'overview') as ConsoleSection[];
+/** Sections without a real route yet (those built so far have their own page.tsx). */
+const BUILT: ConsoleSection[] = [
+  'overview',
+  'inventory',
+  'dealer',
+  'dealers',
+  'catalog',
+  'settings',
+  'users',
+];
+const SECTIONS = (Object.keys(consoleRoutes) as ConsoleSection[]).filter((s) => !BUILT.includes(s));
 const isSection = (value: string): value is ConsoleSection =>
   (SECTIONS as string[]).includes(value);
 
@@ -54,7 +64,7 @@ async function SectionPlaceholder({ section }: { section: ConsoleSection }) {
   return (
     <ComingSoon
       title={item.label}
-      description="This part of the console is being built. Overview and sign-in work today."
+      description="This part of the console is being built. Inventory, dealers and settings work today."
       phase={consoleRoutes[section].phase}
       backHref="/dashboard"
       backLabel="Back to overview"
