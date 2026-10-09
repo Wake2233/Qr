@@ -1,4 +1,4 @@
-import { Redirect, Stack } from 'expo-router';
+import { Link, Redirect, Stack } from 'expo-router';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { consoleGate } from '@/lib/console-gate';
@@ -24,9 +24,19 @@ export default function ManageLayout() {
         <Text className="text-base text-muted-foreground">
           The management console is for approved dealers and admins.
         </Text>
+        <Link href="/sell-with-us" className="py-3 text-base font-semibold text-primary">
+          Apply as a dealer
+        </Link>
       </View>
     );
   }
 
-  return <Stack screenOptions={{ title: 'Manage' }} />;
+  return (
+    <Stack screenOptions={{ title: 'Manage' }}>
+      <Stack.Screen
+        name="inventory/scan"
+        options={{ presentation: 'fullScreenModal', title: 'Scan VIN' }}
+      />
+    </Stack>
+  );
 }

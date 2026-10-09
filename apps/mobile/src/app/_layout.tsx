@@ -64,6 +64,10 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="manage" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="sell-with-us"
+                  options={{ headerShown: true, title: 'Sell with us' }}
+                />
               </Stack>
             </View>
             <Toaster theme={scheme} position="top-center" richColors />

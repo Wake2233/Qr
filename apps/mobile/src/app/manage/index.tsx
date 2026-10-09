@@ -12,9 +12,16 @@ const statusClass: Record<string, string> = {
   suspended: 'bg-destructive/15 text-destructive',
 };
 
+/** Sections with native screens; the rest open the placeholder / "use the web console" screen. */
+const NATIVE = { inventory: '/manage/inventory', dealers: '/manage/dealers' } as const;
+
 function SectionRow({ item }: { item: ConsoleNavItem }) {
+  const href =
+    item.id in NATIVE
+      ? NATIVE[item.id as keyof typeof NATIVE]
+      : ({ pathname: '/manage/[section]', params: { section: item.id } } as const);
   return (
-    <Link href={{ pathname: '/manage/[section]', params: { section: item.id } }} asChild>
+    <Link href={href} asChild>
       <Pressable
         accessibilityRole="link"
         className="min-h-12 flex-row items-center justify-between border-b border-border px-4 py-3 active:bg-muted"

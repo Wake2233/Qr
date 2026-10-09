@@ -26,7 +26,11 @@ export default function AccountScreen() {
               <Link href="/manage" asChild>
                 <Button title="Open dealer console" />
               </Link>
-            ) : null}
+            ) : (
+              <Link href="/sell-with-us" asChild>
+                <Button title="Sell with us" variant="outline" />
+              </Link>
+            )}
             <Button title="Sign out" variant="outline" onPress={() => void signOut()} />
           </View>
         ) : (
