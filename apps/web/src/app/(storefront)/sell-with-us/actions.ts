@@ -3,7 +3,6 @@
 import { applyAsDealer, createDealerDocumentUpload, recordDealerDocument } from '@cp/api';
 import type { ActionResult } from '@cp/types';
 import { dealerApplicationSchema, uuidSchema } from '@cp/validators';
-import { refresh } from 'next/cache';
 import { z } from 'zod';
 
 import { attempt, invalidInput } from '@/lib/action-result';
@@ -19,11 +18,8 @@ export async function submitDealerApplication(
   const ctx = await getSession();
   if (!ctx) return { ok: false, error: 'Please sign in to apply.' };
   const supabase = await createClient();
-  const result = await attempt(async () => ({
-    dealerId: await applyAsDealer(supabase, parsed.data),
-  }));
-  if (result.ok) refresh();
-  return result;
+  // No refresh(): the client still uploads documents, then shows its own confirmation.
+  return attempt(async () => ({ dealerId: await applyAsDealer(supabase, parsed.data) }));
 }
 
 const documentSchema = z.object({

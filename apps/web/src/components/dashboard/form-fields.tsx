@@ -41,6 +41,7 @@ export function Field({
     <div className={cn('space-y-1.5', className)}>
       <Label htmlFor={id}>
         {label}
+        {required ? ' ' : null}
         {required ? (
           <span className="text-muted-foreground text-xs font-normal">(required to publish)</span>
         ) : null}

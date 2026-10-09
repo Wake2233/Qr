@@ -15,6 +15,7 @@
     "test": "turbo run test",
     "test:integration": "pnpm --filter @cp/api test:integration",
     "test:functions": "deno test --permit-no-files supabase/functions",
+    "test:e2e": "pnpm --filter @cp/web test:e2e",
     "functions:serve": "supabase functions serve",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
