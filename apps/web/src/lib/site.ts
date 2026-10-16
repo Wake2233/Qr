@@ -35,10 +35,12 @@ export async function getSiteInfo() {
     return { settings, house };
   } catch (error) {
     // Expected while Supabase is unreachable: one line, no stack (it repeats every few seconds).
-    log.warn('site', 'settings unavailable, using built-in defaults for a few seconds', {
+    log.warn('site', 'settings unavailable, using built-in defaults for a minute', {
       ...describeError(error),
     });
-    cacheLife('seconds');
+    // 'minutes', not 'seconds': a shorter life makes every page's metadata dynamic, which
+    // fails the build when it runs without a database (CI). It still refreshes within a minute.
+    cacheLife('minutes');
     return FALLBACK;
   }
 }
@@ -57,7 +59,7 @@ export async function getLiveInventoryCount(): Promise<number | null> {
     log.warn('site', 'live listing count unavailable (hero shows the brand instead)', {
       error: error instanceof Error ? error.message : String(error),
     });
-    cacheLife('seconds');
+    cacheLife('minutes');
     return null;
   }
 }

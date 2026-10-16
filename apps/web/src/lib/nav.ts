@@ -19,18 +19,15 @@ export const storefrontNav = [
   { href: '/contact', label: 'Contact' },
 ] as const;
 
-/** Console section → route, icon and the phase that delivers it (for placeholders). */
-export const consoleRoutes: Record<
-  ConsoleSection,
-  { href: string; icon: LucideIcon; phase: number }
-> = {
-  overview: { href: '/dashboard', icon: LayoutDashboard, phase: 3 },
-  inventory: { href: '/dashboard/inventory', icon: Car, phase: 4 },
-  leads: { href: '/dashboard/leads', icon: Inbox, phase: 6 },
-  dealer: { href: '/dashboard/dealer', icon: Store, phase: 4 },
-  dealers: { href: '/dashboard/dealers', icon: BadgeCheck, phase: 4 },
-  catalog: { href: '/dashboard/catalog', icon: BookOpen, phase: 4 },
-  settings: { href: '/dashboard/settings', icon: Settings, phase: 4 },
-  users: { href: '/dashboard/users', icon: UserCog, phase: 4 },
-  audit: { href: '/dashboard/audit', icon: ScrollText, phase: 7 },
+/** Console section → route and icon. */
+export const consoleRoutes: Record<ConsoleSection, { href: string; icon: LucideIcon }> = {
+  overview: { href: '/dashboard', icon: LayoutDashboard },
+  inventory: { href: '/dashboard/inventory', icon: Car },
+  leads: { href: '/dashboard/leads', icon: Inbox },
+  dealer: { href: '/dashboard/dealer', icon: Store },
+  dealers: { href: '/dashboard/dealers', icon: BadgeCheck },
+  catalog: { href: '/dashboard/catalog', icon: BookOpen },
+  settings: { href: '/dashboard/settings', icon: Settings },
+  users: { href: '/dashboard/users', icon: UserCog },
+  audit: { href: '/dashboard/audit', icon: ScrollText },
 };

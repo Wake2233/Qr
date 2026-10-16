@@ -27,7 +27,7 @@ const TRUST = [
 ] as const;
 
 export default async function HomePage() {
-  const [{ settings }, home] = await Promise.all([getSiteInfo(), getHomeData().catch(() => null)]);
+  const [{ settings }, home] = await Promise.all([getSiteInfo(), getHomeData()]);
   const total = home?.facets.total ?? null;
 
   return (

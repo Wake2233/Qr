@@ -150,6 +150,7 @@ test.describe('dealer onboarding', () => {
 
     // The applicant's account now has console access.
     await page.goto('/sell-with-us');
-    await expect(page.getByText('Your dealership is approved')).toBeVisible();
+    // .first(): while the page streams, Next can briefly hold a second (hidden) copy.
+    await expect(page.getByText('Your dealership is approved').first()).toBeVisible();
   });
 });

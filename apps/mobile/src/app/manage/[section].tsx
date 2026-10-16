@@ -3,7 +3,6 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
 import { Text } from '@/components/text';
-import { consolePhases } from '@/lib/console-routes';
 import { env } from '@/lib/env';
 import { useSession } from '@/providers/session-provider';
 
@@ -35,7 +34,7 @@ export default function ManageSectionScreen() {
       ) : item ? (
         <>
           <Text className="self-start overflow-hidden rounded-full bg-primary/10 px-3 py-1 font-sans-medium text-xs text-primary">
-            Arrives in Phase {consolePhases[item.id as ConsoleSection]}
+            Coming soon
           </Text>
           <Text variant="display">{item.label}</Text>
           <Text variant="muted">This part of the console is being built.</Text>

@@ -65,7 +65,6 @@ async function SectionPlaceholder({ section }: { section: ConsoleSection }) {
     <ComingSoon
       title={item.label}
       description="This part of the console is being built. Inventory, dealers and settings work today."
-      phase={consoleRoutes[section].phase}
       backHref="/dashboard"
       backLabel="Back to overview"
     />
