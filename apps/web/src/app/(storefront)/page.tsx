@@ -1,10 +1,13 @@
+import type { VehicleCard as VehicleCardData } from '@cp/api';
 import type { Catalog } from '@cp/core';
 import { ArrowRight, BadgeDollarSign, ClipboardList, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
 import { BodyTypeTiles } from '@/components/home/body-type-tiles';
 import { HeroSearch } from '@/components/home/hero-search';
+import { Spotlight } from '@/components/home/spotlight';
 import { Button } from '@/components/ui/button';
+import { VehicleCard } from '@/components/vehicle/vehicle-card';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
 import { getSiteInfo } from '@/lib/site';
 import { getHomeData, getStorefrontCatalog } from '@/lib/storefront';
@@ -70,14 +73,8 @@ export default async function HomePage() {
 
       {home ? (
         <>
+          <InStock cards={home.featured} total={home.facets.total} />
           <BodyTypeTiles counts={home.facets.body} />
-          <VehicleRail
-            title="Featured"
-            description="Hand-picked from our current stock."
-            cards={home.featured}
-            href="/inventory"
-            linkLabel="Browse all"
-          />
           <VehicleRail
             title="Price drops"
             description="Recently reduced — the new price is shown on every card."
@@ -124,6 +121,46 @@ export default async function HomePage() {
           </Button>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * The admin's pins in order (#1 is the spotlight), then every other car, newest first.
+ * Nothing listed yet: nothing to show here (the hero and the contact block still are).
+ */
+function InStock({ cards, total }: { cards: VehicleCardData[]; total: number }) {
+  const [spotlight, ...rest] = cards;
+  if (!spotlight) return null;
+  return (
+    <div className="space-y-10">
+      <Spotlight card={spotlight} />
+      {rest.length > 0 ? (
+        <section aria-labelledby="in-stock" className="space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="space-y-1">
+              <h2 id="in-stock" className="font-display text-2xl font-semibold tracking-tight">
+                In stock now
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Our picks first, then the newest arrivals.
+              </p>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/inventory">
+                Browse all {total} <ArrowRight />
+              </Link>
+            </Button>
+          </div>
+          <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {rest.map((card) => (
+              <li key={card.id}>
+                <VehicleCard card={card} className="h-full" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

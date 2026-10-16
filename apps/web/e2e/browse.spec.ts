@@ -51,6 +51,10 @@ test('filter by make + fuel → VDP → WhatsApp and Call links carry the exact 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/inventory');
   const rail = page.getByRole('complementary', { name: 'Filters' });
+  await rail
+    .getByRole('button', { name: /^Show all \d+$/ })
+    .first()
+    .click();
   await rail.getByText(target.make_name, { exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`make=${target.make_slug}`));
   await rail.getByRole('button', { name: 'Engine & drivetrain' }).click();

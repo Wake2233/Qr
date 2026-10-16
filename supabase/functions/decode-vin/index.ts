@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { createHandler } from './handler.ts';
-import type { VpicResult } from './map.ts';
+import { pickModel, type VpicResult } from './map.ts';
 
 const url = Deno.env.get('SUPABASE_URL') ?? '';
 const publicKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
@@ -61,13 +61,8 @@ Deno.serve(
         .maybeSingle();
       if (!make) return { make_id: null, model_id: null };
       if (!modelSlug) return { make_id: make.id, model_id: null };
-      const { data: model } = await admin
-        .from('models')
-        .select('id')
-        .eq('make_id', make.id)
-        .eq('slug', modelSlug)
-        .maybeSingle();
-      return { make_id: make.id, model_id: model?.id ?? null };
+      const { data: models } = await admin.from('models').select('id, slug').eq('make_id', make.id);
+      return { make_id: make.id, model_id: pickModel(modelSlug, makeSlug, models ?? []) };
     },
   }),
 );

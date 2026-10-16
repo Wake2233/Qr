@@ -99,7 +99,7 @@ export default function DiscoverScreen() {
           </View>
         ) : null}
 
-        <VehicleRail title="Featured" cards={featured.data ?? []} href="/search" />
+        <VehicleRail title="In stock now" cards={featured.data ?? []} href="/search" />
         <VehicleRail title="Price drops" subtitle="Recently reduced." cards={drops.data ?? []} />
         <VehicleRail
           title="Recently sold"

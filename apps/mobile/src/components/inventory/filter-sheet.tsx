@@ -145,12 +145,15 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
           </Text>
           <Section title="Make">
             <ChipList
-              options={withSelected(
-                (facets?.make ?? []).map((m) => ({
-                  value: m.value,
-                  label: m.label,
-                  count: m.count,
-                })),
+              options={inStockFirst(
+                withSelected(
+                  (facets?.make ?? []).map((m) => ({
+                    value: m.value,
+                    label: m.label,
+                    count: m.count,
+                  })),
+                  filters.make,
+                ),
                 filters.make,
               )}
               selected={filters.make}
@@ -161,8 +164,11 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
           {filters.make?.length ? (
             <Section title="Model">
               <ChipList
-                options={withSelected(
-                  models.map((m) => ({ value: m.value, label: m.label, count: m.count })),
+                options={inStockFirst(
+                  withSelected(
+                    models.map((m) => ({ value: m.value, label: m.label, count: m.count })),
+                    filters.model,
+                  ),
                   filters.model,
                 )}
                 selected={filters.model}
@@ -310,7 +316,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
             return (
               <Section key={category} title={featureCategoryLabels[category]}>
                 <ChipList
-                  options={options}
+                  options={inStockFirst(options, filters.feature)}
                   selected={filters.feature}
                   onToggle={(v) => toggle('feature', v)}
                   initialVisible={6}
@@ -333,6 +339,12 @@ function withSelected(
     .filter((value) => !options.some((o) => o.value === value))
     .map((value) => ({ value, label: label(value), count: 0 }));
   return [...options, ...missing];
+}
+
+/** Options with cars (or selected) first, so the first chips are the useful ones. */
+function inStockFirst(options: Option[], selected: readonly string[] = []): Option[] {
+  const useful = (o: Option) => o.count > 0 || selected.includes(o.value);
+  return [...options.filter(useful), ...options.filter((o) => !useful(o))];
 }
 
 function GroupTitle({ title }: { title: string }) {

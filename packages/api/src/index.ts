@@ -5,12 +5,16 @@ export {
   createMake,
   createModel,
   deleteCatalogEntry,
+  HOME_BOARD_LIMIT,
   listCatalog,
+  listHomeBoard,
   listUsers,
+  setHomeOrder,
   setUserRole,
   updateSiteSettings,
   type AdminUser,
   type CatalogData,
+  type HomeBoard,
   type UserListOptions,
 } from './console-admin';
 export {

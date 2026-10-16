@@ -52,6 +52,33 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+/**
+ * Catalog model for an NHTSA model name. NHTSA names often differ from the catalog's:
+ * "GLE-Class" (catalog "GLE"), "MX-5" ("MX-5 Miata"), "Silverado" ("Silverado 1500"),
+ * Mazda "3" ("Mazda3"), "RX 350" ("RX"). Tried in order: exact, without "-class",
+ * make-prefixed, catalog name starting with the NHTSA name (first alphabetically, so the
+ * 1500 wins over 2500HD), NHTSA name starting with a catalog name (the longest).
+ */
+export function pickModel(
+  decodedSlug: string,
+  makeSlug: string,
+  models: readonly { id: number; slug: string }[],
+): number | null {
+  const bySlug = new Map(models.map((m) => [m.slug, m.id]));
+  const base = decodedSlug.replace(/-class$/, '');
+  for (const candidate of [decodedSlug, base, `${makeSlug}${base}`, `${makeSlug}-${base}`]) {
+    const id = bySlug.get(candidate);
+    if (id !== undefined) return id;
+  }
+  const sorted = [...models].sort((a, b) => a.slug.localeCompare(b.slug));
+  const longer = sorted.find((m) => m.slug.startsWith(`${base}-`));
+  if (longer) return longer.id;
+  const shorter = sorted
+    .filter((m) => base.startsWith(`${m.slug}-`))
+    .sort((a, b) => b.slug.length - a.slug.length)[0];
+  return shorter?.id ?? null;
+}
+
 function bodyType(bodyClass: string | null): string | null {
   if (!bodyClass) return null;
   const b = bodyClass.toLowerCase();

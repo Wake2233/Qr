@@ -564,7 +564,7 @@ export function VehicleEditor({
               name="is_featured"
               render={({ field }) => (
                 <SwitchRow
-                  label="Featured on the home page"
+                  label="Pinned to the home page"
                   value={Boolean(field.value)}
                   onChange={field.onChange}
                 />

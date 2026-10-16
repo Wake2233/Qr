@@ -42,6 +42,9 @@ export async function getInventoryFacets(filters: InventoryFilters) {
   return getFacets(createPublicClient(), countFilters);
 }
 
+/** Spotlight + the "In stock now" grid (pinned first, then newest). */
+const HOME_CARDS = 13;
+
 /** Home rails and facet counts, or null while Supabase is unreachable (the hero still renders). */
 export async function getHomeData() {
   'use cache';
@@ -50,7 +53,7 @@ export async function getHomeData() {
   const client = createPublicClient();
   try {
     const [featured, priceDrops, recentlySold, facets] = await Promise.all([
-      listFeaturedVehicles(client, 10),
+      listFeaturedVehicles(client, HOME_CARDS),
       listPriceDrops(client, 10),
       listRecentlySold(client, 10),
       getFacets(client),

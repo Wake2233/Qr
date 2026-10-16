@@ -87,6 +87,16 @@ describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
     expect(facets.color).toHaveLength(14);
   });
 
+  it('home order: pinned cars by position, then the newest', async () => {
+    const cards = await listFeaturedVehicles(client, 40);
+    const firstUnpinned = cards.findIndex((c) => !c.is_featured);
+    const pinned = firstUnpinned === -1 ? cards : cards.slice(0, firstUnpinned);
+    expect(pinned.length).toBeGreaterThan(0);
+    expect(cards.slice(pinned.length).every((c) => !c.is_featured)).toBe(true);
+    const published = cards.slice(pinned.length).map((c) => c.published_at ?? '');
+    expect(published).toEqual([...published].sort().reverse());
+  });
+
   it('supports full-text search', async () => {
     const all = await listVehicles(client);
     const model = all.items[0]?.model_name ?? '';

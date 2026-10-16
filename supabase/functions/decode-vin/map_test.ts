@@ -1,7 +1,7 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 
 import { BMW_X5_2021, TESLA_MODEL_3, TOYOTA_PRIUS_PRIME, UNDECODABLE } from './fixtures.ts';
-import { isUndecodable, mapVpicResult, slugify, titleCaseMake } from './map.ts';
+import { isUndecodable, mapVpicResult, pickModel, slugify, titleCaseMake } from './map.ts';
 
 Deno.test('maps a clean BMW decode onto vehicle columns', () => {
   assertEquals(mapVpicResult(BMW_X5_2021), {
@@ -88,4 +88,29 @@ Deno.test('title-cases makes but keeps acronyms', () => {
   assertEquals(titleCaseMake('GMC'), 'GMC');
   assertEquals(slugify('Mercedes-Benz'), 'mercedes-benz');
   assertEquals(slugify('3 Series'), '3-series');
+});
+
+const catalog = (...slugs: string[]) => slugs.map((slug, i) => ({ id: i + 1, slug }));
+
+Deno.test('pickModel: exact names win', () => {
+  assertEquals(pickModel('x5', 'bmw', catalog('x3', 'x5', 'x5-m')), 2);
+});
+
+Deno.test('pickModel: matches NHTSA names that differ from the catalog', () => {
+  assertEquals(pickModel('gle-class', 'mercedes-benz', catalog('gle', 'gle-coupe')), 1);
+  assertEquals(pickModel('mx-5', 'mazda', catalog('cx-5', 'mx-5-miata')), 2);
+  assertEquals(pickModel('3', 'mazda', catalog('cx-30', 'mazda3', 'mazda3-hatchback')), 2);
+  assertEquals(
+    pickModel(
+      'silverado',
+      'chevrolet',
+      catalog('silverado-ev', 'silverado-2500hd', 'silverado-1500'),
+    ),
+    3,
+  );
+  assertEquals(pickModel('rx-350', 'lexus', catalog('nx', 'rx', 'rz')), 2);
+});
+
+Deno.test('pickModel: no guess when nothing is close', () => {
+  assertEquals(pickModel('supra', 'toyota', catalog('camry', 'corolla')), null);
 });

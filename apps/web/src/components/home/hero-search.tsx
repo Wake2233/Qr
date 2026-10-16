@@ -75,7 +75,11 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
       <Select value={model} onValueChange={setModel} disabled={make === ANY}>
         <SelectTrigger aria-label="Model" className="h-12 w-full border-0 shadow-none">
           <SelectValue>
-            {model === ANY ? 'Any model' : labelOf(makeModels, model, 'Any model')}
+            {make === ANY
+              ? 'Pick a make first'
+              : model === ANY
+                ? 'Any model'
+                : labelOf(makeModels, model, 'Any model')}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>

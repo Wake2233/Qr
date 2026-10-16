@@ -569,7 +569,7 @@ export function VehicleEditor({ vehicle, catalog, dealers, isAdmin, photos }: Ve
                     />
                   )}
                 />
-                <Label htmlFor="is_featured">Featured on the home page</Label>
+                <Label htmlFor="is_featured">Pinned to the home page</Label>
               </div>
             ) : null}
           </div>

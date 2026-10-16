@@ -82,6 +82,12 @@ function enumOptions(
   return withSelected(options, selected, (v) => labels[v] ?? v);
 }
 
+/** Options with cars (or ticked) first, so the first rows are the useful ones; order kept otherwise. */
+function inStockFirst(options: Option[], selected: readonly string[] = []): Option[] {
+  const useful = (o: Option) => o.count > 0 || selected.includes(o.value);
+  return [...options.filter(useful), ...options.filter((o) => !useful(o))];
+}
+
 const listCount = (filters: InventoryFilters, keys: FilterListKey[]) =>
   keys.reduce((n, key) => n + (filters[key]?.length ?? 0), 0);
 const setCount = (filters: InventoryFilters, keys: (keyof InventoryFilters)[]) =>
@@ -133,7 +139,7 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
       >
         <Section title="Make">
           <Checklist
-            options={makes}
+            options={inStockFirst(makes, filters.make)}
             selected={filters.make}
             onToggle={(v) => toggle('make', v)}
             initialVisible={8}
@@ -143,7 +149,7 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
         {filters.make?.length ? (
           <Section title="Model">
             <Checklist
-              options={models}
+              options={inStockFirst(models, filters.model)}
               selected={filters.model}
               onToggle={(v) => toggle('model', v)}
               initialVisible={8}
@@ -352,7 +358,7 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
           return (
             <Section key={category} title={featureCategoryLabels[category]} quiet>
               <Checklist
-                options={options}
+                options={inStockFirst(options, filters.feature)}
                 selected={filters.feature}
                 onToggle={(v) => toggle('feature', v)}
                 initialVisible={6}

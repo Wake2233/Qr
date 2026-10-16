@@ -83,7 +83,7 @@ export function InventoryTable({ rows, isAdmin, showDealer }: InventoryTableProp
           <span className="text-sm font-medium">{visibleSelected.length} selected</span>
           <div className="ml-auto flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={pending} onClick={() => bulk('feature')}>
-              <Star /> Feature
+              <Star /> Pin to home
             </Button>
             <Button
               size="sm"
@@ -91,7 +91,7 @@ export function InventoryTable({ rows, isAdmin, showDealer }: InventoryTableProp
               disabled={pending}
               onClick={() => bulk('unfeature')}
             >
-              <StarOff /> Unfeature
+              <StarOff /> Unpin
             </Button>
             <Button size="sm" variant="outline" disabled={pending} onClick={() => bulk('archive')}>
               <Archive /> Archive
