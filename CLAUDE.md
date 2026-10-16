@@ -58,6 +58,7 @@ pnpm functions:serve                   # serve Edge Functions locally (decode-vi
 pnpm db:remote:link                    # link CLI to the hosted project (reads .env.remote.local)
 pnpm db:remote:push                    # push migrations to hosted — ASK THE USER FIRST
 pnpm db:remote:seed                    # load seeds/reference.sql into hosted (idempotent; needs pnpm db:start) — ASK FIRST
+pnpm functions:remote:deploy           # deploy every Edge Function to hosted (reads .env.remote.local) — ASK FIRST
 ```
 
 Local test accounts (after `pnpm db:seed`): `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending dealer), `buyer@` — all `@test.local`. Sign in with an email code; read it in Mailpit at http://127.0.0.1:54324. Hosted credentials live in `.env.remote.local` (never `.env.local`: the Supabase CLI auto-loads that and would point local commands at the hosted password).
