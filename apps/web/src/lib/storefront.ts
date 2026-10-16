@@ -17,6 +17,7 @@ import type { InventoryFilters } from '@cp/core';
 import { cacheLife, cacheTag } from 'next/cache';
 
 import { cacheTags } from '@/lib/cache-tags';
+import { describeError, log } from '@/lib/log';
 import { createPublicClient } from '@/lib/supabase/public';
 
 /*
@@ -41,18 +42,25 @@ export async function getInventoryFacets(filters: InventoryFilters) {
 }
 
 /** Home page data in one cached call (rails + body-type counts). */
+/** Home rails and facet counts, or null while Supabase is unreachable (the hero still renders). */
 export async function getHomeData() {
   'use cache';
   cacheTag(cacheTags.vehicles);
   cacheLife('minutes');
   const client = createPublicClient();
-  const [featured, priceDrops, recentlySold, facets] = await Promise.all([
-    listFeaturedVehicles(client, 10),
-    listPriceDrops(client, 10),
-    listRecentlySold(client, 10),
-    getFacets(client),
-  ]);
-  return { featured, priceDrops, recentlySold, facets };
+  try {
+    const [featured, priceDrops, recentlySold, facets] = await Promise.all([
+      listFeaturedVehicles(client, 10),
+      listPriceDrops(client, 10),
+      listRecentlySold(client, 10),
+      getFacets(client),
+    ]);
+    return { featured, priceDrops, recentlySold, facets };
+  } catch (error) {
+    // Caught here, not by the caller: errors thrown out of a cached function fail prerendering.
+    log.warn('home', 'listings unavailable, showing the hero only', { ...describeError(error) });
+    return null;
+  }
 }
 
 export async function getVehicle(slug: string) {

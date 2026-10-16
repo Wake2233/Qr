@@ -32,6 +32,8 @@ import { cn } from '@/lib/utils';
 const vehicleUrl = (slug: string) => new URL(`/inventory/${slug}`, env.NEXT_PUBLIC_SITE_URL).href;
 
 const PREBUILT_LIMIT = 500;
+/** Placeholder param for a build without a database; real slugs always end in an id. */
+const NO_LISTINGS = 'unavailable';
 
 /**
  * Prebuilds the newest live listings so their pages (and metadata, in <head>) are static.
@@ -45,14 +47,14 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
     log.error('vdp', 'listings unavailable at build time: prebuilding none', {}, error);
   }
   // Cache Components needs at least one param; a build without a database prebuilds a 404.
-  return [{ slug: 'unavailable' }];
+  return [{ slug: NO_LISTINGS }];
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<'/inventory/[slug]'>): Promise<Metadata> {
   const { slug } = await params;
-  const vehicle = await getVehicle(slug);
+  const vehicle = slug === NO_LISTINGS ? null : await getVehicle(slug);
   if (!vehicle) return { title: 'Vehicle not found', robots: { index: false } };
   const price = vehicle.price_cents === null ? null : formatPrice(vehicle.price_cents);
   const facts = [
@@ -82,6 +84,7 @@ export default function VehiclePage({ params }: PageProps<'/inventory/[slug]'>) 
 }
 
 async function VehicleDetailView({ slug }: { slug: string }) {
+  if (slug === NO_LISTINGS) notFound();
   const [vehicle, { settings }] = await Promise.all([getVehicle(slug), getSiteInfo()]);
   if (!vehicle) notFound();
 
