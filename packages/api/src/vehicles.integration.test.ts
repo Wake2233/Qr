@@ -59,6 +59,34 @@ describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
     expect(page2.items.map((c) => c.id)).not.toContain(page1.items[0]?.id);
   });
 
+  it('condition, history, color and engine filters agree with the facet counts', async () => {
+    const cases = [
+      { damage: ['none' as const] },
+      { driveStatus: ['runs_and_drives' as const] },
+      { history: ['clean_history' as const, 'one_owner' as const] },
+      { color: ['white' as const] },
+      { engineMinL: 2, engineMaxL: 3.5 },
+      { q: 'chevy' },
+    ];
+    for (const filters of cases) {
+      const [page, facets] = await Promise.all([
+        listVehicles(client, filters),
+        getFacets(client, filters),
+      ]);
+      expect(page.total, JSON.stringify(filters)).toBe(facets.total);
+      expect(page.total, JSON.stringify(filters)).toBeGreaterThan(0);
+    }
+  });
+
+  it('lists every make and enum option, even with zero matches', async () => {
+    const facets = await getFacets(client, { make: ['tesla'], damage: ['severe'] });
+    expect(facets.total).toBe(0);
+    expect(facets.make.length).toBeGreaterThanOrEqual(30);
+    expect(facets.damage.map((d) => d.value)).toEqual(['none', 'minor', 'moderate', 'severe']);
+    expect(facets.model.filter((m) => m.make === 'tesla').length).toBeGreaterThanOrEqual(5);
+    expect(facets.color).toHaveLength(14);
+  });
+
   it('supports full-text search', async () => {
     const all = await listVehicles(client);
     const model = all.items[0]?.model_name ?? '';

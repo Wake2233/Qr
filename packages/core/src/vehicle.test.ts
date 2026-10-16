@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  conditionBadges,
   groupFeatures,
   groupVehicleSpecs,
   priceDropCents,
@@ -158,7 +159,11 @@ describe('groupFeatures', () => {
         { name: 'Apple CarPlay', category: 'technology' },
       ]),
     ).toEqual([
-      { category: 'safety', title: 'Safety', features: ['Blind spot monitor', 'Lane keep assist'] },
+      {
+        category: 'safety',
+        title: 'Safety & driver assist',
+        features: ['Blind spot monitor', 'Lane keep assist'],
+      },
       { category: 'technology', title: 'Technology', features: ['Apple CarPlay'] },
       { category: 'exterior', title: 'Exterior', features: ['Sunroof'] },
     ]);
@@ -178,5 +183,65 @@ describe('vehicleImageAlt', () => {
   it('uses the view or a numbered fallback', () => {
     expect(vehicleImageAlt('2021 BMW X5', 'interior', 2)).toBe('2021 BMW X5 – interior');
     expect(vehicleImageAlt('2021 BMW X5', null, 2)).toBe('2021 BMW X5 – photo 3');
+  });
+});
+
+describe('condition and history', () => {
+  it('adds damage, run & drive and service records to the History group', () => {
+    const history = groupVehicleSpecs({
+      ...x5,
+      damage: 'minor',
+      damage_area: 'hail',
+      drive_status: 'runs_and_drives',
+      service_records: true,
+    }).find((g) => g.id === 'history');
+    expect(history?.rows.map((r) => [r.label, r.value])).toEqual(
+      expect.arrayContaining([
+        ['Damage', 'Minor damage'],
+        ['Primary damage', 'Hail'],
+        ['Run & Drive', 'Run & Drive'],
+        ['Service records', 'Available'],
+      ]),
+    );
+  });
+
+  it('hides a primary damage when there is no damage', () => {
+    const history = groupVehicleSpecs({ ...x5, damage: 'none', damage_area: 'front' }).find(
+      (g) => g.id === 'history',
+    );
+    expect(history?.rows.some((r) => r.key === 'damage_area')).toBe(false);
+  });
+
+  it('builds trust badges in a fixed order', () => {
+    expect(
+      conditionBadges({
+        drive_status: 'runs_and_drives',
+        damage: 'none',
+        title_status: 'clean',
+        owners_count: 1,
+        accident_free: true,
+      }).map((b) => `${b.label}:${b.tone}`),
+    ).toEqual([
+      'Run & Drive:positive',
+      'No damage:positive',
+      'Clean title:positive',
+      '1 owner:positive',
+      'No accidents:positive',
+    ]);
+  });
+
+  it('flags what a buyer should know and skips unknowns', () => {
+    expect(
+      conditionBadges({
+        drive_status: 'does_not_start',
+        damage: 'severe',
+        title_status: 'unknown',
+        owners_count: 3,
+        accident_free: null,
+      }),
+    ).toEqual([
+      { key: 'drive_status', label: 'Doesn’t start', tone: 'caution' },
+      { key: 'damage', label: 'Severe damage', tone: 'caution' },
+    ]);
   });
 });

@@ -7,7 +7,13 @@ import { Suspense } from 'react';
 import { InventoryBrowser } from '@/components/inventory/inventory-browser';
 import { VehicleCardSkeleton } from '@/components/vehicle/vehicle-card';
 import { facetFiltersOf, listFiltersOf } from '@/lib/inventory/filter-scopes';
-import { getDealerName, getInventoryFacets, getInventoryPage } from '@/lib/storefront';
+import { getSiteInfo } from '@/lib/site';
+import {
+  getDealerName,
+  getInventoryFacets,
+  getInventoryPage,
+  getStorefrontCatalog,
+} from '@/lib/storefront';
 
 export const metadata: Metadata = {
   title: 'Inventory',
@@ -42,10 +48,12 @@ async function InventoryResults({
   const filters = parseInventoryFilters(await searchParams);
   const listFilters = listFiltersOf(filters);
   const facetFilters = facetFiltersOf(filters);
-  const [page, facets, dealerName] = await Promise.all([
+  const [page, facets, dealerName, catalog, { settings }] = await Promise.all([
     getInventoryPage(listFilters),
     getInventoryFacets(facetFilters),
     filters.dealer ? getDealerName(filters.dealer) : null,
+    getStorefrontCatalog(),
+    getSiteInfo(),
   ]);
 
   const queryClient = new QueryClient();
@@ -59,6 +67,11 @@ async function InventoryResults({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <InventoryBrowser
         dealerLabels={filters.dealer && dealerName ? { [filters.dealer]: dealerName } : undefined}
+        catalog={catalog}
+        contact={{
+          whatsappE164: settings.default_whatsapp_e164,
+          phoneE164: settings.default_phone_e164,
+        }}
       />
     </HydrationBoundary>
   );

@@ -3,15 +3,20 @@
 import { useFacets, useInfiniteVehicles, type InventoryFacets } from '@cp/api';
 import {
   activeFilterChips,
+  buildTelUrl,
+  buildWhatsAppUrl,
   clearFilters,
   countActiveFilters,
   SORT_OPTIONS,
   sortLabels,
+  suggestCatalog,
+  type Catalog,
+  type CatalogSuggestion,
   type InventoryFilters,
   type InventorySort,
 } from '@cp/core';
-import { Loader2, Search, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2, MessageCircle, Phone, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from '@/components/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -37,13 +42,22 @@ import { VehicleCard, VehicleCardSkeleton } from '@/components/vehicle/vehicle-c
 import { facetFiltersOf, listFiltersOf } from '@/lib/inventory/filter-scopes';
 import { useInventoryFilters } from '@/lib/inventory/use-inventory-filters';
 import { useMediaQuery } from '@/lib/use-media-query';
+import { cn } from '@/lib/utils';
 
 import { FilterPanel } from './filter-panel';
 
 const SEARCH_DEBOUNCE_MS = 350;
 
+interface InventoryBrowserProps {
+  dealerLabels?: Record<string, string>;
+  /** makes + models for search suggestions (null while Supabase is unreachable) */
+  catalog?: Catalog | null;
+  /** house WhatsApp/phone for the "new arrivals" block when nothing is listed */
+  contact?: { whatsappE164: string | null; phoneE164: string | null };
+}
+
 /** Inventory search: URL-synced filters, live facet counts and an infinite grid. */
-export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<string, string> }) {
+export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBrowserProps) {
   const { supabase } = useAuth();
   const { filters, setFilters } = useInventoryFilters();
   const listFilters = useMemo(() => listFiltersOf(filters), [filters]);
@@ -102,6 +116,15 @@ export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<strin
         <h2 className="sr-only">Results</h2>
         <div className="flex flex-wrap items-center gap-3">
           <SearchBox
+            catalog={catalog ?? null}
+            onPick={(pick) => {
+              const { q: _q, make: _make, model: _model, ...rest } = listFilters;
+              void setFilters({
+                ...rest,
+                make: [pick.make],
+                ...(pick.model ? { model: [pick.model] } : {}),
+              });
+            }}
             value={filters.q ?? ''}
             // The first keystroke adds a history entry; refinements of that search replace it.
             onChange={(q) =>
@@ -188,6 +211,8 @@ export function InventoryBrowser({ dealerLabels }: { dealerLabels?: Record<strin
             body="Check your connection and try again."
             action={<Button onClick={() => void vehicles.refetch()}>Try again</Button>}
           />
+        ) : cards.length === 0 && activeCount === 0 ? (
+          <NewArrivals contact={contact} />
         ) : cards.length === 0 ? (
           <EmptyState
             title="No vehicles match these filters"
@@ -287,9 +312,73 @@ function EmptyState({
   );
 }
 
-/** Debounced text search; the URL updates with `replace` so typing doesn't flood history. */
-function SearchBox({ value, onChange }: { value: string; onChange: (q: string) => void }) {
+/** Shown when nothing is listed at all: no dead end, a direct line to the team instead. */
+function NewArrivals({ contact }: { contact: InventoryBrowserProps['contact'] }) {
+  const text = 'Hi! I’m looking for a car. Can you help me find one?';
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed px-6 py-16 text-center">
+      <h2 className="font-display text-2xl font-semibold">New arrivals are on the way</h2>
+      <p className="text-muted-foreground max-w-md">
+        Tell us the make, model and budget you have in mind, and we’ll let you know as soon as a
+        match comes in.
+      </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {contact?.whatsappE164 ? (
+          <Button
+            asChild
+            size="lg"
+            className="bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
+          >
+            <a
+              href={buildWhatsAppUrl(contact.whatsappE164, text)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle /> WhatsApp us
+            </a>
+          </Button>
+        ) : null}
+        {contact?.phoneE164 ? (
+          <Button asChild size="lg" variant="outline">
+            <a href={buildTelUrl(contact.phoneE164)}>
+              <Phone /> Call us
+            </a>
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Debounced text search; the URL updates with `replace` so typing doesn't flood history.
+ * Suggests catalog makes/models while typing; picking one sets the Make/Model filters.
+ */
+function SearchBox({
+  value,
+  onChange,
+  catalog,
+  onPick,
+}: {
+  value: string;
+  onChange: (q: string) => void;
+  catalog: Catalog | null;
+  onPick: (pick: CatalogSuggestion) => void;
+}) {
   const [draft, setDraft] = useState(value);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const listId = useId();
+  const suggestions = useMemo(
+    () => (catalog && open ? suggestCatalog(draft, catalog, 6) : []),
+    [catalog, draft, open],
+  );
+  const showList = suggestions.length > 0;
+  const pick = (suggestion: CatalogSuggestion) => {
+    setOpen(false);
+    setDraft('');
+    onPick(suggestion);
+  };
   const [synced, setSynced] = useState(value);
   // The URL changed elsewhere (chip removed, back button): adopt it.
   if (value !== synced) {
@@ -313,6 +402,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (q: string) =
       className="relative min-w-0 flex-1 basis-64"
       onSubmit={(event) => {
         event.preventDefault();
+        setOpen(false);
         onChange(draft.trim());
       }}
     >
@@ -323,12 +413,71 @@ function SearchBox({ value, onChange }: { value: string; onChange: (q: string) =
       <Input
         type="search"
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setActive(0);
+          setOpen(true);
+        }}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (!showList) return;
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const step = event.key === 'ArrowDown' ? 1 : -1;
+            setActive((i) => (i + step + suggestions.length) % suggestions.length);
+          } else if (event.key === 'Enter' && active >= 0) {
+            const choice = suggestions[active];
+            if (choice) {
+              event.preventDefault();
+              pick(choice);
+            }
+          } else if (event.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
         placeholder="Search make, model, trim…"
         aria-label="Search inventory"
+        role="combobox"
+        aria-expanded={showList}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={showList ? `${listId}-${active}` : undefined}
         className="h-10 pl-9"
         enterKeyHint="search"
+        autoComplete="off"
       />
+      {showList ? (
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label="Suggestions"
+          className="bg-popover text-popover-foreground absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-xl border p-1 shadow-lg"
+        >
+          {suggestions.map((suggestion, index) => (
+            <li
+              key={`${suggestion.make}/${suggestion.model ?? ''}`}
+              id={`${listId}-${index}`}
+              role="option"
+              aria-selected={index === active}
+              // Pick on mousedown so the input's blur doesn't close the list first.
+              onMouseDown={(event) => {
+                event.preventDefault();
+                pick(suggestion);
+              }}
+              onMouseEnter={() => setActive(index)}
+              className={cn(
+                'flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-3 text-sm',
+                index === active && 'bg-muted',
+              )}
+            >
+              <span className="truncate">{suggestion.label}</span>
+              <span className="text-muted-foreground shrink-0 text-xs">
+                {suggestion.kind === 'make' ? 'Make' : 'Model'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </form>
   );
 }

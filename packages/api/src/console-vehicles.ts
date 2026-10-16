@@ -105,7 +105,8 @@ const EDITOR_COLUMNS = `
   stock_number, vin, body_type, mileage, price_cents, msrp_cents, exterior_color,
   interior_color, fuel_type, drivetrain, transmission, engine, cylinders, displacement_l,
   horsepower, torque_lbft, mpg_city, mpg_highway, ev_range_mi, doors, seats, owners_count,
-  accident_free, title_status, description, specs, published_at, sold_at, created_at, updated_at,
+  accident_free, title_status, damage, damage_area, drive_status, service_records,
+  description, specs, published_at, sold_at, created_at, updated_at,
   make:makes(id, name),
   model:models(id, name),
   dealer:dealers(id, display_name, slug, status, is_house),
@@ -141,7 +142,8 @@ export type ConsoleVehicleDetail = NonNullable<Awaited<ReturnType<typeof getCons
 export type ConsoleVehicleImage = ConsoleVehicleDetail['images'][number];
 
 function toRow({ feature_ids: _features, ...fields }: VehicleUpsert) {
-  return fields;
+  // "No damage" has no primary damage; drop a stale one left from an earlier edit.
+  return fields.damage === 'none' ? { ...fields, damage_area: null } : fields;
 }
 
 /** Creates a draft listing (features included). Publishing is a separate status change. */

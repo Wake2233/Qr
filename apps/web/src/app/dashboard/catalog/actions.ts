@@ -3,11 +3,11 @@
 import { createFeature, createMake, createModel, deleteCatalogEntry } from '@cp/api';
 import type { ActionResult } from '@cp/types';
 import { featureSchema, makeSchema, modelSchema } from '@cp/validators';
-import { refresh } from 'next/cache';
 import { z } from 'zod';
 
 import { attempt, invalidInput } from '@/lib/action-result';
 import { requireAdmin } from '@/lib/console';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 const entrySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('make'), values: makeSchema }),
@@ -32,7 +32,7 @@ export async function addCatalogEntry(input: unknown): Promise<ActionResult<null
     else await createFeature(supabase, entry.values);
     return null;
   });
-  if (result.ok) refresh();
+  if (result.ok) revalidateCatalog();
   return result;
 }
 
@@ -46,6 +46,6 @@ export async function removeCatalogEntry(input: unknown): Promise<ActionResult<n
     await deleteCatalogEntry(supabase, parsed.data.table, parsed.data.id);
     return null;
   });
-  if (result.ok) refresh();
+  if (result.ok) revalidateCatalog();
   return result;
 }

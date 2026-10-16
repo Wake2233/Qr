@@ -2,16 +2,26 @@ import type { InventoryFacets } from '@cp/api';
 import {
   bodyTypeLabels,
   clearFilters,
+  colorFamilyLabels,
   conditionLabels,
   countActiveFilters,
+  damageAreaLabels,
+  damageLevelLabels,
+  driveStatusLabels,
   drivetrainLabels,
+  ENGINE_STEPS_L,
+  FEATURE_CATEGORY_ORDER,
+  featureCategoryLabels,
   formatMileage,
   formatPrice,
   fuelTypeLabels,
+  historyFlagLabels,
   MILEAGE_STEPS,
   PRICE_STEPS_CENTS,
+  titleStatusLabels,
   toggleFilterValue,
   transmissionLabels,
+  type FilterListKey,
   type InventoryFilters,
 } from '@cp/core';
 import {
@@ -30,17 +40,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { Text } from '@/components/text';
-
-type ListKey =
-  | 'make'
-  | 'model'
-  | 'body'
-  | 'fuel'
-  | 'drivetrain'
-  | 'transmission'
-  | 'condition'
-  | 'color'
-  | 'feature';
 
 interface Option {
   value: string;
@@ -61,7 +60,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   { filters, facets, onChange },
   ref,
 ) {
-  const toggle = (key: ListKey, value: string) =>
+  const toggle = (key: FilterListKey, value: string) =>
     onChange(toggleFilterValue(filters, key, value as never));
   const set = (patch: Partial<InventoryFilters>) => {
     const { page: _page, ...rest } = filters;
@@ -124,7 +123,9 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   const models = (facets?.model ?? []).filter(
     (m) => !filters.make?.length || filters.make.includes(m.make),
   );
-  const years = rangeOf(facets?.year.min ?? null, facets?.year.max ?? null);
+  // Before anything is listed the range is unknown: offer the last 25 model years.
+  const thisYear = new Date().getFullYear();
+  const years = rangeOf(facets?.year.min ?? thisYear - 25, facets?.year.max ?? thisYear + 1);
 
   return (
     <BottomSheetModal
@@ -210,6 +211,22 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               onToggle={(v) => toggle('body', v)}
             />
           </Section>
+          <Section title="Condition">
+            <ChipList
+              options={enumOptions(facets?.condition, conditionLabels, filters.condition)}
+              selected={filters.condition}
+              onToggle={(v) => toggle('condition', v)}
+            />
+          </Section>
+          <GroupTitle title="Engine & drivetrain" />
+          <Section title="Engine size (or larger)">
+            <StepChips
+              steps={ENGINE_STEPS_L}
+              value={filters.engineMinL}
+              label={(l) => `${l.toFixed(1)} L+`}
+              onChange={(engineMinL) => set({ engineMinL })}
+            />
+          </Section>
           <Section title="Fuel type">
             <ChipList
               options={enumOptions(facets?.fuel, fuelTypeLabels, filters.fuel)}
@@ -231,16 +248,47 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               onToggle={(v) => toggle('transmission', v)}
             />
           </Section>
-          <Section title="Condition">
+          <GroupTitle title="Condition & history" />
+          <Section title="Run & Drive">
             <ChipList
-              options={enumOptions(facets?.condition, conditionLabels, filters.condition)}
-              selected={filters.condition}
-              onToggle={(v) => toggle('condition', v)}
+              options={enumOptions(facets?.drive_status, driveStatusLabels, filters.driveStatus)}
+              selected={filters.driveStatus}
+              onToggle={(v) => toggle('driveStatus', v)}
             />
           </Section>
+          <Section title="Damage">
+            <ChipList
+              options={enumOptions(facets?.damage, damageLevelLabels, filters.damage)}
+              selected={filters.damage}
+              onToggle={(v) => toggle('damage', v)}
+            />
+          </Section>
+          <Section title="Primary damage">
+            <ChipList
+              options={enumOptions(facets?.damage_area, damageAreaLabels, filters.damageArea)}
+              selected={filters.damageArea}
+              onToggle={(v) => toggle('damageArea', v)}
+              initialVisible={6}
+            />
+          </Section>
+          <Section title="Title">
+            <ChipList
+              options={enumOptions(facets?.title, titleStatusLabels, filters.title)}
+              selected={filters.title}
+              onToggle={(v) => toggle('title', v)}
+            />
+          </Section>
+          <Section title="History">
+            <ChipList
+              options={enumOptions(facets?.history, historyFlagLabels, filters.history)}
+              selected={filters.history}
+              onToggle={(v) => toggle('history', v)}
+            />
+          </Section>
+          <GroupTitle title="Exterior & interior" />
           <Section title="Exterior color">
             <ChipList
-              options={enumOptions(facets?.color, {}, filters.color)}
+              options={enumOptions(facets?.color, colorFamilyLabels, filters.color)}
               selected={filters.color}
               onToggle={(v) => toggle('color', v)}
             />
@@ -253,21 +301,23 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               onChange={(seatsMin) => set({ seatsMin })}
             />
           </Section>
-          <Section title="Features">
-            <ChipList
-              options={withSelected(
-                (facets?.feature ?? []).map((f) => ({
-                  value: f.value,
-                  label: f.label,
-                  count: f.count,
-                })),
-                filters.feature,
-              )}
-              selected={filters.feature}
-              onToggle={(v) => toggle('feature', v)}
-              initialVisible={10}
-            />
-          </Section>
+          <GroupTitle title="Features" />
+          {FEATURE_CATEGORY_ORDER.map((category) => {
+            const options = (facets?.feature ?? [])
+              .filter((f) => f.category === category)
+              .map((f) => ({ value: f.value, label: f.label, count: f.count }));
+            if (options.length === 0) return null;
+            return (
+              <Section key={category} title={featureCategoryLabels[category]}>
+                <ChipList
+                  options={options}
+                  selected={filters.feature}
+                  onToggle={(v) => toggle('feature', v)}
+                  initialVisible={6}
+                />
+              </Section>
+            );
+          })}
         </View>
       </BottomSheetScrollView>
     </BottomSheetModal>
@@ -285,8 +335,18 @@ function withSelected(
   return [...options, ...missing];
 }
 
-function rangeOf(min: number | null, max: number | null): number[] {
-  if (min === null || max === null || max < min) return [];
+function GroupTitle({ title }: { title: string }) {
+  return (
+    <View className="border-t border-border pt-5">
+      <Text variant="title" className="text-lg" accessibilityRole="header">
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+function rangeOf(min: number, max: number): number[] {
+  if (max < min) return [];
   return Array.from({ length: max - min + 1 }, (_, i) => max - i);
 }
 
@@ -314,7 +374,7 @@ function ChipList({
 }) {
   const [expanded, setExpanded] = useState(false);
   if (options.length === 0) {
-    return <Text variant="caption">Nothing matches the other filters.</Text>;
+    return <Text variant="caption">Nothing to choose from yet.</Text>;
   }
   const visible = expanded ? options : options.slice(0, initialVisible);
   return (

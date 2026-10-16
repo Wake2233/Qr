@@ -71,17 +71,17 @@ select is(
   'anon: total counts live listings only (no drafts)'
 );
 select is(
-  public.get_inventory_facets('{"dealer":"rm-dealer-a"}') -> 'body',
+  jsonb_path_query_array(public.get_inventory_facets('{"dealer":"rm-dealer-a"}') -> 'body', '$[*] ? (@.count > 0)'),
   '[{"value":"sedan","count":2},{"value":"suv","count":1}]'::jsonb,
   'body facet counts'
 );
 select is(
-  public.get_inventory_facets('{"dealer":"rm-dealer-a","body":["suv"]}') -> 'body',
+  jsonb_path_query_array(public.get_inventory_facets('{"dealer":"rm-dealer-a","body":["suv"]}') -> 'body', '$[*] ? (@.count > 0)'),
   '[{"value":"sedan","count":2},{"value":"suv","count":1}]'::jsonb,
   'a facet ignores its own filter'
 );
 select is(
-  public.get_inventory_facets('{"dealer":"rm-dealer-a","body":["suv"]}') -> 'fuel',
+  jsonb_path_query_array(public.get_inventory_facets('{"dealer":"rm-dealer-a","body":["suv"]}') -> 'fuel', '$[*] ? (@.count > 0)'),
   '[{"value":"hybrid","count":1}]'::jsonb,
   'other facets apply the selected filter'
 );

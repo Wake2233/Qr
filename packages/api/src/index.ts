@@ -1,4 +1,4 @@
-export { listFeatures, listMakes, listModels } from './catalog';
+export { getCatalog, listFeatures, listMakes, listModels } from './catalog';
 export type { AppSupabaseClient } from './client';
 export {
   createFeature,
