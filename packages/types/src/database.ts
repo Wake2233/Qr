@@ -308,13 +308,13 @@ isOneToOne: false
                   ]
                 },"site_settings": {
                   Row: {
-                    "apr_by_tier": NonNullable<Json>,"brand_name": string,"business_hours": NonNullable<Json>,"default_phone_e164": string | null,"default_whatsapp_e164": string | null,"id": number,"lender_network_size": number,"require_listing_review": boolean,"updated_at": string,"whatsapp_template": string
+                    "brand_name": string,"business_hours": NonNullable<Json>,"default_phone_e164": string | null,"default_whatsapp_e164": string | null,"id": number,"require_listing_review": boolean,"updated_at": string,"whatsapp_template": string
                   }
                   Insert: {
-                    "apr_by_tier"?: NonNullable<Json>,"brand_name"?: string,"business_hours"?: NonNullable<Json>,"default_phone_e164"?: string | null,"default_whatsapp_e164"?: string | null,"id"?: number,"lender_network_size"?: number,"require_listing_review"?: boolean,"updated_at"?: string,"whatsapp_template"?: string
+                    "brand_name"?: string,"business_hours"?: NonNullable<Json>,"default_phone_e164"?: string | null,"default_whatsapp_e164"?: string | null,"id"?: number,"require_listing_review"?: boolean,"updated_at"?: string,"whatsapp_template"?: string
                   }
                   Update: {
-                    "apr_by_tier"?: NonNullable<Json>,"brand_name"?: string,"business_hours"?: NonNullable<Json>,"default_phone_e164"?: string | null,"default_whatsapp_e164"?: string | null,"id"?: number,"lender_network_size"?: number,"require_listing_review"?: boolean,"updated_at"?: string,"whatsapp_template"?: string
+                    "brand_name"?: string,"business_hours"?: NonNullable<Json>,"default_phone_e164"?: string | null,"default_whatsapp_e164"?: string | null,"id"?: number,"require_listing_review"?: boolean,"updated_at"?: string,"whatsapp_template"?: string
                   }
                   Relationships: [
                     
