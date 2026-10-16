@@ -63,7 +63,8 @@ insert into public.vehicles (
   dealer_id, stock_number, vin, make_id, model_id, year, trim, condition, body_type, mileage,
   price_cents, exterior_color, interior_color, fuel_type, drivetrain, transmission, engine,
   cylinders, displacement_l, horsepower, torque_lbft, mpg_city, mpg_highway, ev_range_mi,
-  doors, seats, owners_count, accident_free, title_status, description, is_featured, specs
+  doors, seats, owners_count, accident_free, title_status, description, is_featured, specs,
+  damage, damage_area, drive_status, service_records
 )
 select
   case
@@ -93,7 +94,11 @@ select
     1 + g.i % 3
   ),
   g.i % 6 = 1,
-  jsonb_build_object('warranty', case when g.i % 9 = 0 then 'Certified 12 months / 12,000 miles' end)
+  jsonb_build_object('warranty', case when g.i % 9 = 0 then 'Certified 12 months / 12,000 miles' end),
+  (case when g.i % 17 = 0 then 'moderate' when g.i % 10 = 0 then 'minor' else 'none' end)::public.damage_level,
+  (case when g.i % 17 = 0 then 'rear' when g.i % 10 = 0 then 'front' end)::public.damage_area,
+  (case when g.i % 17 = 0 then 'starts' else 'runs_and_drives' end)::public.drive_status,
+  g.i % 2 = 0
 from generate_series(1, 60) as g(i)
 cross join lateral (select (g.i - 1) / 26 as k) as k
 join seed_specs s on s.n = ((g.i - 1) % 26) + 1
