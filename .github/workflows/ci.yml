@@ -29,6 +29,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Built package output (tokens.css, the NativeWind preset) is not committed; prettier's
+      # Tailwind plugin, `next build` and `next dev` all need it before turbo would build it.
+      - name: Build design tokens
+        run: pnpm --filter @cp/design-tokens build
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
@@ -90,6 +94,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Built package output (tokens.css, the NativeWind preset) is not committed; prettier's
+      # Tailwind plugin, `next build` and `next dev` all need it before turbo would build it.
+      - name: Build design tokens
+        run: pnpm --filter @cp/design-tokens build
       - name: Start local Supabase
         run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,realtime
       - run: pnpm db:seed
@@ -117,6 +125,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Built package output (tokens.css, the NativeWind preset) is not committed; prettier's
+      # Tailwind plugin, `next build` and `next dev` all need it before turbo would build it.
+      - name: Build design tokens
+        run: pnpm --filter @cp/design-tokens build
       - name: Start local Supabase
         run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,realtime
       - run: pnpm db:seed
