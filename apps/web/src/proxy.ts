@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { log } from '@/lib/log';
 import { updateSession } from '@/lib/supabase/proxy';
 
 /**
@@ -10,6 +11,9 @@ export async function proxy(request: NextRequest) {
   const { response, userId } = await updateSession(request);
 
   if (!userId && request.nextUrl.pathname.startsWith('/dashboard')) {
+    log.info('proxy', 'signed-out visit to the console → sign-in', {
+      path: request.nextUrl.pathname,
+    });
     const login = request.nextUrl.clone();
     login.pathname = '/login';
     login.search = `?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`;

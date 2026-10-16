@@ -1,3 +1,4 @@
+import { parseAuthError } from '@cp/core';
 import { signInRequestSchema, verifyCodeSchema } from '@cp/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
@@ -29,7 +30,11 @@ export default function SignInScreen() {
       email,
       options: { shouldCreateUser: true },
     });
-    if (otpError) return setError(otpError.message);
+    if (otpError) {
+      const failure = parseAuthError(otpError);
+      if (__DEV__) console.warn('[auth.request-code] code NOT sent', failure.code, failure.hint);
+      return setError(failure.message);
+    }
     codeForm.reset({ email, code: '' });
     setSentTo(email);
   });
@@ -41,7 +46,11 @@ export default function SignInScreen() {
       token: code,
       type: 'email',
     });
-    if (verifyError) return setError('That code is invalid or expired. Request a new one.');
+    if (verifyError) {
+      const failure = parseAuthError(verifyError);
+      if (__DEV__) console.warn('[auth.verify-code] sign-in failed', failure.code);
+      return setError(failure.message);
+    }
     if (router.canDismiss()) router.dismissAll();
     router.replace('/account');
   });

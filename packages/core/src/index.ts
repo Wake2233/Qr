@@ -1,4 +1,5 @@
 export { canAccessConsole, isAdmin, type AccessContext, type AppRole } from './access';
+export { parseAuthError, type AuthErrorReason, type ParsedAuthError } from './auth-errors';
 export {
   addToCompare,
   MAX_COMPARE,
@@ -50,26 +51,6 @@ export {
 } from './console';
 export { DB_ERROR_MESSAGES, parseDbError, type DbErrorCode, type ParsedDbError } from './errors';
 export {
-  amountFinancedCents,
-  aprForTier,
-  CREDIT_TIERS,
-  creditTierLabels,
-  DEFAULT_APR_BY_TIER,
-  ESTIMATE_DEFAULTS,
-  estimatePayment,
-  maxVehiclePriceCents,
-  monthlyPaymentCents,
-  suggestedDownPaymentCents,
-  TERM_OPTIONS,
-  totalInterestCents,
-  type AprByTier,
-  type BudgetInput,
-  type CreditTier,
-  type LoanTerms,
-  type PaymentEstimate,
-  type PurchaseCosts,
-} from './finance';
-export {
   activeFilterChips,
   clearFilters,
   countActiveFilters,
@@ -93,7 +74,6 @@ export {
 } from './filters';
 export {
   centsToDollarInput,
-  formatApr,
   formatMileage,
   formatPhone,
   formatPrice,

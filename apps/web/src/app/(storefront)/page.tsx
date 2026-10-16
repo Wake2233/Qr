@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeDollarSign, ClipboardList, Landmark, MessageCircle } from 'lucide-react';
+import { ArrowRight, BadgeDollarSign, ClipboardList, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
 import { BodyTypeTiles } from '@/components/home/body-type-tiles';
@@ -104,23 +104,17 @@ export default async function HomePage() {
 
       <section className="bg-card relative overflow-hidden rounded-3xl border p-8 sm:p-12">
         <div className="max-w-2xl space-y-4">
-          <Landmark className="text-primary size-8" aria-hidden />
+          <MessageCircle className="text-primary size-8" aria-hidden />
           <h2 className="font-display text-3xl font-semibold tracking-tight">
-            Know your payment before you visit
+            Looking for something specific?
           </h2>
           <p className="text-muted-foreground">
-            Estimate a monthly payment on any car, then pre-qualify
-            {settings.lender_network_size > 0
-              ? ` across our network of ${settings.lender_network_size.toLocaleString('en-US')}+ lenders`
-              : ''}{' '}
-            without affecting your credit.
-          </p>
-          <p className="text-muted-foreground text-xs">
-            Offers are simulated pre-qualification estimates, not credit decisions.
+            Tell us the make, model and budget you have in mind. We&apos;ll let you know when the
+            right car arrives.
           </p>
           <Button asChild size="lg">
-            <Link href="/financing">
-              Explore financing <ArrowRight />
+            <Link href="/contact">
+              Contact us <ArrowRight />
             </Link>
           </Button>
         </div>

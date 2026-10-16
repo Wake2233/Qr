@@ -18,11 +18,15 @@ const entrySchema = z.discriminatedUnion('kind', [
 export async function addCatalogEntry(input: unknown): Promise<ActionResult<null>> {
   const parsed = entrySchema.safeParse(input);
   if (!parsed.success) {
-    return invalidInput(parsed.error, parsed.error.issues[0]?.message ?? 'Check the fields');
+    return invalidInput(
+      'catalog.add',
+      parsed.error,
+      parsed.error.issues[0]?.message ?? 'Check the fields',
+    );
   }
   const { supabase } = await requireAdmin();
   const entry = parsed.data;
-  const result = await attempt(async () => {
+  const result = await attempt('catalog.add', async () => {
     if (entry.kind === 'make') await createMake(supabase, entry.values);
     else if (entry.kind === 'model') await createModel(supabase, entry.values);
     else await createFeature(supabase, entry.values);
@@ -36,9 +40,9 @@ export async function removeCatalogEntry(input: unknown): Promise<ActionResult<n
   const parsed = z
     .object({ table: z.enum(['makes', 'models', 'features']), id: z.number().int().positive() })
     .safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid entry');
+  if (!parsed.success) return invalidInput('catalog.remove', parsed.error, 'Invalid entry');
   const { supabase } = await requireAdmin();
-  const result = await attempt(async () => {
+  const result = await attempt('catalog.remove', async () => {
     await deleteCatalogEntry(supabase, parsed.data.table, parsed.data.id);
     return null;
   });

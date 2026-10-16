@@ -3,7 +3,7 @@
  * Only dealer members and admins may call it. Results are cached forever in `vin_decodes`
  * (specs for a VIN never change), so NHTSA is hit at most once per VIN.
  */
-import { corsHeaders, errorResponse, json } from '../_shared/http.ts';
+import { corsHeaders, errorResponse, json, logEvent } from '../_shared/http.ts';
 import { isUndecodable, mapVpicResult, slugify, VIN_PATTERN, type VpicResult } from './map.ts';
 
 export interface DecodeVinDeps {
@@ -19,17 +19,27 @@ export interface DecodeVinDeps {
   ): Promise<{ make_id: number | null; model_id: number | null }>;
 }
 
+const refuse = (status: number, code: string, message: string, fields = {}) => {
+  logEvent(
+    'decode-vin',
+    `refused: ${code}`,
+    { status, ...fields },
+    status >= 500 ? 'error' : 'warn',
+  );
+  return errorResponse(status, code, message);
+};
+
 export function createHandler(deps: DecodeVinDeps) {
   return async (req: Request): Promise<Response> => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-    if (req.method !== 'POST') return errorResponse(405, 'METHOD_NOT_ALLOWED', 'use POST');
+    if (req.method !== 'POST') return refuse(405, 'METHOD_NOT_ALLOWED', 'use POST');
 
     const access = await deps.authorize(req.headers.get('Authorization'));
     if (access === 'unauthenticated') {
-      return errorResponse(401, 'NOT_AUTHENTICATED', 'sign in to decode VINs');
+      return refuse(401, 'NOT_AUTHENTICATED', 'sign in to decode VINs');
     }
     if (access === 'forbidden') {
-      return errorResponse(403, 'FORBIDDEN', 'only dealers and admins can decode VINs');
+      return refuse(403, 'FORBIDDEN', 'only dealers and admins can decode VINs');
     }
 
     const body: unknown = await req.json().catch(() => null);
@@ -39,22 +49,27 @@ export function createHandler(deps: DecodeVinDeps) {
         : '';
     const vin = raw.trim().toUpperCase();
     if (!VIN_PATTERN.test(vin)) {
-      return errorResponse(400, 'INVALID_VIN', 'a VIN is 17 letters and digits (no I, O or Q)');
+      return refuse(400, 'INVALID_VIN', 'a VIN is 17 letters and digits (no I, O or Q)');
     }
 
     let payload = await deps.readCache(vin);
     const cached = payload !== null;
     if (!payload) {
+      let reason = 'empty response';
       try {
         payload = await deps.fetchVpic(vin);
-      } catch {
+      } catch (error) {
+        reason = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
         payload = null;
       }
       if (!payload) {
-        return errorResponse(502, 'DECODER_UNAVAILABLE', 'the VIN decoder is not responding');
+        return refuse(502, 'DECODER_UNAVAILABLE', 'the VIN decoder is not responding', {
+          vin,
+          nhtsa: reason,
+        });
       }
       if (isUndecodable(payload)) {
-        return errorResponse(422, 'UNDECODABLE_VIN', 'that VIN could not be decoded');
+        return refuse(422, 'UNDECODABLE_VIN', 'that VIN could not be decoded', { vin });
       }
       await deps.writeCache(vin, payload);
     }
@@ -72,6 +87,12 @@ export function createHandler(deps: DecodeVinDeps) {
       warnings.push(`${decoded.model} is not in the catalog yet`);
     }
 
+    logEvent('decode-vin', 'decoded', {
+      vin,
+      cached,
+      make: decoded.make,
+      warnings: warnings.length,
+    });
     return json({ vin, cached, ...decoded, ...ids, warnings });
   };
 }

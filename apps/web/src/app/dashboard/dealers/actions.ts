@@ -11,12 +11,17 @@ import { revalidateInventory } from '@/lib/revalidate';
 /** Approve / reject / suspend. Suspension hides every listing immediately (RLS). */
 export async function moderateDealerAction(input: unknown): Promise<ActionResult<null>> {
   const parsed = dealerModerationSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, parsed.error.issues[0]?.message);
+  if (!parsed.success)
+    return invalidInput('dealers.moderate', parsed.error, parsed.error.issues[0]?.message);
   const { supabase } = await requireAdmin();
-  const result = await attempt(async () => {
-    await moderateDealer(supabase, parsed.data);
-    return null;
-  });
+  const result = await attempt(
+    'dealers.moderate',
+    async () => {
+      await moderateDealer(supabase, parsed.data);
+      return null;
+    },
+    { dealer: parsed.data.dealer_id, decision: parsed.data.action },
+  );
   // Dealer status changes which listings are public.
   if (result.ok) revalidateInventory();
   return result;

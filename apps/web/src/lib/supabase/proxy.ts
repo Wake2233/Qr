@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/lib/env';
+import { log } from '@/lib/log';
 
 /**
  * Refreshes the Supabase session on every matched request and writes rotated tokens back to
@@ -32,7 +33,15 @@ export async function updateSession(request: NextRequest) {
   );
 
   // getClaims() verifies the JWT signature; never trust getSession() on the server.
-  const { data } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getClaims();
+  if (error) {
+    // Usually an expired/revoked session (the visitor is treated as signed out).
+    log.warn('proxy', 'session could not be verified', {
+      path: request.nextUrl.pathname,
+      reason: error.code ?? error.message,
+      status: error.status,
+    });
+  }
   const userId = typeof data?.claims.sub === 'string' ? data.claims.sub : null;
 
   return { response, userId };

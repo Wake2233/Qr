@@ -110,7 +110,6 @@ describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
   it('parses site settings with the business numbers', async () => {
     const settings = await getSiteSettings(client);
     expect(settings.default_whatsapp_e164).toBe('+13473700570');
-    expect(settings.apr_by_tier.good).toBe(900);
     expect(settings.business_hours.sun).toBeNull();
   });
 

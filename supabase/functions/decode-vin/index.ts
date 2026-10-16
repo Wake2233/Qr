@@ -49,7 +49,7 @@ Deno.serve(
       const response = await fetch(`${VPIC}/${vin}?format=json`, {
         signal: AbortSignal.timeout(8000),
       });
-      if (!response.ok) return null;
+      if (!response.ok) throw new Error(`NHTSA answered HTTP ${response.status}`);
       const body = (await response.json()) as { Results?: VpicResult[] };
       return body.Results?.[0] ?? null;
     },

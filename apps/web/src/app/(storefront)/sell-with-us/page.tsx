@@ -29,7 +29,7 @@ const PERKS = [
   {
     icon: Car,
     title: 'Listings that sell',
-    body: 'Big photos, every spec, price-drop badges and payment estimates on each car.',
+    body: 'Big photos, every spec and price-drop badges on each car, with WhatsApp and Call buttons.',
   },
 ] as const;
 

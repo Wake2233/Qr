@@ -1,7 +1,9 @@
+import { parseAuthError } from '@cp/core';
 import { safeRedirectSchema } from '@cp/validators';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { log } from '@/lib/log';
 import { createClient } from '@/lib/supabase/server';
 
 const EMAIL_OTP_TYPES = new Set<EmailOtpType>([
@@ -22,11 +24,33 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
 
   const supabase = await createClient();
-  let ok = false;
+  let method: 'link' | 'code' | 'none' = 'none';
+  let error: unknown = null;
   if (tokenHash && type && EMAIL_OTP_TYPES.has(type)) {
-    ok = !(await supabase.auth.verifyOtp({ token_hash: tokenHash, type })).error;
+    method = 'link';
+    ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type }));
   } else if (code) {
-    ok = !(await supabase.auth.exchangeCodeForSession(code)).error;
+    method = 'code';
+    ({ error } = await supabase.auth.exchangeCodeForSession(code));
+  }
+  const ok = method !== 'none' && !error;
+
+  if (ok) {
+    log.info('auth.callback', 'signed in from email link', { method, next });
+  } else if (method === 'none') {
+    log.warn('auth.callback', 'sign-in link was missing its token', { type: type ?? undefined });
+  } else {
+    const failure = parseAuthError(error);
+    log.warn('auth.callback', 'sign-in link rejected', {
+      method,
+      reason: failure.reason,
+      supabase: failure.code,
+      status: failure.status,
+      fix:
+        method === 'code'
+          ? 'PKCE links only work in the browser that requested them; use the 6-digit code instead'
+          : failure.hint,
+    });
   }
 
   const response = NextResponse.redirect(new URL(ok ? next : '/login?error=link', origin));

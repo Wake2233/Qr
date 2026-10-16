@@ -10,7 +10,6 @@ export type ConsoleSection =
   | 'overview'
   | 'inventory'
   | 'leads'
-  | 'finance'
   | 'dealer'
   | 'dealers'
   | 'catalog'
@@ -28,7 +27,6 @@ const ITEMS: (ConsoleNavItem & { visible: (ctx: ConsoleNavContext) => boolean })
   { id: 'overview', label: 'Overview', group: 'workspace', visible: () => true },
   { id: 'inventory', label: 'Inventory', group: 'workspace', visible: () => true },
   { id: 'leads', label: 'Leads', group: 'workspace', visible: () => true },
-  { id: 'finance', label: 'Finance apps', group: 'workspace', visible: () => true },
   {
     id: 'dealer',
     label: 'Dealer profile',

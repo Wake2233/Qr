@@ -6,7 +6,6 @@ import { Link } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
@@ -33,7 +32,6 @@ export default function DiscoverScreen() {
   const bodies = new Map((facets.data?.body ?? []).map((b) => [b.value, b.count]));
   const tiles = BODY_ORDER.filter((type) => (bodies.get(type) ?? 0) > 0);
   const refreshing = facets.isRefetching || featured.isRefetching;
-  const networkSize = settings.data?.lender_network_size ?? 0;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -108,23 +106,6 @@ export default function DiscoverScreen() {
           subtitle="Sold in the last 30 days. Ask us for something similar."
           cards={sold.data ?? []}
         />
-
-        <View className="mx-4 gap-3 rounded-3xl border border-border bg-card p-5">
-          <Text variant="title">Know your payment before you visit</Text>
-          <Text variant="muted">
-            Estimate a monthly payment on any car
-            {networkSize > 0
-              ? `, then pre-qualify across our ${networkSize.toLocaleString('en-US')}+ lender network`
-              : ''}
-            .
-          </Text>
-          <Text variant="caption" className="text-xs">
-            Offers are simulated pre-qualification estimates, not credit decisions.
-          </Text>
-          <Link href="/finance" asChild>
-            <Button title="Explore financing" variant="outline" />
-          </Link>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

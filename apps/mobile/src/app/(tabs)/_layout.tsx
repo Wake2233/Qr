@@ -23,10 +23,6 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>Saved</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'heart', selected: 'heart.fill' }} md="favorite" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="finance">
-        <NativeTabs.Trigger.Label>Finance</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="dollarsign.circle" md="payments" />
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="account">
         <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="person.crop.circle" md="account_circle" />

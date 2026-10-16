@@ -12,17 +12,17 @@ apps/
   mobile/              Expo (expo-router) · NativeWind · buyer tabs + `manage/` console stack (/manage)
 packages/
   types/               @cp/types: GENERATED Supabase types (database.ts) + domain type helpers
-  validators/          @cp/validators: Zod schemas (vehicle, lead, finance app, dealer, filters)
+  validators/          @cp/validators: Zod schemas (vehicle, lead, dealer, filters)
   api/                 @cp/api: platform-agnostic Supabase query fns + React Query keys/hooks
-  core/                @cp/core: pure TS: finance math, formatters, WhatsApp/tel builders, filter<->URL
+  core/                @cp/core: pure TS: formatters, auth/DB error copy, WhatsApp/tel builders, filter<->URL
   design-tokens/       @cp/design-tokens: colors, radii, spacing, type scale → web + mobile Tailwind configs
   config/              @cp/config: shared tsconfig bases, ESLint flat configs, Prettier
 supabase/
   migrations/          timestamped SQL (the ONLY way schema changes)
   tests/               pgTAP tests (RLS per role, triggers, RPCs)
-  functions/           Edge Functions (Deno): simulate-lender-match, decode-vin, notify-new-lead
+  functions/           Edge Functions (Deno): decode-vin, notify-new-lead
   seeds/reference.sql  settings, catalog, house dealer (every environment; `pnpm db:remote:seed` for hosted)
-  seed.sql             local demo only: lenders, demo dealers & vehicles
+  seed.sql             local demo only: demo dealers & vehicles
 scripts/               seed-users.ts, seed-images.ts (service-role, local only)
 ```
 
@@ -63,7 +63,7 @@ pnpm db:remote:seed                    # load seeds/reference.sql into hosted (i
 Local test accounts (after `pnpm db:seed`): `admin@`, `dealer.owner@`, `dealer.staff@`, `dealer2.owner@` (pending dealer), `buyer@` — all `@test.local`. Sign in with an email code; read it in Mailpit at http://127.0.0.1:54324. Hosted credentials live in `.env.remote.local` (never `.env.local`: the Supabase CLI auto-loads that and would point local commands at the hosted password).
 
 Run a single workspace with `pnpm --filter @cp/web <script>` (or `@cp/mobile`, `@cp/core`, and so on).
-Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
+Run a single test file with `pnpm --filter @cp/core test -- format.test.ts`.
 
 ## Non-negotiable architecture rules
 
@@ -71,10 +71,10 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 2. **Every table has RLS enabled in the same migration that creates it,** and every policy gets a pgTAP test (anon / buyer / dealer A / dealer B / admin).
 3. **Share logic, not UI.** Never import `react-native` into web or `next/*` / DOM APIs into `packages/*`. `packages/*` must be platform-agnostic TS. `@cp/api` functions take a `SupabaseClient<Database>` argument and never create their own client.
 4. **The service-role / secret key is used only in Edge Functions and `scripts/`.** It never goes in `apps/*` and never goes in a `NEXT_PUBLIC_*` / `EXPO_PUBLIC_*` var.
-5. **Money is stored as integer cents** (`*_cents bigint`). **APR is stored as basis points** (`apr_bps int`). Format only at render time with `@cp/core` formatters.
-6. **No checkout, cart or payment code.** Conversion goes through `buildWhatsAppUrl()` / `buildTelUrl()` from `@cp/core`. Log clicks with the `track_contact_click` RPC as fire-and-forget, and never block or await before opening the link.
+5. **Money is stored as integer cents** (`*_cents bigint`). Format only at render time with `@cp/core` formatters.
+6. **No checkout, cart, payment or financing code** (financing was removed on 2026-10-16: no loans, lenders, APRs or payment estimates). Conversion goes through `buildWhatsAppUrl()` / `buildTelUrl()` from `@cp/core`. Log clicks with the `track_contact_click` RPC as fire-and-forget, and never block or await before opening the link.
 7. Prices and specs render **exactly** from the DB. Never hardcode, round or "estimate" listing data.
-8. Privileged or multi-row writes are **Postgres RPCs** (`approve_dealer`, `apply_as_dealer`, `submit_lead`, `submit_finance_application`, `reorder_vehicle_images`), so web and mobile share one implementation.
+8. Privileged or multi-row writes are **Postgres RPCs** (`approve_dealer`, `apply_as_dealer`, `submit_lead`, `reorder_vehicle_images`), so web and mobile share one implementation.
 
 ## TypeScript
 
@@ -102,6 +102,7 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 - The VDP needs `generateMetadata` and JSON-LD (`schema.org/Car` + `Offer`). The inventory needs a `sitemap.ts`.
 - shadcn/ui primitives go in `components/ui/`. Add them with `pnpm dlx shadcn@latest add <c>`. Compose them in `components/<feature>/` instead of rewriting primitives.
 - Forms use react-hook-form + `zodResolver(sharedSchema)`. Validate again on the server in the action. Console actions use `requireConsole()`/`requireAdmin()` (`lib/console.ts`) and `attempt()`/`dbFailure()` (`lib/action-result.ts`) so DB errors (`MISSING_FIELDS`, unique violations…) come back as `fieldErrors`.
+- **Errors and logs.** Every Server Action passes its name to `attempt('inventory.save', fn, { vehicle })`, `invalidInput('…', error)` and `refuse('…', message)`, which log one line each (`ok` with ms / `rejected` / `refused: CODE` / `failed` with the raw error) through `lib/log.ts`. Elsewhere use `log.info|warn|error(scope, message, fields)`, not `console.*`. Mask emails with `maskEmail()`, and never log tokens, codes, keys or phone numbers. Screens show only the friendly `ActionResult.error` (Auth errors: `parseAuthError()` from `@cp/core`) in one quiet line or a toast. Unexpected server errors reach `instrumentation.ts` and the error page shows only the digest as a small "Reference".
 - File uploads (vehicle photos, dealer docs, logos): a Server Action issues a signed Storage upload URL, the browser PUTs the bytes with progress (`lib/images.ts`), then a Server Action writes the row. Never send file bytes through a Server Action.
 
 ## Expo (apps/mobile)
@@ -129,7 +130,7 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
   - Index every column a policy filters on.
   - Name policies `"<table>: <who> can <what>"`.
 - Helper functions go in the **`private`** schema (not exposed by PostgREST) and are `security definer`, `stable`, `set search_path = ''`, with fully-qualified names.
-- Every view is created `with (security_invoker = true)`. PII (`profiles.phone`, finance applicant data) never appears in a public view.
+- Every view is created `with (security_invoker = true)`. PII (`profiles.phone`, lead contact details) never appears in a public view.
 - Protect sensitive columns with **column grants** (e.g. `profiles.role`, `dealers.status` are not updatable by `authenticated`). Status changes happen only through RPCs.
 - After migrating hosted: run Supabase security + performance advisors and fix every warning before moving on.
 
@@ -139,11 +140,10 @@ Run a single test file with `pnpm --filter @cp/core test -- finance.test.ts`.
 - Mobile: get to the first usable screen in under 2s on a warm start, keep 60fps lists, use haptics on primary actions, and keep sticky WhatsApp/Call bars on the VDP.
 - **The price is always visible** on cards and the VDP. Every spec field that exists is rendered, grouped as Overview / Powertrain / Body & Interior / History / Features.
 - Accessibility: WCAG 2.2 AA, visible focus, ≥44pt touch targets, image `alt` = vehicle title + view, and respect for reduced motion.
-- Copy for financing must say offers are **simulated / pre-qualification estimates**, not credit decisions.
 
 ## Testing rules
 
-- `packages/core` and `packages/validators`: Vitest. Every exported function gets tests (finance math tables, link builders, filter round-trips).
+- `packages/core` and `packages/validators`: Vitest. Every exported function gets tests (formatters, link builders, filter round-trips).
 - RLS / RPC / triggers: pgTAP in `supabase/tests/`. **A new policy without a test is not done.**
 - Web: Vitest + Testing Library for components with logic. Playwright for critical flows (browse → VDP → WhatsApp href; dealer creates + publishes a listing; admin approves a dealer).
 - Mobile: jest-expo + `@testing-library/react-native` for hooks and screens with logic.

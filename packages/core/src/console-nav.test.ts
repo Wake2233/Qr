@@ -11,7 +11,6 @@ describe('consoleNavItems', () => {
       'overview',
       'inventory',
       'leads',
-      'finance',
     ]);
   });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { aprByTierSchema, businessHoursSchema, siteSettingsSchema } from './settings';
+import { businessHoursSchema, siteSettingsSchema } from './settings';
 
 const settings = {
   brand_name: 'DG Auto',
@@ -8,8 +8,6 @@ const settings = {
   default_phone_e164: '(347) 370-0570',
   whatsapp_template: "Hi! I'm interested in the {title} (Stock #{stock}) listed at {price}. {url}",
   business_hours: { mon: '09:00-19:00', sun: null },
-  apr_by_tier: { excellent: 650, good: 900, fair: 1350, rebuilding: 1900 },
-  lender_network_size: 1200,
   require_listing_review: false,
 };
 
@@ -39,15 +37,4 @@ describe('businessHoursSchema', () => {
       expect(businessHoursSchema.safeParse(hours).success).toBe(false);
     },
   );
-});
-
-describe('aprByTierSchema', () => {
-  it('accepts partial tables of basis points', () => {
-    expect(aprByTierSchema.parse({ good: 899 })).toEqual({ good: 899 });
-  });
-
-  it('rejects percentages and unknown tiers', () => {
-    expect(aprByTierSchema.safeParse({ good: 8.99 }).success).toBe(false);
-    expect(aprByTierSchema.safeParse({ platinum: 100 }).success).toBe(false);
-  });
 });

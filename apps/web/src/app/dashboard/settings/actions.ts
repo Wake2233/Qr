@@ -10,9 +10,9 @@ import { revalidateSiteSettings } from '@/lib/revalidate';
 
 export async function saveSiteSettings(input: unknown): Promise<ActionResult<null>> {
   const parsed = siteSettingsSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error);
+  if (!parsed.success) return invalidInput('settings.save', parsed.error);
   const { supabase } = await requireAdmin();
-  const result = await attempt(async () => {
+  const result = await attempt('settings.save', async () => {
     await updateSiteSettings(supabase, parsed.data);
     return null;
   });

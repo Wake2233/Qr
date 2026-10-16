@@ -27,7 +27,7 @@ export default async function DashboardPage() {
           <Link href="/dashboard/inventory" className="underline underline-offset-4">
             Manage inventory
           </Link>
-          . Lead and finance KPIs arrive with the CRM.
+          . Lead KPIs arrive with the CRM.
         </p>
       </div>
 

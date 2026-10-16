@@ -1,4 +1,3 @@
-import { CREDIT_TIERS } from '@cp/core';
 import { z } from 'zod';
 
 import { phoneE164 } from './phone';
@@ -20,12 +19,6 @@ export const businessHoursSchema = z.partialRecord(
 );
 export type BusinessHours = z.infer<typeof businessHoursSchema>;
 
-/** APR per credit tier in basis points (650 = 6.50%). */
-export const aprByTierSchema = z.partialRecord(
-  z.enum(CREDIT_TIERS),
-  z.number().int().min(0).max(4000),
-);
-
 const TEMPLATE_KEYS = /\{(title|price|stock|vin|url)\}/g;
 
 /** Admin site-settings form (the single `site_settings` row). */
@@ -40,8 +33,6 @@ export const siteSettingsSchema = z.object({
       'Use only {title}, {price}, {stock}, {vin} and {url}',
     ),
   business_hours: businessHoursSchema,
-  apr_by_tier: aprByTierSchema,
-  lender_network_size: z.number().int().min(0).max(100_000),
   require_listing_review: z.boolean(),
 });
 
