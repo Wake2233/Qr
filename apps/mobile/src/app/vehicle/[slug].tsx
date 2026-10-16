@@ -17,6 +17,7 @@ import { toast } from 'sonner-native';
 import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/text';
+import { ConditionBadges } from '@/components/vehicle/condition-badges';
 import { ContactBar } from '@/components/vehicle/contact-bar';
 import { VehicleGallery } from '@/components/vehicle/vehicle-gallery';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
@@ -156,6 +157,7 @@ export default function VehicleScreen() {
               <Text variant="caption">Original MSRP {formatPrice(v.msrp_cents)}</Text>
             ) : null}
             {facts.length > 0 ? <Text variant="caption">{facts.join(' · ')}</Text> : null}
+            <ConditionBadges vehicle={v} />
           </View>
 
           {sold ? (

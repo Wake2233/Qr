@@ -8,6 +8,9 @@ import {
 import {
   bodyTypeLabels,
   conditionLabels,
+  damageAreaLabels,
+  damageLevelLabels,
+  driveStatusLabels,
   drivetrainLabels,
   featureCategoryLabels,
   fuelTypeLabels,
@@ -103,6 +106,10 @@ function toFormValues(vehicle: ConsoleVehicleDetail | null, dealerId: string): F
     owners_count: v.owners_count,
     accident_free: v.accident_free,
     title_status: v.title_status,
+    damage: v.damage,
+    damage_area: v.damage_area,
+    drive_status: v.drive_status,
+    service_records: v.service_records,
     description: v.description,
     is_featured: v.is_featured,
     feature_ids: v.feature_ids,
@@ -143,6 +150,7 @@ export function VehicleEditor({
   const { control, handleSubmit, setValue, setError, formState } = form;
   const errors = formState.errors;
   const makeId = useWatch({ control, name: 'make_id' });
+  const damage = useWatch({ control, name: 'damage' });
   const dealerId = useWatch({ control, name: 'dealer_id' });
   const dealer = dealers.find((d) => d.id === dealerId);
   const dealerApproved = dealer?.status === 'approved';
@@ -300,9 +308,17 @@ export function VehicleEditor({
   });
 
   const enumSelect = <T extends string>(
-    name: 'fuel_type' | 'transmission' | 'drivetrain' | 'body_type',
+    name:
+      | 'fuel_type'
+      | 'transmission'
+      | 'drivetrain'
+      | 'body_type'
+      | 'drive_status'
+      | 'damage'
+      | 'damage_area',
     label: string,
     labels: Record<T, string>,
+    { required = true }: { required?: boolean } = {},
   ) => (
     <Controller
       control={control}
@@ -310,7 +326,7 @@ export function VehicleEditor({
       render={({ field }) => (
         <SelectField
           label={label}
-          required
+          required={required}
           value={(field.value as T | null | undefined) ?? null}
           onChange={field.onChange}
           options={optionsOf(labels)}
@@ -609,6 +625,32 @@ export function VehicleEditor({
               />
             )}
           />
+          <Controller
+            control={control}
+            name="service_records"
+            render={({ field }) => (
+              <SelectField
+                label="Service records"
+                value={field.value == null ? null : field.value ? 'yes' : 'no'}
+                onChange={(v) => field.onChange(v == null ? null : v === 'yes')}
+                options={[
+                  { value: 'yes', label: 'Available' },
+                  { value: 'no', label: 'Not available' },
+                ]}
+              />
+            )}
+          />
+        </FormSection>
+
+        <FormSection
+          title="Condition"
+          description="Shown as badges next to the price. Leave empty if you don’t know."
+        >
+          {enumSelect('drive_status', 'Run & Drive', driveStatusLabels, { required: false })}
+          {enumSelect('damage', 'Damage', damageLevelLabels, { required: false })}
+          {damage && damage !== 'none'
+            ? enumSelect('damage_area', 'Primary damage', damageAreaLabels, { required: false })
+            : null}
         </FormSection>
 
         <FormSection title="Features" description="Buyers can filter by these.">

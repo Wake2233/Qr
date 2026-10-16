@@ -18,6 +18,8 @@ export function Chip({
   onPress: () => void;
   accessibilityLabel?: string;
 }) {
+  // Nothing matches right now: still tappable, just quieter.
+  const muted = count === 0;
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -35,7 +37,10 @@ export function Chip({
       )}
     >
       <Text
-        className={cn('font-sans-medium text-sm', selected ? 'text-background' : 'text-foreground')}
+        className={cn(
+          'font-sans-medium text-sm',
+          selected ? 'text-background' : muted ? 'text-muted-foreground' : 'text-foreground',
+        )}
       >
         {label}
       </Text>
