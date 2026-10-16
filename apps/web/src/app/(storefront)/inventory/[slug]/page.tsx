@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { CompareToggle } from '@/components/vehicle/compare-toggle';
+import { ConditionBadges } from '@/components/vehicle/condition-badges';
 import { ContactActions } from '@/components/vehicle/contact-actions';
 import { DealerCard } from '@/components/vehicle/dealer-card';
 import { FavoriteButton } from '@/components/vehicle/favorite-button';
@@ -225,6 +226,7 @@ async function VehicleDetailView({ slug }: { slug: string }) {
               {highlights.length > 0 ? (
                 <p className="text-muted-foreground text-sm">{highlights.join(' · ')}</p>
               ) : null}
+              <ConditionBadges vehicle={vehicle} />
             </div>
 
             {sold ? (

@@ -4,6 +4,9 @@ import type { ConsoleVehicleDetail } from '@cp/api';
 import {
   bodyTypeLabels,
   conditionLabels,
+  damageAreaLabels,
+  damageLevelLabels,
+  driveStatusLabels,
   drivetrainLabels,
   featureCategoryLabels,
   fuelTypeLabels,
@@ -80,6 +83,7 @@ export const EDITOR_SECTIONS = [
   { id: 'powertrain', label: 'Powertrain' },
   { id: 'body', label: 'Body & interior' },
   { id: 'history', label: 'History' },
+  { id: 'condition', label: 'Condition' },
   { id: 'features', label: 'Features' },
   { id: 'description', label: 'Description' },
   { id: 'photos', label: 'Photos' },
@@ -138,6 +142,10 @@ function toFormValues(vehicle: ConsoleVehicleDetail | null, dealerId: string): F
     owners_count: v.owners_count,
     accident_free: v.accident_free,
     title_status: v.title_status,
+    damage: v.damage,
+    damage_area: v.damage_area,
+    drive_status: v.drive_status,
+    service_records: v.service_records,
     description: v.description,
     is_featured: v.is_featured,
     feature_ids: v.feature_ids,
@@ -147,6 +155,11 @@ function toFormValues(vehicle: ConsoleVehicleDetail | null, dealerId: string): F
 const ACCIDENT_OPTIONS = [
   { value: 'yes', label: 'No accidents reported' },
   { value: 'no', label: 'Accident reported' },
+] as const;
+
+const SERVICE_RECORD_OPTIONS = [
+  { value: 'yes', label: 'Available' },
+  { value: 'no', label: 'Not available' },
 ] as const;
 
 export function VehicleEditor({ vehicle, catalog, dealers, isAdmin, photos }: VehicleEditorProps) {
@@ -165,6 +178,7 @@ export function VehicleEditor({ vehicle, catalog, dealers, isAdmin, photos }: Ve
   const errors = formState.errors;
 
   const makeId = useWatch({ control, name: 'make_id' });
+  const damage = useWatch({ control, name: 'damage' });
   const dealerId = useWatch({ control, name: 'dealer_id' });
   const dealer = dealers.find((d) => d.id === dealerId);
   const dealerApproved = dealer?.status === 'approved';
@@ -675,6 +689,54 @@ export function VehicleEditor({ vehicle, catalog, dealers, isAdmin, photos }: Ve
                 />
               )}
             </Field>
+            <Field label="Service records" error={err('service_records')}>
+              {(p) => (
+                <Controller
+                  control={control}
+                  name="service_records"
+                  render={({ field }) => (
+                    <OptionSelect
+                      {...p}
+                      value={field.value == null ? null : field.value ? 'yes' : 'no'}
+                      onChange={(value) => field.onChange(value == null ? null : value === 'yes')}
+                      options={SERVICE_RECORD_OPTIONS}
+                    />
+                  )}
+                />
+              )}
+            </Field>
+          </div>
+        </Section>
+
+        <Section
+          id="condition"
+          title="Condition"
+          description="Shown as badges next to the price. Leave empty if you don’t know."
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <EnumField
+              control={control}
+              name="drive_status"
+              label="Run & Drive"
+              labels={driveStatusLabels}
+              error={err('drive_status')}
+            />
+            <EnumField
+              control={control}
+              name="damage"
+              label="Damage"
+              labels={damageLevelLabels}
+              error={err('damage')}
+            />
+            {damage && damage !== 'none' ? (
+              <EnumField
+                control={control}
+                name="damage_area"
+                label="Primary damage"
+                labels={damageAreaLabels}
+                error={err('damage_area')}
+              />
+            ) : null}
           </div>
         </Section>
 
@@ -855,7 +917,15 @@ function NumberControl({
   );
 }
 
-type EnumName = 'fuel_type' | 'transmission' | 'drivetrain' | 'body_type' | 'title_status';
+type EnumName =
+  | 'fuel_type'
+  | 'transmission'
+  | 'drivetrain'
+  | 'body_type'
+  | 'title_status'
+  | 'drive_status'
+  | 'damage'
+  | 'damage_area';
 
 function EnumField<T extends string>({
   control,

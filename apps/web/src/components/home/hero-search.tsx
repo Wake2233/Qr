@@ -21,7 +21,9 @@ interface HeroSearchProps {
   models: { value: string; label: string; make: string; count: number }[];
 }
 
-/** Make → model → budget, then straight to the filtered inventory. */
+const withCount = (label: string, count: number) => (count > 0 ? `${label} (${count})` : label);
+
+/** Make → model → budget, then straight to the filtered inventory. Lists the whole catalog. */
 export function HeroSearch({ makes, models }: HeroSearchProps) {
   const router = useRouter();
   const [make, setMake] = useState(ANY);
@@ -65,7 +67,7 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
           <SelectItem value={ANY}>Any make</SelectItem>
           {makes.map((m) => (
             <SelectItem key={m.value} value={m.value}>
-              {m.label} ({m.count})
+              {withCount(m.label, m.count)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -80,7 +82,7 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
           <SelectItem value={ANY}>Any model</SelectItem>
           {makeModels.map((m) => (
             <SelectItem key={m.value} value={m.value}>
-              {m.label} ({m.count})
+              {withCount(m.label, m.count)}
             </SelectItem>
           ))}
         </SelectContent>

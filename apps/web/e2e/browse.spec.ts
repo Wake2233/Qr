@@ -53,6 +53,7 @@ test('filter by make + fuel → VDP → WhatsApp and Call links carry the exact 
   const rail = page.getByRole('complementary', { name: 'Filters' });
   await rail.getByText(target.make_name, { exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`make=${target.make_slug}`));
+  await rail.getByRole('button', { name: 'Engine & drivetrain' }).click();
   await rail.getByText(FUEL_LABELS[target.fuel_type] ?? target.fuel_type, { exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`fuel=${target.fuel_type}`));
   await expect(
@@ -110,7 +111,7 @@ test('search as you type, then infinite scroll to the end', async ({ page }) => 
   expect(total).toBeGreaterThan(24); // more than one page
 
   await page.goto('/inventory');
-  await page.getByRole('searchbox', { name: 'Search inventory' }).fill('f15');
+  await page.getByRole('combobox', { name: 'Search inventory' }).fill('f15');
   await expect(page).toHaveURL(/q=f15/);
   const titles = page.locator('main ul.grid:visible').first().locator('article h3');
   await expect(titles.first()).toContainText('F-150');
@@ -127,4 +128,48 @@ test('search as you type, then infinite scroll to the end', async ({ page }) => 
   }
   await expect(cards).toHaveCount(total);
   await expect(page.getByText(`You’ve seen all ${total} vehicles.`)).toBeVisible();
+});
+
+test('condition and engine-size filters → VDP shows the trust badges', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/inventory');
+  const rail = page.getByRole('complementary', { name: 'Filters' });
+
+  // Every catalog make is listed, even ones nothing matches right now.
+  await rail
+    .getByRole('button', { name: /^Show all \d+$/ })
+    .first()
+    .click();
+  await expect(rail.getByRole('checkbox', { name: /^Tesla/ })).toBeVisible();
+
+  await rail.getByRole('button', { name: 'Condition & history' }).click();
+  await rail.getByRole('checkbox', { name: /^Run & Drive/ }).click();
+  await expect(page).toHaveURL(/drive_status=runs_and_drives/);
+  await rail.getByRole('checkbox', { name: /^No damage/ }).click();
+  await expect(page).toHaveURL(/damage=none/);
+
+  await rail.getByRole('button', { name: 'Engine & drivetrain' }).click();
+  await rail.getByRole('combobox', { name: 'Smallest engine' }).click();
+  await page.getByRole('option', { name: '2.0 L' }).click();
+  await expect(page).toHaveURL(/engine_min=2\.0/);
+  await expect(page.getByRole('button', { name: 'Remove filter: Engine 2.0L+' })).toBeVisible();
+
+  const grid = page.locator('main ul.grid:visible').first();
+  await grid.locator('article a').first().click();
+  await expect(page).toHaveURL(/\/inventory\/[a-z0-9-]+$/);
+  const badges = page.getByRole('list', { name: 'Condition and history' });
+  await expect(badges.getByText('Run & Drive', { exact: true })).toBeVisible();
+  await expect(badges.getByText('No damage', { exact: true })).toBeVisible();
+});
+
+test('search suggests catalog makes and models (nicknames too)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/inventory');
+  const search = page.getByRole('combobox', { name: 'Search inventory' });
+  await search.fill('chevy');
+  const option = page.getByRole('option', { name: /Chevrolet/ }).first();
+  await expect(option).toBeVisible();
+  await option.click();
+  await expect(page).toHaveURL(/make=chevrolet/);
+  await expect(page.getByRole('button', { name: 'Remove filter: Chevrolet' })).toBeVisible();
 });

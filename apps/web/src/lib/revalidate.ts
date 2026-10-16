@@ -14,6 +14,13 @@ export function revalidateInventory(...vehicleIds: string[]) {
   refresh();
 }
 
+/** After a catalog edit: suggestions and the facet option lists (cached with listings). */
+export function revalidateCatalog() {
+  updateTag(cacheTags.catalog);
+  updateTag(cacheTags.vehicles);
+  refresh();
+}
+
 export function revalidateSiteSettings() {
   updateTag(cacheTags.siteSettings);
   refresh();

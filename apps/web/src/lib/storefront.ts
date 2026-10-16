@@ -2,6 +2,7 @@ import 'server-only';
 
 import {
   dealerLogoUrl,
+  getCatalog,
   getDealerBySlug,
   getFacets,
   getVehicleBySlug,
@@ -41,7 +42,6 @@ export async function getInventoryFacets(filters: InventoryFilters) {
   return getFacets(createPublicClient(), countFilters);
 }
 
-/** Home page data in one cached call (rails + body-type counts). */
 /** Home rails and facet counts, or null while Supabase is unreachable (the hero still renders). */
 export async function getHomeData() {
   'use cache';
@@ -59,6 +59,24 @@ export async function getHomeData() {
   } catch (error) {
     // Caught here, not by the caller: errors thrown out of a cached function fail prerendering.
     log.warn('home', 'listings unavailable, showing the hero only', { ...describeError(error) });
+    return null;
+  }
+}
+
+/** Every make and model for search suggestions and the hero, or null while Supabase is down. */
+export async function getStorefrontCatalog() {
+  'use cache';
+  cacheTag(cacheTags.catalog);
+  try {
+    const catalog = await getCatalog(createPublicClient());
+    cacheLife('hours');
+    return catalog;
+  } catch (error) {
+    // Retry soon: a failure must not switch suggestions off for hours.
+    cacheLife('minutes');
+    log.warn('catalog', 'catalog unavailable, search suggestions are off', {
+      ...describeError(error),
+    });
     return null;
   }
 }

@@ -1,3 +1,4 @@
+import type { Catalog } from '@cp/core';
 import { ArrowRight, BadgeDollarSign, ClipboardList, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -6,7 +7,7 @@ import { HeroSearch } from '@/components/home/hero-search';
 import { Button } from '@/components/ui/button';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
 import { getSiteInfo } from '@/lib/site';
-import { getHomeData } from '@/lib/storefront';
+import { getHomeData, getStorefrontCatalog } from '@/lib/storefront';
 
 const TRUST = [
   {
@@ -27,7 +28,11 @@ const TRUST = [
 ] as const;
 
 export default async function HomePage() {
-  const [{ settings }, home] = await Promise.all([getSiteInfo(), getHomeData()]);
+  const [{ settings }, home, catalog] = await Promise.all([
+    getSiteInfo(),
+    getHomeData(),
+    getStorefrontCatalog(),
+  ]);
   const total = home?.facets.total ?? null;
 
   return (
@@ -52,7 +57,7 @@ export default async function HomePage() {
         </div>
         <div className="relative mt-10 max-w-4xl">
           {home ? (
-            <HeroSearch makes={home.facets.make} models={home.facets.model} />
+            <HeroSearch makes={home.facets.make} models={heroModels(catalog, home.facets.model)} />
           ) : (
             <Button asChild size="lg">
               <Link href="/inventory">
@@ -121,4 +126,19 @@ export default async function HomePage() {
       </section>
     </div>
   );
+}
+
+/** Every catalog model, with stock counts where there are cars (facets only list those). */
+function heroModels(
+  catalog: Catalog | null,
+  inStock: { value: string; label: string; make: string; count: number }[],
+) {
+  if (!catalog) return inStock;
+  const counts = new Map(inStock.map((m) => [`${m.make}/${m.value}`, m.count]));
+  return catalog.models.map((m) => ({
+    value: m.slug,
+    label: m.name,
+    make: m.make,
+    count: counts.get(`${m.make}/${m.slug}`) ?? 0,
+  }));
 }
