@@ -5,7 +5,7 @@ import type { ActionResult } from '@cp/types';
 import { dealerApplicationSchema, uuidSchema } from '@cp/validators';
 import { z } from 'zod';
 
-import { attempt, invalidInput } from '@/lib/action-result';
+import { attempt, invalidInput, refuse } from '@/lib/action-result';
 import { DOCUMENT_TYPES, MAX_DOCUMENT_BYTES } from '@/lib/documents';
 import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
@@ -14,12 +14,14 @@ export async function submitDealerApplication(
   input: unknown,
 ): Promise<ActionResult<{ dealerId: string }>> {
   const parsed = dealerApplicationSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error);
+  if (!parsed.success) return invalidInput('dealer.apply', parsed.error);
   const ctx = await getSession();
-  if (!ctx) return { ok: false, error: 'Please sign in to apply.' };
+  if (!ctx) return refuse('dealer.apply', 'Please sign in to apply.');
   const supabase = await createClient();
   // No refresh(): the client still uploads documents, then shows its own confirmation.
-  return attempt(async () => ({ dealerId: await applyAsDealer(supabase, parsed.data) }));
+  return attempt('dealer.apply', async () => ({
+    dealerId: await applyAsDealer(supabase, parsed.data),
+  }));
 }
 
 const documentSchema = z.object({
@@ -35,9 +37,14 @@ export async function requestDocumentUpload(
   input: unknown,
 ): Promise<ActionResult<{ path: string; signedUrl: string }>> {
   const parsed = documentSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, parsed.error.issues[0]?.message);
+  if (!parsed.success)
+    return invalidInput(
+      'dealer.apply.document-upload',
+      parsed.error,
+      parsed.error.issues[0]?.message,
+    );
   const supabase = await createClient();
-  return attempt(async () => {
+  return attempt('dealer.apply.document-upload', async () => {
     const { path, signedUrl } = await createDealerDocumentUpload(
       supabase,
       parsed.data.dealerId,
@@ -56,9 +63,10 @@ export async function recordDocument(input: unknown): Promise<ActionResult<{ nam
       size: z.number().int().positive().nullable(),
     })
     .safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid document');
+  if (!parsed.success)
+    return invalidInput('dealer.apply.document-saved', parsed.error, 'Invalid document');
   const supabase = await createClient();
-  return attempt(async () => {
+  return attempt('dealer.apply.document-saved', async () => {
     const doc = await recordDealerDocument(supabase, parsed.data.dealerId, parsed.data);
     return { name: doc.name };
   });

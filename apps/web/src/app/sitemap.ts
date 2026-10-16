@@ -4,9 +4,10 @@ import { cacheLife, cacheTag } from 'next/cache';
 
 import { cacheTags } from '@/lib/cache-tags';
 import { env } from '@/lib/env';
+import { log } from '@/lib/log';
 import { createPublicClient } from '@/lib/supabase/public';
 
-const STATIC_PATHS = ['/', '/inventory', '/financing', '/sell-with-us', '/contact'] as const;
+const STATIC_PATHS = ['/', '/inventory', '/sell-with-us', '/contact'] as const;
 
 /** Storefront pages, every live listing and every approved dealer. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -43,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
   } catch (error) {
     // A build without a database still gets a valid sitemap of the static pages.
-    console.error('[sitemap] listing data unavailable:', error);
+    log.error('sitemap', 'listing data unavailable: static pages only', {}, error);
     cacheLife('minutes');
     return pages;
   }

@@ -5,7 +5,6 @@ export const consolePhases: Record<ConsoleSection, number> = {
   overview: 3,
   inventory: 4,
   leads: 6,
-  finance: 6,
   dealer: 4,
   dealers: 4,
   catalog: 4,

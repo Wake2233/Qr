@@ -85,10 +85,7 @@ export async function SiteFooter() {
         </div>
       </div>
       <div className="text-muted-foreground mx-auto max-w-[1440px] border-t px-4 py-6 text-xs sm:px-6">
-        <p>
-          © {settings.brand_name}. Prices exclude tax, title and registration. Financing offers are
-          simulated pre-qualification estimates, not credit decisions.
-        </p>
+        <p>© {settings.brand_name}. Prices exclude tax, title and registration.</p>
       </div>
     </footer>
   );

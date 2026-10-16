@@ -4,6 +4,7 @@ import type { InventoryScope, SessionContext } from '@cp/api';
 import { isAdmin } from '@cp/core';
 import { notFound, redirect } from 'next/navigation';
 
+import { log } from '@/lib/log';
 import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
 
@@ -22,8 +23,17 @@ export interface ConsoleContext {
 /** Console pages and actions: requires a signed-in admin or dealer member (RLS still enforces data). */
 export async function requireConsole(): Promise<ConsoleContext> {
   const ctx = await getSession();
-  if (!ctx) redirect('/login?next=/dashboard');
-  if (!ctx.canAccessConsole) redirect('/dashboard');
+  if (!ctx) {
+    log.info('console', 'no session → sign-in');
+    redirect('/login?next=/dashboard');
+  }
+  if (!ctx.canAccessConsole) {
+    log.warn('console', 'access denied: not an admin or dealer member', {
+      user: ctx.userId,
+      role: ctx.profile.role,
+    });
+    redirect('/dashboard');
+  }
   const admin = isAdmin({ role: ctx.profile.role });
   const memberDealerIds = ctx.memberships.map((m) => m.dealerId);
   return {
@@ -41,6 +51,12 @@ export async function requireConsole(): Promise<ConsoleContext> {
 /** Admin-only console pages 404 for everyone else (don't reveal they exist). */
 export async function requireAdmin(): Promise<ConsoleContext> {
   const console = await requireConsole();
-  if (!console.isAdmin) notFound();
+  if (!console.isAdmin) {
+    log.warn('console', 'admin page refused (shown as 404)', {
+      user: console.ctx.userId,
+      role: console.ctx.profile.role,
+    });
+    notFound();
+  }
   return console;
 }

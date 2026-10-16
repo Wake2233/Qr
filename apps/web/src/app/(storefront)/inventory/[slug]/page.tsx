@@ -16,7 +16,6 @@ import { CompareToggle } from '@/components/vehicle/compare-toggle';
 import { ContactActions } from '@/components/vehicle/contact-actions';
 import { DealerCard } from '@/components/vehicle/dealer-card';
 import { FavoriteButton } from '@/components/vehicle/favorite-button';
-import { PaymentEstimate } from '@/components/vehicle/payment-estimate';
 import { ShareButton } from '@/components/vehicle/share-button';
 import { VehicleGallery } from '@/components/vehicle/vehicle-gallery';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
@@ -24,6 +23,7 @@ import { VehicleFeatures, VehicleSpecs } from '@/components/vehicle/vehicle-spec
 import { VehicleViewTracker } from '@/components/vehicle/vehicle-view-tracker';
 import { env } from '@/lib/env';
 import { serializeJsonLd, vehicleJsonLd } from '@/lib/json-ld';
+import { log } from '@/lib/log';
 import { getSiteInfo } from '@/lib/site';
 import { getSimilarVehicles, getVehicle } from '@/lib/storefront';
 import { createPublicClient } from '@/lib/supabase/public';
@@ -42,7 +42,7 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
     const vehicles = await listSitemapVehicles(createPublicClient());
     if (vehicles.length > 0) return vehicles.slice(0, PREBUILT_LIMIT).map(({ slug }) => ({ slug }));
   } catch (error) {
-    console.error('[inventory] listings unavailable at build time:', error);
+    log.error('vdp', 'listings unavailable at build time: prebuilding none', {}, error);
   }
   // Cache Components needs at least one param; a build without a database prebuilds a 404.
   return [{ slug: 'unavailable' }];
@@ -137,7 +137,7 @@ async function VehicleDetailView({ slug }: { slug: string }) {
       </nav>
 
       {/*
-        Phones read top to bottom: photos → title, price and actions → specs → estimate and dealer.
+        Phones read top to bottom: photos → title, price and actions → specs → dealer.
         From lg the summary column is sticky beside the photos and specs.
       */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:gap-x-10 lg:gap-y-10">
@@ -258,12 +258,11 @@ async function VehicleDetailView({ slug }: { slug: string }) {
             </div>
           </section>
 
-          <div className="order-4 space-y-5 lg:order-none">
-            {!sold && vehicle.price_cents !== null ? (
-              <PaymentEstimate priceCents={vehicle.price_cents} aprByTier={settings.apr_by_tier} />
-            ) : null}
-            {dealer ? <DealerCard dealer={dealer} /> : null}
-          </div>
+          {dealer ? (
+            <div className="order-4 lg:order-none">
+              <DealerCard dealer={dealer} />
+            </div>
+          ) : null}
         </div>
       </div>
 

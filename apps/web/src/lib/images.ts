@@ -81,11 +81,23 @@ export function uploadWithProgress(
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress(event.loaded / event.total);
     };
-    xhr.onload = () =>
-      xhr.status >= 200 && xhr.status < 300
-        ? resolve()
-        : reject(new Error(`Upload failed (${xhr.status})`));
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      // Storage's reason stays in the browser console; the person sees one short sentence.
+      console.warn(`[upload] storage refused the file · status=${xhr.status}`, xhr.responseText);
+      reject(new Error(uploadFailureMessage(xhr.status)));
+    };
     xhr.onerror = () => reject(new Error('Upload failed. Check your connection.'));
     xhr.send(body);
   });
+}
+
+/** Storage HTTP status → what to tell the person uploading. */
+export function uploadFailureMessage(status: number): string {
+  if (status === 413) return 'That file is too large.';
+  if (status === 400 || status === 415) return 'That file type isn’t supported.';
+  if (status === 401 || status === 403)
+    return 'Upload link expired. Refresh the page and try again.';
+  if (status === 409) return 'That file was already uploaded.';
+  return 'Upload failed. Please try again.';
 }

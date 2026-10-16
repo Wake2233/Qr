@@ -7,11 +7,10 @@
 -- Site settings
 ------------------------------------------------------------------------------
 insert into public.site_settings (
-  id, brand_name, default_whatsapp_e164, default_phone_e164, business_hours, apr_by_tier
+  id, brand_name, default_whatsapp_e164, default_phone_e164, business_hours
 ) values (
   1, 'DG Auto', '+13473700570', '+13473700570',
-  '{"mon":"09:00-19:00","tue":"09:00-19:00","wed":"09:00-19:00","thu":"09:00-19:00","fri":"09:00-19:00","sat":"10:00-17:00","sun":null}',
-  '{"excellent":650,"good":900,"fair":1350,"rebuilding":1900}'
+  '{"mon":"09:00-19:00","tue":"09:00-19:00","wed":"09:00-19:00","thu":"09:00-19:00","fri":"09:00-19:00","sat":"10:00-17:00","sun":null}'
 )
 on conflict (id) do nothing;
 

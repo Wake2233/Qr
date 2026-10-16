@@ -21,8 +21,9 @@ import { Constants, type ActionResult, type Enums } from '@cp/types';
 import { priceCentsSchema, uuidSchema, vehicleUpsertSchema, vinSchema } from '@cp/validators';
 import { z } from 'zod';
 
-import { attempt, dbFailure, invalidInput } from '@/lib/action-result';
+import { attempt, dbFailure, invalidInput, refuse } from '@/lib/action-result';
 import { requireConsole } from '@/lib/console';
+import { log } from '@/lib/log';
 import { revalidateInventory } from '@/lib/revalidate';
 
 type ListingStatus = Enums<'listing_status'>;
@@ -34,18 +35,22 @@ export async function saveVehicle(
   input: unknown,
 ): Promise<ActionResult<{ id: string; status: ListingStatus | 'draft' }>> {
   const parsed = vehicleUpsertSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error);
+  if (!parsed.success) return invalidInput('inventory.save', parsed.error);
   const { ctx, supabase, isAdmin } = await requireConsole();
   const values = isAdmin ? parsed.data : { ...parsed.data, is_featured: undefined };
 
-  const result = await attempt(async () => {
-    if (id) {
-      const saved = await updateVehicle(supabase, uuidSchema.parse(id), values);
-      return { id: saved.id, status: saved.status };
-    }
-    const created = await createVehicle(supabase, values, ctx.userId);
-    return { id: created.id, status: 'draft' as const };
-  });
+  const result = await attempt(
+    'inventory.save',
+    async () => {
+      if (id) {
+        const saved = await updateVehicle(supabase, uuidSchema.parse(id), values);
+        return { id: saved.id, status: saved.status };
+      }
+      const created = await createVehicle(supabase, values, ctx.userId);
+      return { id: created.id, status: 'draft' as const };
+    },
+    { vehicle: id ?? 'new', user: ctx.userId },
+  );
   if (result.ok) revalidateInventory(result.data.id);
   return result;
 }
@@ -57,11 +62,16 @@ export async function changeVehicleStatus(
 ): Promise<ActionResult<{ status: ListingStatus }>> {
   const parsedId = uuidSchema.safeParse(id);
   const parsedStatus = statusSchema.safeParse(status);
-  if (!parsedId.success || !parsedStatus.success) return { ok: false, error: 'Invalid request' };
+  if (!parsedId.success || !parsedStatus.success)
+    return refuse('inventory.status', 'Invalid request');
   const { supabase } = await requireConsole();
-  const result = await attempt(async () => ({
-    status: await setVehicleStatus(supabase, parsedId.data, parsedStatus.data),
-  }));
+  const result = await attempt(
+    'inventory.status',
+    async () => ({
+      status: await setVehicleStatus(supabase, parsedId.data, parsedStatus.data),
+    }),
+    { vehicle: parsedId.data, to: parsedStatus.data },
+  );
   if (result.ok) revalidateInventory(parsedId.data);
   return result;
 }
@@ -86,13 +96,21 @@ export async function changeVehiclePrice(
     priceCents,
   });
   if (!parsed.success) {
-    return invalidInput(parsed.error, parsed.error.issues[0]?.message ?? 'Enter a valid price');
+    return invalidInput(
+      'inventory.price',
+      parsed.error,
+      parsed.error.issues[0]?.message ?? 'Enter a valid price',
+    );
   }
   const { supabase } = await requireConsole();
-  const result = await attempt(async () => {
-    await updateVehiclePrice(supabase, parsed.data.id, parsed.data.priceCents);
-    return { priceCents: parsed.data.priceCents };
-  });
+  const result = await attempt(
+    'inventory.price',
+    async () => {
+      await updateVehiclePrice(supabase, parsed.data.id, parsed.data.priceCents);
+      return { priceCents: parsed.data.priceCents };
+    },
+    { vehicle: parsed.data.id, price_cents: parsed.data.priceCents },
+  );
   if (result.ok) revalidateInventory(parsed.data.id);
   return result;
 }
@@ -105,30 +123,40 @@ const bulkSchema = z.object({
 /** Admin bulk actions from the inventory table. */
 export async function bulkVehicleAction(input: unknown): Promise<ActionResult<{ count: number }>> {
   const parsed = bulkSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Select at least one listing');
+  if (!parsed.success)
+    return invalidInput('inventory.bulk', parsed.error, 'Select at least one listing');
   const { supabase, isAdmin } = await requireConsole();
-  if (!isAdmin) return { ok: false, error: 'Only admins can run bulk actions.' };
+  if (!isAdmin) return refuse('inventory.bulk', 'Only admins can run bulk actions.');
   const { ids, action } = parsed.data;
   const patch =
     action === 'archive'
       ? ({ status: 'archived' } as const)
       : { is_featured: action === 'feature' };
-  const result = await attempt(async () => ({
-    count: await bulkUpdateVehicles(supabase, ids, patch),
-  }));
+  const result = await attempt(
+    'inventory.bulk',
+    async () => ({
+      count: await bulkUpdateVehicles(supabase, ids, patch),
+    }),
+    { action, listings: ids.length },
+  );
   if (result.ok) revalidateInventory(...ids);
   return result;
 }
 
 export async function removeVehicle(id: string): Promise<ActionResult<null>> {
   const parsed = uuidSchema.safeParse(id);
-  if (!parsed.success) return { ok: false, error: 'Invalid request' };
+  if (!parsed.success) return refuse('inventory.delete', 'Invalid request');
   const { supabase, isAdmin } = await requireConsole();
-  if (!isAdmin) return { ok: false, error: 'Dealers archive listings instead of deleting them.' };
-  const result = await attempt(async () => {
-    await deleteVehicle(supabase, parsed.data);
-    return null;
-  });
+  if (!isAdmin)
+    return refuse('inventory.delete', 'Dealers archive listings instead of deleting them.');
+  const result = await attempt(
+    'inventory.delete',
+    async () => {
+      await deleteVehicle(supabase, parsed.data);
+      return null;
+    },
+    { vehicle: parsed.data },
+  );
   if (result.ok) revalidateInventory(parsed.data);
   return result;
 }
@@ -151,11 +179,17 @@ export async function requestPhotoUploads(
   input: unknown,
 ): Promise<ActionResult<PhotoUploadTarget[]>> {
   const parsed = uploadRequestSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid upload request');
+  if (!parsed.success)
+    return invalidInput('inventory.photos.upload-urls', parsed.error, 'Invalid upload request');
   const { supabase } = await requireConsole();
   const { dealerId, vehicleId, files } = parsed.data;
-  return attempt(() =>
-    Promise.all(files.map((file) => createPhotoUpload(supabase, { dealerId, vehicleId, ...file }))),
+  return attempt(
+    'inventory.photos.upload-urls',
+    () =>
+      Promise.all(
+        files.map((file) => createPhotoUpload(supabase, { dealerId, vehicleId, ...file })),
+      ),
+    { vehicle: vehicleId, photos: files.length },
   );
 }
 
@@ -174,13 +208,21 @@ export async function registerPhotos(
   const parsed = z
     .object({ vehicleId: uuidSchema, photos: z.array(photoSchema).min(1).max(MAX_VEHICLE_IMAGES) })
     .safeParse({ vehicleId, photos });
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid photos');
+  if (!parsed.success) return invalidInput('inventory.photos.add', parsed.error, 'Invalid photos');
   const { supabase } = await requireConsole();
-  const result = await attempt(async () => ({
-    count: (
-      await addVehicleImages(supabase, parsed.data.vehicleId, parsed.data.photos as UploadedPhoto[])
-    ).length,
-  }));
+  const result = await attempt(
+    'inventory.photos.add',
+    async () => ({
+      count: (
+        await addVehicleImages(
+          supabase,
+          parsed.data.vehicleId,
+          parsed.data.photos as UploadedPhoto[],
+        )
+      ).length,
+    }),
+    { vehicle: parsed.data.vehicleId, photos: parsed.data.photos.length },
+  );
   if (result.ok) revalidateInventory(parsed.data.vehicleId);
   return result;
 }
@@ -192,12 +234,17 @@ export async function reorderPhotos(
   const parsed = z
     .object({ vehicleId: uuidSchema, orderedIds: z.array(uuidSchema).min(1) })
     .safeParse({ vehicleId, orderedIds });
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid photo order');
+  if (!parsed.success)
+    return invalidInput('inventory.photos.reorder', parsed.error, 'Invalid photo order');
   const { supabase } = await requireConsole();
-  const result = await attempt(async () => {
-    await reorderVehicleImages(supabase, parsed.data.vehicleId, parsed.data.orderedIds);
-    return null;
-  });
+  const result = await attempt(
+    'inventory.photos.reorder',
+    async () => {
+      await reorderVehicleImages(supabase, parsed.data.vehicleId, parsed.data.orderedIds);
+      return null;
+    },
+    { vehicle: parsed.data.vehicleId },
+  );
   if (result.ok) revalidateInventory(parsed.data.vehicleId);
   return result;
 }
@@ -209,34 +256,47 @@ export async function deletePhoto(vehicleId: string, image: unknown): Promise<Ac
       image: z.object({ id: uuidSchema, storage_path: z.string().min(1) }),
     })
     .safeParse({ vehicleId, image });
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid photo');
+  if (!parsed.success)
+    return invalidInput('inventory.photos.delete', parsed.error, 'Invalid photo');
   const { supabase } = await requireConsole();
   // The storage path must belong to this vehicle's row; the DB delete (RLS) is the real check.
-  const result = await attempt(async () => {
-    await deleteVehicleImage(supabase, parsed.data.image);
-    return null;
-  });
+  const result = await attempt(
+    'inventory.photos.delete',
+    async () => {
+      await deleteVehicleImage(supabase, parsed.data.image);
+      return null;
+    },
+    { vehicle: parsed.data.vehicleId, image: parsed.data.image.id },
+  );
   if (result.ok) revalidateInventory(parsed.data.vehicleId);
   return result;
 }
 
 export async function decodeVinAction(vin: unknown): Promise<ActionResult<VinDecodeResult>> {
   const parsed = vinSchema.safeParse(vin);
-  if (!parsed.success) return invalidInput(parsed.error, 'Enter a valid 17-character VIN');
+  if (!parsed.success)
+    return invalidInput('inventory.decode-vin', parsed.error, 'Enter a valid 17-character VIN');
   const { supabase } = await requireConsole();
   try {
-    return { ok: true, data: await decodeVin(supabase, parsed.data) };
+    const data = await decodeVin(supabase, parsed.data);
+    log.info('inventory.decode-vin', 'ok', { vin: parsed.data });
+    return { ok: true, data };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     if (message.startsWith('UNDECODABLE_VIN')) {
-      return {
-        ok: false,
-        error: 'That VIN could not be decoded. Check it, or fill in the details by hand.',
-      };
+      return refuse(
+        'inventory.decode-vin',
+        'That VIN could not be decoded. Check it, or fill in the details by hand.',
+        `UNDECODABLE_VIN ${parsed.data}`,
+      );
     }
     if (message.startsWith('DECODER_UNAVAILABLE')) {
-      return { ok: false, error: 'The VIN decoder is not responding. Try again in a minute.' };
+      return refuse(
+        'inventory.decode-vin',
+        'The VIN decoder is not responding. Try again in a minute.',
+        'DECODER_UNAVAILABLE (NHTSA vPIC did not answer; see the decode-vin function logs)',
+      );
     }
-    return dbFailure(error);
+    return dbFailure('inventory.decode-vin', error);
   }
 }

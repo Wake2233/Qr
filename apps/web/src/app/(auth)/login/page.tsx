@@ -30,6 +30,9 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
 async function LoginFormFromParams({ searchParams }: Pick<PageProps<'/login'>, 'searchParams'>) {
   const params = await searchParams;
   const next = typeof params.next === 'string' ? params.next : undefined;
-  const error = params.error === 'link' ? 'That sign-in link is invalid or expired.' : undefined;
+  const error =
+    params.error === 'link'
+      ? 'That sign-in link has expired or was already used. Enter your email for a new code.'
+      : undefined;
   return <LoginForm next={next} initialError={error} />;
 }

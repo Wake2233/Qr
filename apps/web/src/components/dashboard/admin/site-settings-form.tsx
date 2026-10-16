@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  CREDIT_TIERS,
-  creditTierLabels,
-  DEFAULT_APR_BY_TIER,
-  formatApr,
-  renderWhatsAppTemplate,
-} from '@cp/core';
+import { renderWhatsAppTemplate } from '@cp/core';
 import { siteSettingsSchema, type BusinessHours, type SiteSettingsInput } from '@cp/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -16,7 +10,7 @@ import { toast } from 'sonner';
 
 import { saveSiteSettings } from '@/app/dashboard/settings/actions';
 import { BusinessHoursEditor } from '@/components/dashboard/business-hours-editor';
-import { Field, firstErrorMessage, NumberInput } from '@/components/dashboard/form-fields';
+import { Field, firstErrorMessage } from '@/components/dashboard/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -109,60 +103,6 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettingsInput }) {
             />
           )}
         />
-      </Card>
-
-      <Card
-        title="Financing"
-        description="Estimated APR per credit tier for the payment calculators. Offers are simulated pre-qualification estimates, not credit decisions."
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          {CREDIT_TIERS.map((tier) => (
-            <Field
-              key={tier}
-              label={`${creditTierLabels[tier]} APR (%)`}
-              error={firstErrorMessage(formState.errors.apr_by_tier?.[tier])}
-            >
-              {(p) => (
-                <Controller
-                  control={control}
-                  name={`apr_by_tier.${tier}`}
-                  render={({ field }) => (
-                    <NumberInput
-                      {...p}
-                      decimals={1}
-                      placeholder={formatApr(DEFAULT_APR_BY_TIER[tier]).replace('%', '')}
-                      // Stored as basis points; edited as a percentage.
-                      value={field.value == null ? null : field.value / 100}
-                      onChange={(percent) =>
-                        field.onChange(percent == null ? undefined : Math.round(percent * 100))
-                      }
-                      onBlur={field.onBlur}
-                    />
-                  )}
-                />
-              )}
-            </Field>
-          ))}
-          <Field
-            label="Lender network size (marketing)"
-            error={formState.errors.lender_network_size?.message}
-          >
-            {(p) => (
-              <Controller
-                control={control}
-                name="lender_network_size"
-                render={({ field }) => (
-                  <NumberInput
-                    {...p}
-                    value={field.value}
-                    onChange={(n) => field.onChange(n ?? 0)}
-                    onBlur={field.onBlur}
-                  />
-                )}
-              />
-            )}
-          </Field>
-        </div>
       </Card>
 
       <Card title="Listing review">

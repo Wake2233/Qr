@@ -174,43 +174,6 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"finance_applications": {
-                  Row: {
-                    "access_token": string,"consent_at": string,"consent_text_version": string,"created_at": string,"credit_tier": Database["public"]['Enums']["credit_tier"],"dealer_id": string,"down_payment_cents": number,"email": string,"employment_status": string | null,"first_name": string,"housing_payment_cents": number | null,"id": string,"last_name": string,"monthly_income_cents": number | null,"phone_e164": string,"postal_code": string,"requested_amount_cents": number,"status": Database["public"]['Enums']["finance_app_status"],"term_months": number,"trade_in_value_cents": number,"updated_at": string,"user_id": string | null,"vehicle_id": string | null
-                  }
-                  Insert: {
-                    "access_token"?: string,"consent_at": string,"consent_text_version": string,"created_at"?: string,"credit_tier": Database["public"]['Enums']["credit_tier"],"dealer_id": string,"down_payment_cents"?: number,"email": string,"employment_status"?: string | null,"first_name": string,"housing_payment_cents"?: number | null,"id"?: string,"last_name": string,"monthly_income_cents"?: number | null,"phone_e164": string,"postal_code": string,"requested_amount_cents": number,"status"?: Database["public"]['Enums']["finance_app_status"],"term_months": number,"trade_in_value_cents"?: number,"updated_at"?: string,"user_id"?: string | null,"vehicle_id"?: string | null
-                  }
-                  Update: {
-                    "access_token"?: string,"consent_at"?: string,"consent_text_version"?: string,"created_at"?: string,"credit_tier"?: Database["public"]['Enums']["credit_tier"],"dealer_id"?: string,"down_payment_cents"?: number,"email"?: string,"employment_status"?: string | null,"first_name"?: string,"housing_payment_cents"?: number | null,"id"?: string,"last_name"?: string,"monthly_income_cents"?: number | null,"phone_e164"?: string,"postal_code"?: string,"requested_amount_cents"?: number,"status"?: Database["public"]['Enums']["finance_app_status"],"term_months"?: number,"trade_in_value_cents"?: number,"updated_at"?: string,"user_id"?: string | null,"vehicle_id"?: string | null
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "finance_applications_dealer_id_fkey"
-      columns: ["dealer_id"]
-isOneToOne: false
-      referencedRelation: "dealers"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "finance_applications_user_id_fkey"
-      columns: ["user_id"]
-isOneToOne: false
-      referencedRelation: "profiles"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "finance_applications_vehicle_id_fkey"
-      columns: ["vehicle_id"]
-isOneToOne: false
-      referencedRelation: "vehicle_cards"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "finance_applications_vehicle_id_fkey"
-      columns: ["vehicle_id"]
-isOneToOne: false
-      referencedRelation: "vehicles"
-      referencedColumns: ["id"]
-    }
-                  ]
                 },"lead_activities": {
                   Row: {
                     "author_id": string | null,"body": string | null,"created_at": string,"id": string,"kind": string,"lead_id": string,"meta": NonNullable<Json>
@@ -278,44 +241,6 @@ isOneToOne: false
       referencedRelation: "vehicles"
       referencedColumns: ["id"]
     }
-                  ]
-                },"lender_offers": {
-                  Row: {
-                    "application_id": string,"approved_amount_cents": number,"apr_bps": number,"created_at": string,"expires_at": string,"id": string,"lender_id": string,"monthly_payment_cents": number,"term_months": number
-                  }
-                  Insert: {
-                    "application_id": string,"approved_amount_cents": number,"apr_bps": number,"created_at"?: string,"expires_at": string,"id"?: string,"lender_id": string,"monthly_payment_cents": number,"term_months": number
-                  }
-                  Update: {
-                    "application_id"?: string,"approved_amount_cents"?: number,"apr_bps"?: number,"created_at"?: string,"expires_at"?: string,"id"?: string,"lender_id"?: string,"monthly_payment_cents"?: number,"term_months"?: number
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "lender_offers_application_id_fkey"
-      columns: ["application_id"]
-isOneToOne: false
-      referencedRelation: "finance_applications"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "lender_offers_lender_id_fkey"
-      columns: ["lender_id"]
-isOneToOne: false
-      referencedRelation: "lenders"
-      referencedColumns: ["id"]
-    }
-                  ]
-                },"lenders": {
-                  Row: {
-                    "active": boolean,"base_apr_bps": number,"created_at": string,"id": string,"logo_path": string | null,"max_ltv_pct": number,"max_term_months": number,"min_credit_tier": Database["public"]['Enums']["credit_tier"],"name": string
-                  }
-                  Insert: {
-                    "active"?: boolean,"base_apr_bps": number,"created_at"?: string,"id"?: string,"logo_path"?: string | null,"max_ltv_pct"?: number,"max_term_months"?: number,"min_credit_tier"?: Database["public"]['Enums']["credit_tier"],"name": string
-                  }
-                  Update: {
-                    "active"?: boolean,"base_apr_bps"?: number,"created_at"?: string,"id"?: string,"logo_path"?: string | null,"max_ltv_pct"?: number,"max_term_months"?: number,"min_credit_tier"?: Database["public"]['Enums']["credit_tier"],"name"?: string
-                  }
-                  Relationships: [
-                    
                   ]
                 },"makes": {
                   Row: {
@@ -653,7 +578,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "buyer"|"dealer"|"admin","body_type": "sedan"|"suv"|"pickup"|"coupe"|"convertible"|"hatchback"|"wagon"|"van"|"minivan","client_platform": "web"|"ios"|"android","contact_channel": "whatsapp"|"call","credit_tier": "excellent"|"good"|"fair"|"rebuilding","dealer_member_role": "owner"|"manager"|"staff","dealer_status": "pending"|"approved"|"rejected"|"suspended","drivetrain": "fwd"|"rwd"|"awd"|"4wd","feature_category": "safety"|"comfort"|"technology"|"exterior"|"interior"|"performance","finance_app_status": "submitted"|"matching"|"offers_ready"|"in_review"|"withdrawn","fuel_type": "gasoline"|"diesel"|"hybrid"|"plug_in_hybrid"|"electric"|"flex_fuel","lead_status": "new"|"contacted"|"qualified"|"negotiating"|"won"|"lost","lead_type": "inquiry"|"test_drive"|"trade_in"|"finance","listing_status": "draft"|"pending_review"|"active"|"reserved"|"sold"|"archived","title_status": "clean"|"rebuilt"|"salvage"|"lemon"|"unknown","transmission": "automatic"|"manual"|"cvt"|"dct","vehicle_condition": "new"|"used"|"certified"
+            "app_role": "buyer"|"dealer"|"admin","body_type": "sedan"|"suv"|"pickup"|"coupe"|"convertible"|"hatchback"|"wagon"|"van"|"minivan","client_platform": "web"|"ios"|"android","contact_channel": "whatsapp"|"call","dealer_member_role": "owner"|"manager"|"staff","dealer_status": "pending"|"approved"|"rejected"|"suspended","drivetrain": "fwd"|"rwd"|"awd"|"4wd","feature_category": "safety"|"comfort"|"technology"|"exterior"|"interior"|"performance","fuel_type": "gasoline"|"diesel"|"hybrid"|"plug_in_hybrid"|"electric"|"flex_fuel","lead_status": "new"|"contacted"|"qualified"|"negotiating"|"won"|"lost","lead_type": "inquiry"|"test_drive"|"trade_in","listing_status": "draft"|"pending_review"|"active"|"reserved"|"sold"|"archived","title_status": "clean"|"rebuilt"|"salvage"|"lemon"|"unknown","transmission": "automatic"|"manual"|"cvt"|"dct","vehicle_condition": "new"|"used"|"certified"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -769,7 +694,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "app_role": ["buyer", "dealer", "admin"],"body_type": ["sedan", "suv", "pickup", "coupe", "convertible", "hatchback", "wagon", "van", "minivan"],"client_platform": ["web", "ios", "android"],"contact_channel": ["whatsapp", "call"],"credit_tier": ["excellent", "good", "fair", "rebuilding"],"dealer_member_role": ["owner", "manager", "staff"],"dealer_status": ["pending", "approved", "rejected", "suspended"],"drivetrain": ["fwd", "rwd", "awd", "4wd"],"feature_category": ["safety", "comfort", "technology", "exterior", "interior", "performance"],"finance_app_status": ["submitted", "matching", "offers_ready", "in_review", "withdrawn"],"fuel_type": ["gasoline", "diesel", "hybrid", "plug_in_hybrid", "electric", "flex_fuel"],"lead_status": ["new", "contacted", "qualified", "negotiating", "won", "lost"],"lead_type": ["inquiry", "test_drive", "trade_in", "finance"],"listing_status": ["draft", "pending_review", "active", "reserved", "sold", "archived"],"title_status": ["clean", "rebuilt", "salvage", "lemon", "unknown"],"transmission": ["automatic", "manual", "cvt", "dct"],"vehicle_condition": ["new", "used", "certified"]
+            "app_role": ["buyer", "dealer", "admin"],"body_type": ["sedan", "suv", "pickup", "coupe", "convertible", "hatchback", "wagon", "van", "minivan"],"client_platform": ["web", "ios", "android"],"contact_channel": ["whatsapp", "call"],"dealer_member_role": ["owner", "manager", "staff"],"dealer_status": ["pending", "approved", "rejected", "suspended"],"drivetrain": ["fwd", "rwd", "awd", "4wd"],"feature_category": ["safety", "comfort", "technology", "exterior", "interior", "performance"],"fuel_type": ["gasoline", "diesel", "hybrid", "plug_in_hybrid", "electric", "flex_fuel"],"lead_status": ["new", "contacted", "qualified", "negotiating", "won", "lost"],"lead_type": ["inquiry", "test_drive", "trade_in"],"listing_status": ["draft", "pending_review", "active", "reserved", "sold", "archived"],"title_status": ["clean", "rebuilt", "salvage", "lemon", "unknown"],"transmission": ["automatic", "manual", "cvt", "dct"],"vehicle_condition": ["new", "used", "certified"]
           }
         }
 } as const

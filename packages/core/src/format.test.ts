@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   centsToDollarInput,
-  formatApr,
   formatMileage,
   formatPhone,
   formatPrice,
@@ -30,20 +29,6 @@ describe('formatPrice', () => {
 describe('formatMileage', () => {
   it('adds thousands separators and unit', () => {
     expect(formatMileage(42_180)).toBe('42,180 mi');
-  });
-});
-
-describe('formatApr', () => {
-  it.each([
-    [650, '6.50%'],
-    [1999, '19.99%'],
-    [0, '0.00%'],
-  ])('%i → %s', (bps, expected) => {
-    expect(formatApr(bps)).toBe(expected);
-  });
-
-  it('rejects fractional basis points', () => {
-    expect(() => formatApr(6.5)).toThrow(TypeError);
   });
 });
 

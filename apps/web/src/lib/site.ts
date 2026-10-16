@@ -5,6 +5,7 @@ import { DEFAULT_WHATSAPP_TEMPLATE } from '@cp/core';
 import { cacheLife, cacheTag } from 'next/cache';
 
 import { cacheTags } from '@/lib/cache-tags';
+import { describeError, log } from '@/lib/log';
 import { createPublicClient } from '@/lib/supabase/public';
 
 const FALLBACK: { settings: SiteSettings; house: null } = {
@@ -14,8 +15,6 @@ const FALLBACK: { settings: SiteSettings; house: null } = {
     default_phone_e164: null,
     whatsapp_template: DEFAULT_WHATSAPP_TEMPLATE,
     business_hours: {},
-    apr_by_tier: {},
-    lender_network_size: 0,
     require_listing_review: false,
   },
   house: null,
@@ -35,7 +34,10 @@ export async function getSiteInfo() {
     cacheLife('hours');
     return { settings, house };
   } catch (error) {
-    console.error('[site] falling back to defaults:', error);
+    // Expected while Supabase is unreachable: one line, no stack (it repeats every few seconds).
+    log.warn('site', 'settings unavailable, using built-in defaults for a few seconds', {
+      ...describeError(error),
+    });
     cacheLife('seconds');
     return FALLBACK;
   }
@@ -51,7 +53,10 @@ export async function getLiveInventoryCount(): Promise<number | null> {
     const { total } = await getFacets(createPublicClient());
     cacheLife('minutes');
     return total;
-  } catch {
+  } catch (error) {
+    log.warn('site', 'live listing count unavailable (hero shows the brand instead)', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     cacheLife('seconds');
     return null;
   }

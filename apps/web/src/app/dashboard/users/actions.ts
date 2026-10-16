@@ -13,12 +13,16 @@ export async function changeUserRole(input: unknown): Promise<ActionResult<null>
   const parsed = z
     .object({ userId: uuidSchema, role: z.enum(Constants.public.Enums.app_role) })
     .safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid role');
+  if (!parsed.success) return invalidInput('users.change-role', parsed.error, 'Invalid role');
   const { supabase } = await requireAdmin();
-  const result = await attempt(async () => {
-    await setUserRole(supabase, parsed.data.userId, parsed.data.role);
-    return null;
-  });
+  const result = await attempt(
+    'users.change-role',
+    async () => {
+      await setUserRole(supabase, parsed.data.userId, parsed.data.role);
+      return null;
+    },
+    { user: parsed.data.userId, role: parsed.data.role },
+  );
   if (result.ok) refresh();
   return result;
 }

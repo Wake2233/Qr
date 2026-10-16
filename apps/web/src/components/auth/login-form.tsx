@@ -22,6 +22,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
   const { refresh: refreshAuth } = useAuth();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [error, setError] = useState<string | undefined>(initialError);
+  const [notice, setNotice] = useState<string | undefined>();
   const [sentTo, setSentTo] = useState('');
   const [pending, startTransition] = useTransition();
 
@@ -36,6 +37,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
 
   const onRequest = emailForm.handleSubmit((values) => {
     setError(undefined);
+    setNotice(undefined);
     startTransition(async () => {
       const result = await requestSignInCode(values, next);
       if (!result.ok) {
@@ -48,8 +50,23 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
     });
   });
 
+  const resend = () => {
+    setError(undefined);
+    setNotice(undefined);
+    startTransition(async () => {
+      const result = await requestSignInCode({ email: sentTo }, next);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      codeForm.setValue('code', '');
+      setNotice('A new code is on its way.');
+    });
+  };
+
   const onVerify = codeForm.handleSubmit((values) => {
     setError(undefined);
+    setNotice(undefined);
     startTransition(async () => {
       const result = await verifySignInCode(values, next);
       if (!result.ok) {
@@ -68,6 +85,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
       <form onSubmit={onVerify} className="space-y-5" noValidate>
         <p className="text-muted-foreground text-sm">
           We sent a 6-digit code to <span className="text-foreground font-medium">{sentTo}</span>.
+          It can take a minute; check your spam folder too.
         </p>
         <div className="space-y-2">
           <Label htmlFor="code">Sign-in code</Label>
@@ -82,17 +100,18 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
             {...codeForm.register('code')}
           />
         </div>
-        {error ? (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        ) : null}
+        <FormMessage error={error} notice={notice} />
         <Button type="submit" size="lg" className="w-full" disabled={pending}>
           {pending ? 'Verifying…' : 'Sign in'}
         </Button>
-        <Button type="button" variant="ghost" className="w-full" onClick={() => setStep('email')}>
-          Use a different email
-        </Button>
+        <div className="flex flex-wrap justify-between gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setStep('email')}>
+            Use a different email
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={resend} disabled={pending}>
+            Send a new code
+          </Button>
+        </div>
       </form>
     );
   }
@@ -110,11 +129,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
           {...emailForm.register('email')}
         />
       </div>
-      {error ? (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
-      ) : null}
+      <FormMessage error={error} />
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? 'Sending code…' : 'Email me a sign-in code'}
       </Button>
@@ -123,4 +138,20 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
       </p>
     </form>
   );
+}
+
+/** One quiet line under the field: red for problems, muted for confirmations. */
+function FormMessage({ error, notice }: { error?: string; notice?: string }) {
+  if (error) {
+    return (
+      <p role="alert" className="text-destructive text-sm">
+        {error}
+      </p>
+    );
+  }
+  return notice ? (
+    <p role="status" className="text-muted-foreground text-sm">
+      {notice}
+    </p>
+  ) : null;
 }

@@ -75,11 +75,7 @@ export async function updateSiteSettings(
   client: AppSupabaseClient,
   settings: z.output<typeof siteSettingsSchema>,
 ) {
-  const { business_hours, apr_by_tier, ...fields } = settings;
-  const { error } = await client
-    .from('site_settings')
-    .update({ ...fields, business_hours, apr_by_tier })
-    .eq('id', 1);
+  const { error } = await client.from('site_settings').update(settings).eq('id', 1);
   if (error) throw error;
 }
 

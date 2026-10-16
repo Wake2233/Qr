@@ -13,7 +13,7 @@ import { dealerProfileSchema, teamMemberInviteSchema, uuidSchema } from '@cp/val
 import { refresh } from 'next/cache';
 import { z } from 'zod';
 
-import { attempt, invalidInput } from '@/lib/action-result';
+import { attempt, invalidInput, refuse } from '@/lib/action-result';
 import { requireConsole } from '@/lib/console';
 import { revalidateInventory } from '@/lib/revalidate';
 
@@ -30,11 +30,12 @@ export async function saveDealerProfile(
 ): Promise<ActionResult<null>> {
   const id = uuidSchema.safeParse(dealerId);
   const parsed = dealerProfileSchema.safeParse(input);
-  if (!id.success) return { ok: false, error: 'Invalid dealer' };
-  if (!parsed.success) return invalidInput(parsed.error);
+  if (!id.success) return refuse('dealer.profile.save', 'Invalid dealer');
+  if (!parsed.success) return invalidInput('dealer.profile.save', parsed.error);
   const console = await requireManager(id.data);
-  if (!console) return { ok: false, error: 'Only owners and managers can edit the profile.' };
-  const result = await attempt(async () => {
+  if (!console)
+    return refuse('dealer.profile.save', 'Only owners and managers can edit the profile.');
+  const result = await attempt('dealer.profile.save', async () => {
     await updateDealerProfile(console.supabase, id.data, parsed.data);
     return null;
   });
@@ -50,10 +51,11 @@ export async function requestLogoUpload(
   const parsed = z
     .object({ dealerId: uuidSchema, extension: z.enum(['webp', 'jpg', 'png']) })
     .safeParse({ dealerId, extension });
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid logo');
+  if (!parsed.success) return invalidInput('dealer.logo.upload-url', parsed.error, 'Invalid logo');
   const console = await requireManager(parsed.data.dealerId);
-  if (!console) return { ok: false, error: 'Only owners and managers can change the logo.' };
-  return attempt(() =>
+  if (!console)
+    return refuse('dealer.logo.upload-url', 'Only owners and managers can change the logo.');
+  return attempt('dealer.logo.upload-url', () =>
     createDealerLogoUpload(
       console.supabase,
       parsed.data.dealerId,
@@ -67,10 +69,10 @@ export async function saveDealerLogo(dealerId: string, path: unknown): Promise<A
   const parsed = z
     .object({ dealerId: uuidSchema, path: z.string().max(300).nullable() })
     .safeParse({ dealerId, path });
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid logo');
+  if (!parsed.success) return invalidInput('dealer.logo.save', parsed.error, 'Invalid logo');
   const console = await requireManager(parsed.data.dealerId);
-  if (!console) return { ok: false, error: 'Only owners and managers can change the logo.' };
-  const result = await attempt(async () => {
+  if (!console) return refuse('dealer.logo.save', 'Only owners and managers can change the logo.');
+  const result = await attempt('dealer.logo.save', async () => {
     await setDealerLogo(console.supabase, parsed.data.dealerId, parsed.data.path);
     return null;
   });
@@ -80,10 +82,10 @@ export async function saveDealerLogo(dealerId: string, path: unknown): Promise<A
 
 export async function addTeamMember(input: unknown): Promise<ActionResult<null>> {
   const parsed = teamMemberInviteSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error);
+  if (!parsed.success) return invalidInput('dealer.team.add', parsed.error);
   const console = await requireManager(parsed.data.dealer_id);
-  if (!console) return { ok: false, error: 'Only owners and managers can add team members.' };
-  const result = await attempt(async () => {
+  if (!console) return refuse('dealer.team.add', 'Only owners and managers can add team members.');
+  const result = await attempt('dealer.team.add', async () => {
     await addDealerMember(console.supabase, parsed.data);
     return null;
   });
@@ -97,10 +99,11 @@ export async function changeMemberRole(input: unknown): Promise<ActionResult<nul
   const parsed = memberSchema
     .extend({ role: z.enum(Constants.public.Enums.dealer_member_role) })
     .safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid role');
+  if (!parsed.success) return invalidInput('dealer.team.change-role', parsed.error, 'Invalid role');
   const console = await requireManager(parsed.data.dealerId);
-  if (!console) return { ok: false, error: 'Only owners and managers can change roles.' };
-  const result = await attempt(async () => {
+  if (!console)
+    return refuse('dealer.team.change-role', 'Only owners and managers can change roles.');
+  const result = await attempt('dealer.team.change-role', async () => {
     await updateDealerMemberRole(
       console.supabase,
       parsed.data.dealerId,
@@ -115,13 +118,13 @@ export async function changeMemberRole(input: unknown): Promise<ActionResult<nul
 
 export async function removeTeamMember(input: unknown): Promise<ActionResult<null>> {
   const parsed = memberSchema.safeParse(input);
-  if (!parsed.success) return invalidInput(parsed.error, 'Invalid member');
+  if (!parsed.success) return invalidInput('dealer.team.remove', parsed.error, 'Invalid member');
   const console = await requireManager(parsed.data.dealerId);
-  if (!console) return { ok: false, error: 'Only owners and managers can remove members.' };
+  if (!console) return refuse('dealer.team.remove', 'Only owners and managers can remove members.');
   if (parsed.data.userId === console.ctx.userId) {
-    return { ok: false, error: 'You cannot remove yourself. Ask another owner.' };
+    return refuse('dealer.team.remove', 'You cannot remove yourself. Ask another owner.');
   }
-  const result = await attempt(async () => {
+  const result = await attempt('dealer.team.remove', async () => {
     await removeDealerMember(console.supabase, parsed.data.dealerId, parsed.data.userId);
     return null;
   });

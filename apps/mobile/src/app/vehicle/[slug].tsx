@@ -18,7 +18,6 @@ import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/text';
 import { ContactBar } from '@/components/vehicle/contact-bar';
-import { PaymentEstimate } from '@/components/vehicle/payment-estimate';
 import { VehicleGallery } from '@/components/vehicle/vehicle-gallery';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
 import { VehicleFeatures, VehicleSpecs } from '@/components/vehicle/vehicle-specs';
@@ -166,10 +165,6 @@ export default function VehicleScreen() {
                 See similar vehicles below, or tell us what you’re looking for.
               </Text>
             </View>
-          ) : null}
-
-          {!sold && v.price_cents !== null && settings.data ? (
-            <PaymentEstimate priceCents={v.price_cents} aprByTier={settings.data.apr_by_tier} />
           ) : null}
 
           <VehicleSpecs vehicle={{ ...v, make: v.make.name, model: v.model.name }} />
