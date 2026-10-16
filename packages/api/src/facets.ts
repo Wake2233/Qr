@@ -20,10 +20,16 @@ export const inventoryFacetsSchema = z.object({
   transmission: z.array(bucket),
   condition: z.array(bucket),
   color: z.array(bucket),
-  feature: z.array(labeled),
+  feature: z.array(z.extend(labeled, { category: z.string() })),
+  damage: z.array(bucket),
+  damage_area: z.array(bucket),
+  drive_status: z.array(bucket),
+  title: z.array(bucket),
+  history: z.array(bucket),
   price: range,
   year: range,
   mileage: range,
+  engine: range,
 });
 
 export type InventoryFacets = z.infer<typeof inventoryFacetsSchema>;
@@ -41,12 +47,19 @@ export function toFacetPayload(filters: InventoryFilters): { [key: string]: Json
     condition: filters.condition,
     color: filters.color,
     feature: filters.feature,
+    damage: filters.damage,
+    damage_area: filters.damageArea,
+    drive_status: filters.driveStatus,
+    title: filters.title,
+    history: filters.history,
     year_min: filters.yearMin,
     year_max: filters.yearMax,
     price_min_cents: filters.priceMinCents,
     price_max_cents: filters.priceMaxCents,
     mileage_max: filters.mileageMax,
     seats_min: filters.seatsMin,
+    engine_min_l: filters.engineMinL,
+    engine_max_l: filters.engineMaxL,
     dealer: filters.dealer,
   };
   const defined: { [key: string]: Json } = {};

@@ -10,10 +10,18 @@ import { Constants, type Enums } from '@cp/types';
 import { formatMileage, formatPrice } from './format';
 import {
   bodyTypeLabels,
+  colorFamilyLabels,
   conditionLabels,
+  damageAreaLabels,
+  damageLevelLabels,
+  driveStatusLabels,
   drivetrainLabels,
   fuelTypeLabels,
+  historyFlagLabels,
+  HISTORY_FLAGS,
+  titleStatusLabels,
   transmissionLabels,
+  type HistoryFlag,
 } from './vehicle';
 
 const E = Constants.public.Enums;
@@ -45,19 +53,30 @@ export interface InventoryFilters {
   drivetrain?: Enums<'drivetrain'>[];
   transmission?: Enums<'transmission'>[];
   condition?: Enums<'vehicle_condition'>[];
-  color?: string[];
+  /** exterior color family (`white`, `gray`…), derived from the paint name in the DB */
+  color?: Enums<'color_family'>[];
   feature?: string[];
+  damage?: Enums<'damage_level'>[];
+  damageArea?: Enums<'damage_area'>[];
+  driveStatus?: Enums<'drive_status'>[];
+  title?: Enums<'title_status'>[];
+  /** every selected flag must hold */
+  history?: HistoryFlag[];
   yearMin?: number;
   yearMax?: number;
   priceMinCents?: number;
   priceMaxCents?: number;
   mileageMax?: number;
   seatsMin?: number;
+  /** engine displacement in liters, one decimal (`2.0`) */
+  engineMinL?: number;
+  engineMaxL?: number;
   dealer?: string;
   sort?: InventorySort;
   page?: number;
 }
 
+export type FilterListKey = ListKey;
 type ListKey =
   | 'make'
   | 'model'
@@ -67,7 +86,12 @@ type ListKey =
   | 'transmission'
   | 'condition'
   | 'color'
-  | 'feature';
+  | 'feature'
+  | 'damage'
+  | 'damageArea'
+  | 'driveStatus'
+  | 'title'
+  | 'history';
 type NumberKey = 'yearMin' | 'yearMax' | 'mileageMax' | 'seatsMin' | 'page';
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -85,8 +109,31 @@ const LIST_PARAMS: Record<ListKey, (value: string) => boolean> = {
   drivetrain: oneOf(E.drivetrain),
   transmission: oneOf(E.transmission),
   condition: oneOf(E.vehicle_condition),
-  color: (value) => value.length > 0 && value.length <= 40 && !value.includes(','),
+  color: oneOf(E.color_family),
   feature: isSlug,
+  damage: oneOf(E.damage_level),
+  damageArea: oneOf(E.damage_area),
+  driveStatus: oneOf(E.drive_status),
+  title: oneOf(E.title_status),
+  history: oneOf(HISTORY_FLAGS),
+};
+
+/** URL param name of each list filter (most match the filter key). */
+const LIST_PARAM_NAMES: Record<ListKey, string> = {
+  make: 'make',
+  model: 'model',
+  body: 'body',
+  fuel: 'fuel',
+  drivetrain: 'drivetrain',
+  transmission: 'transmission',
+  condition: 'condition',
+  color: 'color',
+  feature: 'feature',
+  damage: 'damage',
+  damageArea: 'damage_area',
+  driveStatus: 'drive_status',
+  title: 'title',
+  history: 'history',
 };
 
 const NUMBER_PARAMS: Record<NumberKey, string> = {
@@ -98,6 +145,7 @@ const NUMBER_PARAMS: Record<NumberKey, string> = {
 };
 
 const PRICE_PARAMS = { priceMinCents: 'price_min', priceMaxCents: 'price_max' } as const;
+const ENGINE_PARAMS = { engineMinL: 'engine_min', engineMaxL: 'engine_max' } as const;
 
 /** Order of keys in serialized URLs, so equal filters always produce identical strings. */
 const PARAM_ORDER = [
@@ -111,12 +159,19 @@ const PARAM_ORDER = [
   'condition',
   'color',
   'feature',
+  'damage',
+  'damage_area',
+  'drive_status',
+  'title',
+  'history',
   'year_min',
   'year_max',
   'price_min',
   'price_max',
   'mileage_max',
   'seats_min',
+  'engine_min',
+  'engine_max',
   'dealer',
   'sort',
   'page',
@@ -136,8 +191,14 @@ export const FILTER_PARAM_KEYS = {
   condition: 'condition',
   color: 'color',
   feature: 'feature',
+  damage: 'damage',
+  damageArea: 'damage_area',
+  driveStatus: 'drive_status',
+  title: 'title',
+  history: 'history',
   ...NUMBER_PARAMS,
   ...PRICE_PARAMS,
+  ...ENGINE_PARAMS,
   dealer: 'dealer',
   sort: 'sort',
 } as const satisfies Record<keyof InventoryFilters, string>;
@@ -198,6 +259,13 @@ function parsePositiveInt(raw: string | null): number | undefined {
   return value > 0 ? value : undefined;
 }
 
+/** Liters with at most one decimal (`2`, `2.0`, `3.5`), between 0.1 and 99.9. */
+function parseLiters(raw: string | null): number | undefined {
+  if (raw === null || !/^\d{1,2}(\.\d)?$/.test(raw.trim())) return undefined;
+  const value = Number(raw.trim());
+  return value > 0 ? value : undefined;
+}
+
 /** Parses URL params (repeated keys or comma-separated values) into normalized filters. */
 export function parseInventoryFilters(input: SearchParamsInput): InventoryFilters {
   const params = toMultiMap(input);
@@ -208,9 +276,9 @@ export function parseInventoryFilters(input: SearchParamsInput): InventoryFilter
 
   for (const [key, isValid] of Object.entries(LIST_PARAMS) as [ListKey, (v: string) => boolean][]) {
     const values = params
-      .getAll(key)
+      .getAll(LIST_PARAM_NAMES[key])
       .flatMap((raw: string) => raw.split(','))
-      .map((v: string) => (key === 'color' ? v.trim() : v.trim().toLowerCase()))
+      .map((v: string) => v.trim().toLowerCase())
       .filter(isValid);
     if (values.length > 0) {
       (filters[key] as string[]) = [...new Set(values)].sort().slice(0, MAX_LIST_VALUES);
@@ -231,6 +299,14 @@ export function parseInventoryFilters(input: SearchParamsInput): InventoryFilter
     if (dollars !== undefined) filters[key] = dollars * 100;
   }
 
+  for (const [key, param] of Object.entries(ENGINE_PARAMS) as [
+    keyof typeof ENGINE_PARAMS,
+    string,
+  ][]) {
+    const liters = parseLiters(first(params, param));
+    if (liters !== undefined) filters[key] = liters;
+  }
+
   const dealer = first(params, 'dealer')?.trim().toLowerCase();
   if (dealer && isSlug(dealer)) filters.dealer = dealer;
 
@@ -246,7 +322,9 @@ export function serializeInventoryFilters(filters: InventoryFilters): Record<str
   if (filters.q?.trim()) entries.set('q', filters.q.trim());
   for (const key of Object.keys(LIST_PARAMS) as ListKey[]) {
     const values = filters[key];
-    if (values && values.length > 0) entries.set(key, [...new Set(values)].sort().join(','));
+    if (values && values.length > 0) {
+      entries.set(LIST_PARAM_NAMES[key], [...new Set<string>(values)].sort().join(','));
+    }
   }
   for (const [key, param] of Object.entries(NUMBER_PARAMS) as [NumberKey, string][]) {
     const value = filters[key];
@@ -258,6 +336,13 @@ export function serializeInventoryFilters(filters: InventoryFilters): Record<str
   ][]) {
     const cents = filters[key];
     if (cents !== undefined) entries.set(param, String(Math.floor(cents / 100)));
+  }
+  for (const [key, param] of Object.entries(ENGINE_PARAMS) as [
+    keyof typeof ENGINE_PARAMS,
+    string,
+  ][]) {
+    const liters = filters[key];
+    if (liters !== undefined && liters > 0 && liters < 100) entries.set(param, liters.toFixed(1));
   }
   if (filters.dealer) entries.set('dealer', filters.dealer);
   if (filters.sort && filters.sort !== DEFAULT_SORT) entries.set('sort', filters.sort);
@@ -313,6 +398,8 @@ export function countActiveFilters(filters: InventoryFilters): number {
     'priceMaxCents',
     'mileageMax',
     'seatsMin',
+    'engineMinL',
+    'engineMaxL',
     'dealer',
   ] as const) {
     if (filters[key] !== undefined) count += 1;
@@ -327,6 +414,8 @@ export const PRICE_STEPS_CENTS = [
 ] as const;
 /** "Mileage up to" steps. */
 export const MILEAGE_STEPS = [10_000, 25_000, 50_000, 75_000, 100_000, 150_000] as const;
+/** Engine size steps (liters) for the min/max selects. */
+export const ENGINE_STEPS_L = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0] as const;
 
 export interface FilterLabels {
   /** slug → display name, usually from the facet response */
@@ -352,8 +441,13 @@ const LIST_LABELS: Record<ListKey, (value: string, labels: FilterLabels) => stri
   drivetrain: (v) => drivetrainLabels[v as Enums<'drivetrain'>],
   transmission: (v) => transmissionLabels[v as Enums<'transmission'>],
   condition: (v) => conditionLabels[v as Enums<'vehicle_condition'>],
-  color: (v) => v,
+  color: (v) => colorFamilyLabels[v as Enums<'color_family'>],
   feature: (v, l) => l.feature?.[v] ?? v,
+  damage: (v) => damageLevelLabels[v as Enums<'damage_level'>],
+  damageArea: (v) => `${damageAreaLabels[v as Enums<'damage_area'>]} damage`,
+  driveStatus: (v) => driveStatusLabels[v as Enums<'drive_status'>],
+  title: (v) => `${titleStatusLabels[v as Enums<'title_status'>]} title`,
+  history: (v) => historyFlagLabels[v as HistoryFlag],
 };
 
 type ScalarKey =
@@ -364,6 +458,8 @@ type ScalarKey =
   | 'priceMaxCents'
   | 'mileageMax'
   | 'seatsMin'
+  | 'engineMinL'
+  | 'engineMaxL'
   | 'dealer';
 
 const SCALAR_LABELS: Record<
@@ -377,6 +473,8 @@ const SCALAR_LABELS: Record<
   priceMaxCents: (f) => `Up to ${formatPrice(f.priceMaxCents ?? 0)}`,
   mileageMax: (f) => `Under ${formatMileage(f.mileageMax ?? 0)}`,
   seatsMin: (f) => `${f.seatsMin}+ seats`,
+  engineMinL: (f) => `Engine ${(f.engineMinL ?? 0).toFixed(1)}L+`,
+  engineMaxL: (f) => `Engine up to ${(f.engineMaxL ?? 0).toFixed(1)}L`,
   dealer: (f, l) => l.dealer?.[f.dealer ?? ''] ?? f.dealer ?? '',
 };
 

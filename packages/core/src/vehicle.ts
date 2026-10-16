@@ -80,6 +80,85 @@ export const titleStatusLabels: Record<Enums<'title_status'>, string> = {
   unknown: 'Unknown',
 };
 
+export const damageLevelLabels: Record<Enums<'damage_level'>, string> = {
+  none: 'No damage',
+  minor: 'Minor damage',
+  moderate: 'Moderate damage',
+  severe: 'Severe damage',
+};
+
+export const damageAreaLabels: Record<Enums<'damage_area'>, string> = {
+  front: 'Front end',
+  rear: 'Rear end',
+  side: 'Side',
+  roof: 'Roof',
+  undercarriage: 'Undercarriage',
+  all_over: 'All over',
+  hail: 'Hail',
+  flood: 'Flood / water',
+  fire: 'Fire',
+  mechanical: 'Mechanical',
+  vandalism: 'Vandalism',
+  normal_wear: 'Normal wear',
+};
+
+export const driveStatusLabels: Record<Enums<'drive_status'>, string> = {
+  runs_and_drives: 'Run & Drive',
+  starts: 'Starts, doesn’t drive',
+  does_not_start: 'Doesn’t start',
+};
+
+export const colorFamilyLabels: Record<Enums<'color_family'>, string> = {
+  black: 'Black',
+  white: 'White',
+  gray: 'Gray',
+  silver: 'Silver',
+  blue: 'Blue',
+  red: 'Red',
+  green: 'Green',
+  brown: 'Brown',
+  beige: 'Beige',
+  gold: 'Gold',
+  orange: 'Orange',
+  yellow: 'Yellow',
+  purple: 'Purple',
+  other: 'Other',
+};
+
+/** Swatch colors for the color filter (display only). */
+export const colorFamilySwatches: Record<Enums<'color_family'>, string> = {
+  black: '#111111',
+  white: '#ffffff',
+  gray: '#8a8d91',
+  silver: '#c7c9cc',
+  blue: '#2457a6',
+  red: '#b3202a',
+  green: '#2f6b3a',
+  brown: '#6b4a2f',
+  beige: '#d8c8a8',
+  gold: '#c9a227',
+  orange: '#e0731f',
+  yellow: '#efcf2f',
+  purple: '#6a3d9a',
+  other: 'conic-gradient(#e33, #ec3, #3c6, #39e, #a3e, #e33)',
+};
+
+/** History checkboxes in the filter rail; every selected flag must hold. */
+export const HISTORY_FLAGS = [
+  'no_accidents',
+  'one_owner',
+  'service_records',
+  'clean_history',
+] as const;
+export type HistoryFlag = (typeof HISTORY_FLAGS)[number];
+
+export const historyFlagLabels: Record<HistoryFlag, string> = {
+  no_accidents: 'No accidents reported',
+  one_owner: 'One owner',
+  service_records: 'Service records',
+  clean_history: 'Clean history',
+};
+
 export const listingStatusLabels: Record<Enums<'listing_status'>, string> = {
   draft: 'Draft',
   pending_review: 'Pending review',
@@ -90,7 +169,7 @@ export const listingStatusLabels: Record<Enums<'listing_status'>, string> = {
 };
 
 export const featureCategoryLabels: Record<Enums<'feature_category'>, string> = {
-  safety: 'Safety',
+  safety: 'Safety & driver assist',
   comfort: 'Comfort & convenience',
   technology: 'Technology',
   exterior: 'Exterior',
@@ -98,7 +177,7 @@ export const featureCategoryLabels: Record<Enums<'feature_category'>, string> = 
   performance: 'Performance',
 };
 
-const FEATURE_CATEGORY_ORDER: Enums<'feature_category'>[] = [
+export const FEATURE_CATEGORY_ORDER: Enums<'feature_category'>[] = [
   'safety',
   'technology',
   'comfort',
@@ -151,7 +230,13 @@ export type VehicleSpecSource = Pick<
   | 'owners_count'
   | 'accident_free'
   | 'title_status'
-> & { make: string; model: string };
+> &
+  Partial<
+    Pick<Tables<'vehicles'>, 'damage' | 'damage_area' | 'drive_status' | 'service_records'>
+  > & {
+    make: string;
+    model: string;
+  };
 
 type Row = [key: string, label: string, value: string | null];
 
@@ -243,6 +328,18 @@ export function vehicleSpecGrid(v: VehicleSpecSource): SpecGrid[] {
           'Accident history',
           str(v.accident_free, (ok) => (ok ? 'No accidents reported' : 'Accident reported')),
         ],
+        ['damage', 'Damage', str(v.damage ?? null, (d) => damageLevelLabels[d])],
+        [
+          'damage_area',
+          'Primary damage',
+          v.damage === 'none' ? null : str(v.damage_area ?? null, (a) => damageAreaLabels[a]),
+        ],
+        ['drive_status', 'Run & Drive', str(v.drive_status ?? null, (d) => driveStatusLabels[d])],
+        [
+          'service_records',
+          'Service records',
+          str(v.service_records ?? null, (ok) => (ok ? 'Available' : 'Not available')),
+        ],
       ]),
     },
   ];
@@ -277,6 +374,47 @@ export function groupFeatures(
       ? [{ category, title: featureCategoryLabels[category], features: names }]
       : [];
   });
+}
+
+export interface ConditionBadge {
+  key: 'drive_status' | 'damage' | 'title' | 'owners' | 'accidents';
+  label: string;
+  /** good news (green) vs. something a buyer should know (amber) */
+  tone: 'positive' | 'caution';
+}
+
+/** Short trust badges near the price ("Run & Drive · No damage · Clean title · 1 owner"). */
+export function conditionBadges(
+  v: Pick<VehicleSpecSource, 'title_status' | 'owners_count' | 'accident_free'> &
+    Partial<Pick<VehicleSpecSource, 'damage' | 'drive_status'>>,
+): ConditionBadge[] {
+  const badges: ConditionBadge[] = [];
+  if (v.drive_status) {
+    badges.push({
+      key: 'drive_status',
+      label: driveStatusLabels[v.drive_status],
+      tone: v.drive_status === 'runs_and_drives' ? 'positive' : 'caution',
+    });
+  }
+  if (v.damage) {
+    badges.push({
+      key: 'damage',
+      label: damageLevelLabels[v.damage],
+      tone: v.damage === 'none' ? 'positive' : 'caution',
+    });
+  }
+  if (v.title_status !== 'unknown') {
+    badges.push({
+      key: 'title',
+      label: `${titleStatusLabels[v.title_status]} title`,
+      tone: v.title_status === 'clean' ? 'positive' : 'caution',
+    });
+  }
+  if (v.owners_count === 1) badges.push({ key: 'owners', label: '1 owner', tone: 'positive' });
+  if (v.accident_free === true) {
+    badges.push({ key: 'accidents', label: 'No accidents', tone: 'positive' });
+  }
+  return badges;
 }
 
 /** Amount of the most recent price drop, or null if the last change wasn't a decrease. */

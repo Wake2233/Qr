@@ -20,7 +20,22 @@ export const DEFAULT_PAGE_SIZE = 24;
 const CARD_COLUMNS =
   'id, slug, dealer_id, status, is_featured, condition, year, make_id, make_name, make_slug, model_id, model_name, model_slug, trim, body_type, fuel_type, drivetrain, transmission, mileage, price_cents, msrp_cents, exterior_color, seats, mpg_city, mpg_highway, ev_range_mi, stock_number, published_at, sold_at, created_at, dealer_name, dealer_slug, dealer_status, dealer_is_house, cover_path, cover_blurhash, cover_alt, cover_width, cover_height, image_count, feature_slugs, previous_price_cents, price_dropped_at' as const;
 
-export type CardRow = Omit<Tables<'vehicle_cards'>, 'search_vector' | 'vin' | 'updated_at'>;
+/** Filter-only columns of the view (cards don't render them). */
+type FilterColumns =
+  | 'displacement_l'
+  | 'damage'
+  | 'damage_area'
+  | 'drive_status'
+  | 'title_status'
+  | 'accident_free'
+  | 'owners_count'
+  | 'service_records'
+  | 'exterior_color_family';
+
+export type CardRow = Omit<
+  Tables<'vehicle_cards'>,
+  'search_vector' | 'vin' | 'updated_at' | FilterColumns
+>;
 
 /** A `vehicle_cards` row with the always-present columns narrowed, plus display fields. */
 export type VehicleCard = Omit<
@@ -95,8 +110,21 @@ export async function listVehicles(
   if (filters.drivetrain?.length) query = query.in('drivetrain', filters.drivetrain);
   if (filters.transmission?.length) query = query.in('transmission', filters.transmission);
   if (filters.condition?.length) query = query.in('condition', filters.condition);
-  if (filters.color?.length) query = query.in('exterior_color', filters.color);
+  if (filters.color?.length) query = query.in('exterior_color_family', filters.color);
   if (filters.feature?.length) query = query.contains('feature_slugs', filters.feature);
+  if (filters.damage?.length) query = query.in('damage', filters.damage);
+  if (filters.damageArea?.length) query = query.in('damage_area', filters.damageArea);
+  if (filters.driveStatus?.length) query = query.in('drive_status', filters.driveStatus);
+  if (filters.title?.length) query = query.in('title_status', filters.title);
+  const history = new Set(filters.history);
+  if (history.has('no_accidents') || history.has('clean_history')) {
+    query = query.eq('accident_free', true);
+  }
+  if (history.has('clean_history')) query = query.eq('title_status', 'clean');
+  if (history.has('one_owner')) query = query.eq('owners_count', 1);
+  if (history.has('service_records')) query = query.eq('service_records', true);
+  if (filters.engineMinL !== undefined) query = query.gte('displacement_l', filters.engineMinL);
+  if (filters.engineMaxL !== undefined) query = query.lte('displacement_l', filters.engineMaxL);
   if (filters.yearMin !== undefined) query = query.gte('year', filters.yearMin);
   if (filters.yearMax !== undefined) query = query.lte('year', filters.yearMax);
   if (filters.priceMinCents !== undefined) query = query.gte('price_cents', filters.priceMinCents);
@@ -220,7 +248,7 @@ const DETAIL_COLUMNS = `
   body_type, mileage, price_cents, msrp_cents, exterior_color, interior_color, fuel_type,
   drivetrain, transmission, engine, cylinders, displacement_l, horsepower, torque_lbft,
   mpg_city, mpg_highway, ev_range_mi, doors, seats, owners_count, accident_free, title_status,
-  description, specs, published_at, sold_at, updated_at,
+  damage, damage_area, drive_status, service_records, description, specs, published_at, sold_at, updated_at,
   make:makes(id, name, slug),
   model:models(id, name, slug),
   dealer:dealers(id, slug, display_name, is_house, status, phone_e164, whatsapp_e164, email,

@@ -29,14 +29,21 @@ const full: InventoryFilters = {
   drivetrain: ['awd'],
   transmission: ['automatic'],
   condition: ['certified', 'used'],
-  color: ['Jet Black'],
+  color: ['black'],
   feature: ['apple-carplay'],
+  damage: ['minor', 'none'],
+  damageArea: ['front'],
+  driveStatus: ['runs_and_drives'],
+  title: ['clean'],
+  history: ['no_accidents', 'one_owner'],
   yearMin: 2018,
   yearMax: 2024,
   priceMinCents: 1_000_000,
   priceMaxCents: 4_500_000,
   mileageMax: 60_000,
   seatsMin: 5,
+  engineMinL: 2,
+  engineMaxL: 3.5,
   dealer: 'garden-state-auto',
   sort: 'price_asc',
   page: 3,
@@ -94,7 +101,7 @@ describe('parseInventoryFilters', () => {
   });
 
   it('decodes "+" as a space', () => {
-    expect(parseInventoryFilters('color=Jet+Black')).toEqual({ color: ['Jet Black'] });
+    expect(parseInventoryFilters('q=jet+black')).toEqual({ q: 'jet black' });
   });
 
   it('ignores pairs without a value and empty segments', () => {
@@ -123,7 +130,9 @@ describe('toggleFilterValue', () => {
 describe('countActiveFilters', () => {
   it('counts each list value and each range, but not sort/page', () => {
     expect(countActiveFilters({})).toBe(0);
-    expect(countActiveFilters(full)).toBe(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 7);
+    expect(countActiveFilters(full)).toBe(
+      1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 2 + 1 + 1 + 1 + 2 + 9,
+    );
   });
 });
 
@@ -156,7 +165,7 @@ describe('activeFilterChips', () => {
   });
 
   it('falls back to slugs when no labels are known', () => {
-    const chips = activeFilterChips({ model: ['x5'], feature: ['sunroof'], color: ['Black'] });
+    const chips = activeFilterChips({ model: ['x5'], feature: ['sunroof'], color: ['black'] });
     expect(chips.map((c) => c.label)).toEqual(['x5', 'Black', 'sunroof']);
   });
 
@@ -207,14 +216,21 @@ describe('FILTER_PARAM_KEYS', () => {
       drivetrain: ['awd'],
       transmission: ['manual'],
       condition: ['used'],
-      color: ['Black'],
+      color: ['white'],
       feature: ['sunroof'],
+      damage: ['none'],
+      damageArea: ['hail'],
+      driveStatus: ['starts'],
+      title: ['rebuilt'],
+      history: ['clean_history'],
       yearMin: 2019,
       yearMax: 2023,
       priceMinCents: 1_000_000,
       priceMaxCents: 4_000_000,
       mileageMax: 50_000,
       seatsMin: 5,
+      engineMinL: 1.5,
+      engineMaxL: 6,
       dealer: 'garden-state',
       sort: 'price_asc',
       page: 2,
@@ -229,5 +245,58 @@ describe('FILTER_PARAM_KEYS', () => {
         parseInventoryFilters({ [param]: params[param] })[key as keyof InventoryFilters],
       ).toEqual(filters[key as keyof InventoryFilters]);
     }
+  });
+});
+
+describe('condition, history and engine filters', () => {
+  it('uses readable URL params', () => {
+    expect(
+      inventoryQueryString({
+        damageArea: ['front'],
+        driveStatus: ['runs_and_drives'],
+        history: ['one_owner'],
+        engineMinL: 2,
+      }),
+    ).toBe('damage_area=front&drive_status=runs_and_drives&history=one_owner&engine_min=2.0');
+  });
+
+  it('drops unknown enum values, old free-text colors and bad liters', () => {
+    expect(
+      parseInventoryFilters(
+        'color=Jet+Black,WHITE&damage=totaled&history=one_owner,bogus&engine_min=abc&engine_max=3.55',
+      ),
+    ).toEqual({ color: ['white'], history: ['one_owner'] });
+  });
+
+  it('accepts whole and one-decimal liters', () => {
+    expect(parseInventoryFilters('engine_min=2&engine_max=3.5')).toEqual({
+      engineMinL: 2,
+      engineMaxL: 3.5,
+    });
+  });
+
+  it('labels the new chips', () => {
+    const chips = activeFilterChips({
+      damage: ['none'],
+      damageArea: ['hail'],
+      driveStatus: ['runs_and_drives'],
+      title: ['salvage'],
+      history: ['service_records'],
+      engineMinL: 2,
+      engineMaxL: 3.5,
+    });
+    expect(chips.map((c) => c.label)).toEqual([
+      'No damage',
+      'Hail damage',
+      'Run & Drive',
+      'Salvage title',
+      'Service records',
+      'Engine 2.0L+',
+      'Engine up to 3.5L',
+    ]);
+  });
+
+  it('counts engine bounds as active filters', () => {
+    expect(countActiveFilters({ engineMinL: 2, history: ['one_owner', 'clean_history'] })).toBe(3);
   });
 });
