@@ -30,7 +30,8 @@ type FilterColumns =
   | 'accident_free'
   | 'owners_count'
   | 'service_records'
-  | 'exterior_color_family';
+  | 'exterior_color_family'
+  | 'home_position';
 
 export type CardRow = Omit<
   Tables<'vehicle_cards'>,
@@ -164,7 +165,10 @@ export async function getVehiclesByIds(
   return ids.flatMap((id) => byId.get(id) ?? []);
 }
 
-/** Featured / newest live listings for home rails. */
+/**
+ * Home page order: listings the admin pinned, in their order (#1 is the spotlight), then
+ * every other live listing, newest first.
+ */
 export async function listFeaturedVehicles(client: AppSupabaseClient, limit = 8) {
   const { data, error } = await client
     .from('vehicle_cards')
@@ -172,7 +176,9 @@ export async function listFeaturedVehicles(client: AppSupabaseClient, limit = 8)
     .in('status', STOREFRONT_STATUSES)
     .eq('dealer_status', 'approved')
     .order('is_featured', { ascending: false })
+    .order('home_position', { ascending: true, nullsFirst: false })
     .order('published_at', { ascending: false, nullsFirst: false })
+    .order('id')
     .limit(limit);
   if (error) throw error;
   return data.flatMap((row) => toCard(client, row) ?? []);

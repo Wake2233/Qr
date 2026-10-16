@@ -2,6 +2,7 @@ import type { ConsoleSection } from '@cp/core';
 import {
   BadgeCheck,
   BookOpen,
+  House,
   Car,
   Inbox,
   LayoutDashboard,
@@ -26,6 +27,7 @@ export const consoleRoutes: Record<ConsoleSection, { href: string; icon: LucideI
   leads: { href: '/dashboard/leads', icon: Inbox },
   dealer: { href: '/dashboard/dealer', icon: Store },
   dealers: { href: '/dashboard/dealers', icon: BadgeCheck },
+  home: { href: '/dashboard/home', icon: House },
   catalog: { href: '/dashboard/catalog', icon: BookOpen },
   settings: { href: '/dashboard/settings', icon: Settings },
   users: { href: '/dashboard/users', icon: UserCog },

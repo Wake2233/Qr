@@ -1,9 +1,10 @@
-/** Admin-only console data: catalog, site settings and the user directory. RLS enforces admin. */
+/** Admin-only console data: catalog, site settings, users and the home page. RLS enforces admin. */
 import type { Enums } from '@cp/types';
 import type { SiteSettingsInput, siteSettingsSchema } from '@cp/validators';
 import type { z } from 'zod';
 
 import type { AppSupabaseClient } from './client';
+import { listFeaturedVehicles } from './vehicles';
 
 type CatalogTable = 'makes' | 'models' | 'features';
 
@@ -115,4 +116,28 @@ export async function setUserRole(
 ) {
   const { error } = await client.rpc('set_user_role', { p_user_id: userId, p_role: role });
   if (error) throw error;
+}
+
+/** Most live listings the home-page board offers for pinning. */
+export const HOME_BOARD_LIMIT = 300;
+
+/**
+ * The admin's home-page board: pinned live listings in home order (#1 = spotlight) and the
+ * other live listings (newest first) that can be pinned.
+ */
+export async function listHomeBoard(client: AppSupabaseClient) {
+  const cards = await listFeaturedVehicles(client, HOME_BOARD_LIMIT);
+  return {
+    pinned: cards.filter((card) => card.is_featured),
+    others: cards.filter((card) => !card.is_featured),
+  };
+}
+
+export type HomeBoard = Awaited<ReturnType<typeof listHomeBoard>>;
+
+/** Replaces the pinned list (in display order); listings left out are unpinned. */
+export async function setHomeOrder(client: AppSupabaseClient, vehicleIds: readonly string[]) {
+  const { data, error } = await client.rpc('set_home_order', { p_vehicle_ids: [...vehicleIds] });
+  if (error) throw error;
+  return data;
 }

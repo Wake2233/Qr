@@ -7,7 +7,7 @@ import { env } from '@/lib/env';
 import { useSession } from '@/providers/session-provider';
 
 /** Desk-work sections that live on the web console only (PLAN.md §7). */
-const WEB_ONLY: ConsoleSection[] = ['dealer', 'catalog', 'settings', 'users'];
+const WEB_ONLY: ConsoleSection[] = ['dealer', 'home', 'catalog', 'settings', 'users'];
 
 /** Placeholder for console sections built in later phases (same visibility rules as web). */
 export default function ManageSectionScreen() {

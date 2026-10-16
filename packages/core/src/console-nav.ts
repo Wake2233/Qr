@@ -12,6 +12,7 @@ export type ConsoleSection =
   | 'leads'
   | 'dealer'
   | 'dealers'
+  | 'home'
   | 'catalog'
   | 'settings'
   | 'users'
@@ -34,6 +35,7 @@ const ITEMS: (ConsoleNavItem & { visible: (ctx: ConsoleNavContext) => boolean })
     visible: ({ memberships }) => memberships.some((m) => m === 'owner' || m === 'manager'),
   },
   { id: 'dealers', label: 'Dealers', group: 'admin', visible: ({ role }) => role === 'admin' },
+  { id: 'home', label: 'Home page', group: 'admin', visible: ({ role }) => role === 'admin' },
   { id: 'catalog', label: 'Catalog', group: 'admin', visible: ({ role }) => role === 'admin' },
   {
     id: 'settings',

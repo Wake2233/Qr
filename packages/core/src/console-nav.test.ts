@@ -23,6 +23,7 @@ describe('consoleNavItems', () => {
     const items = consoleNavItems({ role: 'admin', memberships: [] });
     expect(items.filter((i) => i.group === 'admin').map((i) => i.id)).toEqual([
       'dealers',
+      'home',
       'catalog',
       'settings',
       'users',
