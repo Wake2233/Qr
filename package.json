@@ -32,6 +32,7 @@
     "db:remote:link": "set -a && . ./.env.remote.local && set +a && supabase link --project-ref \"$SUPABASE_PROJECT_REF\" --password \"$SUPABASE_DB_PASSWORD\"",
     "db:remote:push": "set -a && . ./.env.remote.local && set +a && supabase db push --password \"$SUPABASE_DB_PASSWORD\"",
     "db:remote:seed": "bash scripts/seed-remote-reference.sh",
+    "functions:remote:deploy": "set -a && . ./.env.remote.local && set +a && supabase functions deploy --project-ref \"$SUPABASE_PROJECT_REF\"",
     "db:seed": "pnpm db:seed:users && pnpm db:seed:images"
   },
   "devDependencies": {
