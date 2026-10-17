@@ -285,8 +285,8 @@ insert into public.dealers (
 ) values
   ('00000000-0000-4000-8000-000000000001', 'dg-auto', 'DG Auto', null,
    'approved', true, '+13473700570', '+13473700570', null,
-   '300 NJ-31', 'Flemington', 'NJ', '08822', 40.5123, -74.8593,
-   'Our dealership in Flemington, New Jersey.',
+   '26 New Dorp Ln', 'Staten Island', 'NY', '10306', null, null,
+   'Our dealership in Staten Island, New York.',
    '{"mon":"09:00-19:00","tue":"09:00-19:00","wed":"09:00-19:00","thu":"09:00-19:00","fri":"09:00-19:00","sat":"10:00-17:00","sun":null}',
    now())
 on conflict (id) do nothing;
