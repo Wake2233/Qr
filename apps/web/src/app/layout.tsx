@@ -23,10 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
-  ],
+  themeColor: '#fafaf9',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
@@ -35,8 +32,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <body className="min-h-dvh">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <AppProviders>{children}</AppProviders>

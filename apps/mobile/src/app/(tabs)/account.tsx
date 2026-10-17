@@ -3,10 +3,19 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { Segmented } from '@/components/segmented';
 import { useSession } from '@/providers/session-provider';
+import { usePreferencesStore } from '@/stores/preferences';
+
+const THEMES = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+] as const;
 
 export default function AccountScreen() {
   const { loading, context, signOut } = useSession();
+  const theme = usePreferencesStore((s) => s.theme);
+  const setTheme = usePreferencesStore((s) => s.setTheme);
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -43,6 +52,10 @@ export default function AccountScreen() {
             </Link>
           </View>
         )}
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-foreground">Appearance</Text>
+          <Segmented label="Appearance" options={THEMES} value={theme} onChange={setTheme} />
+        </View>
       </View>
     </SafeAreaView>
   );

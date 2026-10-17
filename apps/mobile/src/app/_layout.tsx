@@ -13,7 +13,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { Appearance, View } from 'react-native';
 import { Toaster } from 'sonner-native';
 
 import { ErrorFallback } from '@/components/error-fallback';
@@ -41,6 +41,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
+
+  // Native pieces (alerts, keyboards, date pickers) follow the app's theme, not the phone's.
+  useEffect(() => {
+    Appearance.setColorScheme(scheme);
+  }, [scheme]);
 
   if (!ready) return null;
 
