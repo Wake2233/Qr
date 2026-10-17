@@ -7,19 +7,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { Text } from '@/components/text';
 import { VehicleCard } from '@/components/vehicle/vehicle-card';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { supabase } from '@/lib/supabase';
 import { useFavorites } from '@/lib/use-favorites';
 import { useCompareStore } from '@/stores/compare';
 import { useRecentlyViewedStore } from '@/stores/recently-viewed';
 
-const TABS = [
-  { id: 'saved', label: 'Saved' },
-  { id: 'recent', label: 'Recently viewed' },
-] as const;
+const TABS = ['saved', 'recent'] as const;
 
 export default function SavedScreen() {
-  const [tab, setTab] = useState<(typeof TABS)[number]['id']>('saved');
+  const t = useT();
+  const [tab, setTab] = useState<(typeof TABS)[number]>('saved');
   const favorites = useFavorites();
   const recentIds = useRecentlyViewedStore((s) => s.ids);
   const compareIds = useCompareStore((s) => s.ids);
@@ -31,46 +30,46 @@ export default function SavedScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <ScrollView contentContainerClassName="gap-5 px-4 pb-12 pt-4">
         <Text variant="display" accessibilityRole="header">
-          Saved
+          {t.saved.title}
         </Text>
 
         {compareIds.length > 0 ? (
           <View className="flex-row items-center gap-3 rounded-2xl bg-primary/10 p-4">
-            <Text className="flex-1 font-sans-medium">
-              {compareIds.length} {compareIds.length === 1 ? 'vehicle' : 'vehicles'} in compare
-            </Text>
+            <Text className="flex-1 font-sans-medium">{t.saved.inCompare(compareIds.length)}</Text>
             <Pressable
               accessibilityRole="button"
               onPress={clearCompare}
               className="min-h-11 justify-center px-2"
             >
-              <Text className="font-sans-medium text-sm text-muted-foreground">Clear</Text>
+              <Text className="font-sans-medium text-sm text-muted-foreground">
+                {t.common.clear}
+              </Text>
             </Pressable>
             <Link href="/compare" asChild>
-              <Button title="Compare" size="sm" />
+              <Button title={t.saved.compare} size="sm" />
             </Link>
           </View>
         ) : null}
 
         <View className="flex-row gap-2" accessibilityRole="tablist">
-          {TABS.map((t) => (
+          {TABS.map((id) => (
             <Pressable
-              key={t.id}
+              key={id}
               accessibilityRole="tab"
-              accessibilityState={{ selected: tab === t.id }}
-              onPress={() => setTab(t.id)}
+              accessibilityState={{ selected: tab === id }}
+              onPress={() => setTab(id)}
               className={cn(
                 'min-h-11 justify-center rounded-full px-4',
-                tab === t.id ? 'bg-foreground' : 'bg-muted',
+                tab === id ? 'bg-foreground' : 'bg-muted',
               )}
             >
               <Text
                 className={cn(
                   'font-sans-medium text-sm',
-                  tab === t.id ? 'text-background' : 'text-foreground',
+                  tab === id ? 'text-background' : 'text-foreground',
                 )}
               >
-                {t.label}
+                {id === 'saved' ? t.saved.title : t.saved.recent}
               </Text>
             </Pressable>
           ))}
@@ -79,10 +78,10 @@ export default function SavedScreen() {
         {tab === 'saved' && favorites.ready && !favorites.signedIn ? (
           <View className="flex-row items-center gap-3 rounded-2xl bg-muted p-4">
             <Text variant="caption" className="flex-1">
-              Saved on this device only. Sign in to keep them on every device.
+              {t.saved.deviceOnly}
             </Text>
             <Link href="/sign-in" asChild>
-              <Button title="Sign in" size="sm" variant="outline" />
+              <Button title={t.common.signIn} size="sm" variant="outline" />
             </Link>
           </View>
         ) : null}
@@ -92,15 +91,13 @@ export default function SavedScreen() {
         ) : (cards.data ?? []).length === 0 ? (
           <View className="items-center gap-3 py-16">
             <Text variant="heading">
-              {tab === 'saved' ? 'No saved vehicles yet' : 'Nothing viewed yet'}
+              {tab === 'saved' ? t.saved.emptySaved : t.saved.emptyRecent}
             </Text>
             <Text variant="caption" className="text-center">
-              {tab === 'saved'
-                ? 'Tap the heart on a listing to keep it here.'
-                : 'Vehicles you open will show up here.'}
+              {tab === 'saved' ? t.saved.emptySavedBody : t.saved.emptyRecentBody}
             </Text>
             <Link href="/search" asChild>
-              <Button title="Browse inventory" />
+              <Button title={t.common.browseInventory} />
             </Link>
           </View>
         ) : (

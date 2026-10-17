@@ -35,9 +35,15 @@ export async function readOtp(email: string, since: Date): Promise<string> {
 export async function signIn(page: Page, email: string, next = '/dashboard') {
   await page.goto(`/login?next=${encodeURIComponent(next)}`);
   const since = new Date(Date.now() - 2000);
-  await page.getByLabel('Email').fill(email);
-  await page.getByRole('button', { name: 'Email me a sign-in code' }).click();
-  await expect(page.getByText(`We sent a 6-digit code to ${email}`)).toBeVisible();
+  // Typing before hydration is lost (the form resets its fields on mount), so retry until the
+  // form has taken the email; an empty submit never reaches the server.
+  await expect(async () => {
+    await page.getByLabel('Email').fill(email);
+    await page.getByRole('button', { name: 'Email me a sign-in code' }).click();
+    await expect(page.getByText(`We sent a 6-digit code to ${email}`)).toBeVisible({
+      timeout: 5_000,
+    });
+  }).toPass({ timeout: 45_000 });
   await page.getByLabel('Sign-in code').fill(await readOtp(email, since));
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.waitForURL((url) => url.pathname === next.split('?')[0]);

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useId, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { requestLogoUpload, saveDealerLogo } from '@/app/dashboard/dealer/actions';
+import { requestLogoUpload, saveDealerLogo } from '@/app/[locale]/dashboard/dealer/actions';
 import { Button } from '@/components/ui/button';
 import { env } from '@/lib/env';
 import { prepareImage, uploadWithProgress } from '@/lib/images';

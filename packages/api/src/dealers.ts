@@ -1,7 +1,7 @@
 import type { AppSupabaseClient } from './client';
 
 const PUBLIC_DEALER_COLUMNS =
-  'id, slug, display_name, is_house, status, logo_path, phone_e164, whatsapp_e164, email, website, address_line1, city, state, postal_code, lat, lng, description, business_hours' as const;
+  'id, slug, display_name, is_house, status, logo_path, phone_e164, whatsapp_e164, email, website, address_line1, city, state, postal_code, lat, lng, description' as const;
 
 /** Public dealer storefront data (RLS: approved dealers, or your own). */
 export async function getDealerBySlug(client: AppSupabaseClient, slug: string) {

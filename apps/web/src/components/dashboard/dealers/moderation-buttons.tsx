@@ -5,7 +5,7 @@ import { Ban, Check, Loader2, X } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { moderateDealerAction } from '@/app/dashboard/dealers/actions';
+import { moderateDealerAction } from '@/app/[locale]/dashboard/dealers/actions';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

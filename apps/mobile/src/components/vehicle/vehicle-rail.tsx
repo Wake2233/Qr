@@ -4,6 +4,7 @@ import { Link, type Href } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/text';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 import { VehicleCard } from './vehicle-card';
@@ -20,6 +21,7 @@ export function VehicleRail({
   cards: Card[];
   href?: Href;
 }) {
+  const t = useT();
   if (cards.length === 0) return null;
   return (
     <View className="gap-3">
@@ -33,7 +35,7 @@ export function VehicleRail({
         {href ? (
           <Link href={href} asChild>
             <Pressable accessibilityRole="link" hitSlop={8} className="min-h-11 justify-center">
-              <Text className="font-sans-semibold text-sm text-primary">See all</Text>
+              <Text className="font-sans-semibold text-sm text-primary">{t.common.seeAll}</Text>
             </Pressable>
           </Link>
         ) : null}

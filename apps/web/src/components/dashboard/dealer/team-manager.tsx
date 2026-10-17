@@ -6,7 +6,11 @@ import { Loader2, Trash2, UserPlus } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { addTeamMember, changeMemberRole, removeTeamMember } from '@/app/dashboard/dealer/actions';
+import {
+  addTeamMember,
+  changeMemberRole,
+  removeTeamMember,
+} from '@/app/[locale]/dashboard/dealer/actions';
 import { OptionSelect } from '@/components/dashboard/form-fields';
 import {
   AlertDialog,

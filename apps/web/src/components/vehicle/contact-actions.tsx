@@ -3,6 +3,7 @@
 import { trackContactClick } from '@cp/api';
 import { buildTelUrl, buildWhatsAppUrl, formatPhone } from '@cp/core';
 import { MessageCircle, Phone } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/components/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ export function ContactActions({
   className,
 }: ContactActionsProps) {
   const { supabase } = useAuth();
+  const t = useTranslations('Vehicle');
   if (!whatsappE164 && !phoneE164) return null;
   const bar = variant === 'bar';
 
@@ -53,7 +55,7 @@ export function ContactActions({
             onClick={() => trackContactClick(supabase, vehicleId, 'whatsapp', 'web')}
             data-testid="cta-whatsapp"
           >
-            <MessageCircle className="size-5" /> {bar ? 'WhatsApp' : 'Contact via WhatsApp'}
+            <MessageCircle className="size-5" /> {bar ? t('whatsapp') : t('contactWhatsapp')}
           </a>
         </Button>
       ) : null}
@@ -69,7 +71,8 @@ export function ContactActions({
             onClick={() => trackContactClick(supabase, vehicleId, 'call', 'web')}
             data-testid="cta-call"
           >
-            <Phone className="size-5" /> {bar ? 'Call' : `Call ${formatPhone(phoneE164)}`}
+            <Phone className="size-5" />{' '}
+            {bar ? t('call') : t('callNumber', { phone: formatPhone(phoneE164) })}
           </a>
         </Button>
       ) : null}

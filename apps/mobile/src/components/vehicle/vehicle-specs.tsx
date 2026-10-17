@@ -1,15 +1,17 @@
-import { groupFeatures, groupVehicleSpecs, type VehicleSpecSource } from '@cp/core';
+import { featureName, groupFeatures, groupVehicleSpecs, type VehicleSpecSource } from '@cp/core';
 import type { Tables } from '@cp/types';
 import { View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useLocale, useT } from '@/i18n';
 
 /** Every non-null spec, grouped Overview / Powertrain / Body & Interior / History. */
 export function VehicleSpecs({ vehicle }: { vehicle: VehicleSpecSource }) {
+  const locale = useLocale();
   return (
     <View className="gap-4">
-      {groupVehicleSpecs(vehicle).map((group) => (
+      {groupVehicleSpecs(vehicle, locale).map((group) => (
         <View key={group.id} className="rounded-2xl border border-border p-4">
           <Text variant="heading" accessibilityRole="header" className="mb-2">
             {group.title}
@@ -39,14 +41,19 @@ export function VehicleSpecs({ vehicle }: { vehicle: VehicleSpecSource }) {
 export function VehicleFeatures({
   features,
 }: {
-  features: Pick<Tables<'features'>, 'name' | 'category'>[];
+  features: Pick<Tables<'features'>, 'name' | 'slug' | 'category'>[];
 }) {
-  const groups = groupFeatures(features);
+  const t = useT();
+  const locale = useLocale();
+  const groups = groupFeatures(
+    features.map((f) => ({ name: featureName(f, locale), category: f.category })),
+    locale,
+  );
   if (groups.length === 0) return null;
   return (
     <View className="gap-4">
       <Text variant="title" accessibilityRole="header">
-        Features
+        {t.vehicle.features}
       </Text>
       {groups.map((group) => (
         <View key={group.category} className="gap-2">

@@ -1,6 +1,7 @@
-import { groupFeatures, groupVehicleSpecs, type VehicleSpecSource } from '@cp/core';
+import { featureName, groupFeatures, groupVehicleSpecs, type VehicleSpecSource } from '@cp/core';
 import type { Tables } from '@cp/types';
 import { Check } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { CopyValue } from './copy-value';
 
@@ -8,7 +9,7 @@ const COPYABLE = new Set(['vin', 'stock_number']);
 
 /** Every non-null spec, grouped Overview / Powertrain / Body & Interior / History. */
 export function VehicleSpecs({ vehicle }: { vehicle: VehicleSpecSource }) {
-  const groups = groupVehicleSpecs(vehicle);
+  const groups = groupVehicleSpecs(vehicle, useLocale());
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {groups.map((group) => (
@@ -43,14 +44,19 @@ export function VehicleSpecs({ vehicle }: { vehicle: VehicleSpecSource }) {
 export function VehicleFeatures({
   features,
 }: {
-  features: Pick<Tables<'features'>, 'name' | 'category'>[];
+  features: Pick<Tables<'features'>, 'name' | 'slug' | 'category'>[];
 }) {
-  const groups = groupFeatures(features);
+  const locale = useLocale();
+  const t = useTranslations('Vehicle');
+  const groups = groupFeatures(
+    features.map((f) => ({ name: featureName(f, locale), category: f.category })),
+    locale,
+  );
   if (groups.length === 0) return null;
   return (
     <section aria-labelledby="features-title" className="space-y-4">
       <h2 id="features-title" className="font-display text-2xl font-semibold tracking-tight">
-        Features
+        {t('features')}
       </h2>
       <div className="grid gap-6 sm:grid-cols-2">
         {groups.map((group) => (

@@ -1,5 +1,6 @@
 import { conditionBadges, type ConditionBadge } from '@cp/core';
 import { CircleAlert, CircleCheck } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 
@@ -13,10 +14,11 @@ export function ConditionBadges({
   vehicle: BadgeSource;
   className?: string;
 }) {
-  const badges = conditionBadges(vehicle);
+  const t = useTranslations('Card');
+  const badges = conditionBadges(vehicle, useLocale());
   if (badges.length === 0) return null;
   return (
-    <ul aria-label="Condition and history" className={cn('flex flex-wrap gap-1.5', className)}>
+    <ul aria-label={t('conditionHistory')} className={cn('flex flex-wrap gap-1.5', className)}>
       {badges.map((badge) => (
         <li key={badge.key}>
           <Badge badge={badge} />

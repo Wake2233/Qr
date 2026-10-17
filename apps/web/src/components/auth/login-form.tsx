@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { requestSignInCode, verifySignInCode } from '@/app/(auth)/login/actions';
+import { requestSignInCode, verifySignInCode } from '@/app/[locale]/(auth)/login/actions';
 import { useAuth } from '@/components/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

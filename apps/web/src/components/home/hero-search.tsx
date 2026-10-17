@@ -2,7 +2,7 @@
 
 import { formatPrice, inventoryHref, PRICE_STEPS_CENTS, type InventoryFilters } from '@cp/core';
 import { Search } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useRouter } from '@/i18n/navigation';
 
 const ANY = 'any';
 
@@ -26,6 +27,7 @@ const withCount = (label: string, count: number) => (count > 0 ? `${label} (${co
 /** Make → model → budget, then straight to the filtered inventory. Lists the whole catalog. */
 export function HeroSearch({ makes, models }: HeroSearchProps) {
   const router = useRouter();
+  const t = useTranslations('HeroSearch');
   const [make, setMake] = useState(ANY);
   const [model, setModel] = useState(ANY);
   const [budget, setBudget] = useState(ANY);
@@ -45,7 +47,7 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
   return (
     <form
       role="search"
-      aria-label="Find a vehicle"
+      aria-label={t('label')}
       onSubmit={(event) => {
         event.preventDefault();
         submit();
@@ -60,11 +62,13 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
           setModel(ANY);
         }}
       >
-        <SelectTrigger aria-label="Make" className="h-12 w-full border-0 shadow-none">
-          <SelectValue>{make === ANY ? 'Any make' : labelOf(makes, make, 'Any make')}</SelectValue>
+        <SelectTrigger aria-label={t('make')} className="h-12 w-full border-0 shadow-none">
+          <SelectValue>
+            {make === ANY ? t('anyMake') : labelOf(makes, make, t('anyMake'))}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ANY}>Any make</SelectItem>
+          <SelectItem value={ANY}>{t('anyMake')}</SelectItem>
           {makes.map((m) => (
             <SelectItem key={m.value} value={m.value}>
               {withCount(m.label, m.count)}
@@ -73,17 +77,17 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
         </SelectContent>
       </Select>
       <Select value={model} onValueChange={setModel} disabled={make === ANY}>
-        <SelectTrigger aria-label="Model" className="h-12 w-full border-0 shadow-none">
+        <SelectTrigger aria-label={t('model')} className="h-12 w-full border-0 shadow-none">
           <SelectValue>
             {make === ANY
-              ? 'Pick a make first'
+              ? t('pickMakeFirst')
               : model === ANY
-                ? 'Any model'
-                : labelOf(makeModels, model, 'Any model')}
+                ? t('anyModel')
+                : labelOf(makeModels, model, t('anyModel'))}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ANY}>Any model</SelectItem>
+          <SelectItem value={ANY}>{t('anyModel')}</SelectItem>
           {makeModels.map((m) => (
             <SelectItem key={m.value} value={m.value}>
               {withCount(m.label, m.count)}
@@ -92,22 +96,22 @@ export function HeroSearch({ makes, models }: HeroSearchProps) {
         </SelectContent>
       </Select>
       <Select value={budget} onValueChange={setBudget}>
-        <SelectTrigger aria-label="Maximum price" className="h-12 w-full border-0 shadow-none">
+        <SelectTrigger aria-label={t('maxPrice')} className="h-12 w-full border-0 shadow-none">
           <SelectValue>
-            {budget === ANY ? 'Any price' : `Up to ${formatPrice(Number(budget))}`}
+            {budget === ANY ? t('anyPrice') : t('upTo', { price: formatPrice(Number(budget)) })}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ANY}>Any price</SelectItem>
+          <SelectItem value={ANY}>{t('anyPrice')}</SelectItem>
           {PRICE_STEPS_CENTS.map((cents) => (
             <SelectItem key={cents} value={String(cents)}>
-              Up to {formatPrice(cents)}
+              {t('upTo', { price: formatPrice(cents) })}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
       <Button type="submit" size="lg" className="h-12 px-6">
-        <Search /> Search
+        <Search /> {t('search')}
       </Button>
     </form>
   );

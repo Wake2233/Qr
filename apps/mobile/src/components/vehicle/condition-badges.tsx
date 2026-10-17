@@ -2,18 +2,20 @@ import { conditionBadges } from '@cp/core';
 import { View } from 'react-native';
 
 import { Text } from '@/components/text';
+import { useLocale, useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 type BadgeSource = Parameters<typeof conditionBadges>[0];
 
 /** "Run & Drive · No damage · Clean title · 1 owner": short trust signals near the price. */
 export function ConditionBadges({ vehicle }: { vehicle: BadgeSource }) {
-  const badges = conditionBadges(vehicle);
+  const t = useT();
+  const badges = conditionBadges(vehicle, useLocale());
   if (badges.length === 0) return null;
   return (
     <View
       className="flex-row flex-wrap gap-1.5"
-      accessibilityLabel={`Condition: ${badges.map((b) => b.label).join(', ')}`}
+      accessibilityLabel={t.vehicle.conditionLabel(badges.map((b) => b.label).join(', '))}
     >
       {badges.map((badge) => (
         <View

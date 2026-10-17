@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as Haptics from 'expo-haptics';
 import { Link, Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm, type FieldPath } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { toast } from 'sonner-native';
 
@@ -13,32 +13,33 @@ import { Button } from '@/components/button';
 import { DealerStatusChip } from '@/components/console/status-chip';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
+import { useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/providers/session-provider';
 
 type Values = DealerApplicationInput;
 
 const FIELDS: {
-  name: Exclude<FieldPath<Values>, 'description'>;
-  label: string;
+  name: Exclude<keyof Values, 'description'>;
   keyboard?: 'phone-pad' | 'email-address' | 'url';
   autoComplete?: 'tel' | 'email' | 'postal-code' | 'street-address' | 'organization';
 }[] = [
-  { name: 'display_name', label: 'Dealership name', autoComplete: 'organization' },
-  { name: 'legal_name', label: 'Legal business name (optional)' },
-  { name: 'phone_e164', label: 'Phone', keyboard: 'phone-pad', autoComplete: 'tel' },
-  { name: 'whatsapp_e164', label: 'WhatsApp number', keyboard: 'phone-pad' },
-  { name: 'email', label: 'Business email', keyboard: 'email-address', autoComplete: 'email' },
-  { name: 'website', label: 'Website (optional)', keyboard: 'url' },
-  { name: 'address_line1', label: 'Street address', autoComplete: 'street-address' },
-  { name: 'city', label: 'City' },
-  { name: 'state', label: 'State' },
-  { name: 'postal_code', label: 'ZIP code', autoComplete: 'postal-code' },
-  { name: 'license_number', label: 'Dealer license number' },
+  { name: 'display_name', autoComplete: 'organization' },
+  { name: 'legal_name' },
+  { name: 'phone_e164', keyboard: 'phone-pad', autoComplete: 'tel' },
+  { name: 'whatsapp_e164', keyboard: 'phone-pad' },
+  { name: 'email', keyboard: 'email-address', autoComplete: 'email' },
+  { name: 'website', keyboard: 'url' },
+  { name: 'address_line1', autoComplete: 'street-address' },
+  { name: 'city' },
+  { name: 'state' },
+  { name: 'postal_code', autoComplete: 'postal-code' },
+  { name: 'license_number' },
 ];
 
 export default function SellWithUsScreen() {
   const router = useRouter();
+  const t = useT();
   const { loading, context, refresh } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export default function SellWithUsScreen() {
       await applyAsDealer(supabase, dealerApplicationSchema.parse(values));
       await refresh();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      toast.success('Application received');
+      toast.success(t.sell.received);
     } catch (submitError) {
       setError(parseDbError(submitError).message);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -82,21 +83,18 @@ export default function SellWithUsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       className="flex-1 bg-background"
     >
-      <Stack.Screen options={{ title: 'Sell with us', headerShown: true }} />
+      <Stack.Screen options={{ title: t.sell.title, headerShown: true }} />
       <ScrollView contentContainerClassName="gap-5 p-4 pb-16" keyboardShouldPersistTaps="handled">
         <View className="gap-2">
-          <Text variant="display">List your inventory</Text>
-          <Text variant="muted">
-            Buyers contact you directly on WhatsApp or by phone from every listing. Manage cars from
-            the web console or this app.
-          </Text>
+          <Text variant="display">{t.sell.heading}</Text>
+          <Text variant="muted">{t.sell.lead}</Text>
         </View>
 
         {loading ? null : !context ? (
           <View className="gap-3 rounded-lg border border-border bg-card p-4">
-            <Text variant="heading">Sign in to apply</Text>
+            <Text variant="heading">{t.sell.signInTitle}</Text>
             <Link href="/sign-in" asChild>
-              <Button title="Sign in" />
+              <Button title={t.common.signIn} />
             </Link>
           </View>
         ) : membership ? (
@@ -108,11 +106,9 @@ export default function SellWithUsScreen() {
               <DealerStatusChip status={membership.dealer.status} />
             </View>
             <Text variant="caption">
-              {membership.dealer.status === 'pending'
-                ? 'Application received. You can prepare draft listings now; they go live once you are approved.'
-                : 'Your dealership is approved.'}
+              {membership.dealer.status === 'pending' ? t.sell.pending : t.sell.approved}
             </Text>
-            <Button title="Open the console" onPress={() => router.replace('/manage')} />
+            <Button title={t.sell.openConsole} onPress={() => router.replace('/manage')} />
           </View>
         ) : (
           <View className="gap-4">
@@ -133,7 +129,7 @@ export default function SellWithUsScreen() {
                 name={f.name}
                 render={({ field, fieldState }) => (
                   <TextField
-                    label={f.label}
+                    label={t.sell.fields[f.name]}
                     value={field.value ?? ''}
                     onChangeText={field.onChange}
                     onBlur={field.onBlur}
@@ -150,7 +146,7 @@ export default function SellWithUsScreen() {
               name="description"
               render={({ field }) => (
                 <TextField
-                  label="About your dealership (optional)"
+                  label={t.sell.about}
                   multiline
                   textAlignVertical="top"
                   className="h-28 py-3"
@@ -159,14 +155,8 @@ export default function SellWithUsScreen() {
                 />
               )}
             />
-            <Text variant="caption">
-              Supporting documents (license, insurance) can be uploaded from the web console.
-            </Text>
-            <Button
-              title="Submit application"
-              loading={submitting}
-              onPress={() => void onSubmit()}
-            />
+            <Text variant="caption">{t.sell.documentsNote}</Text>
+            <Button title={t.sell.submit} loading={submitting} onPress={() => void onSubmit()} />
           </View>
         )}
       </ScrollView>

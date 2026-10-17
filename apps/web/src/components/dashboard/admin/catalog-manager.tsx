@@ -7,7 +7,7 @@ import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { addCatalogEntry, removeCatalogEntry } from '@/app/dashboard/catalog/actions';
+import { addCatalogEntry, removeCatalogEntry } from '@/app/[locale]/dashboard/catalog/actions';
 import { OptionSelect, optionsOf } from '@/components/dashboard/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

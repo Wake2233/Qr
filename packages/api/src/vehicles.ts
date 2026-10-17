@@ -258,7 +258,7 @@ const DETAIL_COLUMNS = `
   make:makes(id, name, slug),
   model:models(id, name, slug),
   dealer:dealers(id, slug, display_name, is_house, status, phone_e164, whatsapp_e164, email,
-    address_line1, city, state, postal_code, logo_path, business_hours),
+    address_line1, city, state, postal_code, logo_path),
   images:vehicle_images(id, storage_path, position, width, height, blurhash, alt),
   features:vehicle_features(feature:features(id, name, slug, category)),
   price_history:vehicle_price_history(old_price_cents, new_price_cents, changed_at)

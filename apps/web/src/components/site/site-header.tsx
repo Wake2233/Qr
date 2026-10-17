@@ -1,20 +1,22 @@
 import { buildTelUrl, formatPhone } from '@cp/core';
 import { Heart, Phone } from 'lucide-react';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import { AccountButton } from '@/components/auth/account-button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { getSiteInfo } from '@/lib/site';
 
 import { BrandMark } from './brand-mark';
 import { CompareLink } from './compare-link';
+import { LanguageSwitch } from './language-switch';
 import { MainNav, MainNavLinks } from './main-nav';
 import { MobileNav } from './mobile-nav';
 
 export async function SiteHeader() {
-  const { settings } = await getSiteInfo();
+  const [{ settings }, t] = await Promise.all([getSiteInfo(), getTranslations('Header')]);
   const phone = settings.default_phone_e164;
 
   return (
@@ -33,11 +35,12 @@ export async function SiteHeader() {
             </Button>
           ) : null}
           <Button asChild variant="ghost" size="icon">
-            <Link href="/account/favorites" aria-label="Saved vehicles">
+            <Link href="/account/favorites" aria-label={t('savedVehicles')}>
               <Heart className="size-5" />
             </Link>
           </Button>
           <CompareLink />
+          <LanguageSwitch className="hidden md:inline-flex" />
           <ThemeToggle className="hidden md:inline-flex" />
           <AccountButton />
           <MobileNav

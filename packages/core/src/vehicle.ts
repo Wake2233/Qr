@@ -5,6 +5,8 @@
 import type { Enums, Tables } from '@cp/types';
 
 import { formatMileage, formatPrice } from './format';
+import { coreDictionary, type Locale } from './i18n';
+import { en } from './i18n/en';
 
 export interface VehicleTitleParts {
   year: number;
@@ -31,99 +33,20 @@ export function vehicleSlug(parts: VehicleTitleParts & { id: string }): string {
   return `${base}-${parts.id.replace(/-/g, '').slice(0, 8)}`;
 }
 
-export const bodyTypeLabels: Record<Enums<'body_type'>, string> = {
-  sedan: 'Sedan',
-  suv: 'SUV',
-  pickup: 'Pickup truck',
-  coupe: 'Coupe',
-  convertible: 'Convertible',
-  hatchback: 'Hatchback',
-  wagon: 'Wagon',
-  van: 'Van',
-  minivan: 'Minivan',
-};
-
-export const fuelTypeLabels: Record<Enums<'fuel_type'>, string> = {
-  gasoline: 'Gasoline',
-  diesel: 'Diesel',
-  hybrid: 'Hybrid',
-  plug_in_hybrid: 'Plug-in hybrid',
-  electric: 'Electric',
-  flex_fuel: 'Flex fuel',
-};
-
-export const drivetrainLabels: Record<Enums<'drivetrain'>, string> = {
-  fwd: 'Front-wheel drive (FWD)',
-  rwd: 'Rear-wheel drive (RWD)',
-  awd: 'All-wheel drive (AWD)',
-  '4wd': 'Four-wheel drive (4WD)',
-};
-
-export const transmissionLabels: Record<Enums<'transmission'>, string> = {
-  automatic: 'Automatic',
-  manual: 'Manual',
-  cvt: 'CVT',
-  dct: 'Dual-clutch',
-};
-
-export const conditionLabels: Record<Enums<'vehicle_condition'>, string> = {
-  new: 'New',
-  used: 'Used',
-  certified: 'Certified pre-owned',
-};
-
-export const titleStatusLabels: Record<Enums<'title_status'>, string> = {
-  clean: 'Clean',
-  rebuilt: 'Rebuilt',
-  salvage: 'Salvage',
-  lemon: 'Lemon / buyback',
-  unknown: 'Unknown',
-};
-
-export const damageLevelLabels: Record<Enums<'damage_level'>, string> = {
-  none: 'No damage',
-  minor: 'Minor damage',
-  moderate: 'Moderate damage',
-  severe: 'Severe damage',
-};
-
-export const damageAreaLabels: Record<Enums<'damage_area'>, string> = {
-  front: 'Front end',
-  rear: 'Rear end',
-  side: 'Side',
-  roof: 'Roof',
-  undercarriage: 'Undercarriage',
-  all_over: 'All over',
-  hail: 'Hail',
-  flood: 'Flood / water',
-  fire: 'Fire',
-  mechanical: 'Mechanical',
-  vandalism: 'Vandalism',
-  normal_wear: 'Normal wear',
-};
-
-export const driveStatusLabels: Record<Enums<'drive_status'>, string> = {
-  runs_and_drives: 'Run & Drive',
-  starts: 'Starts, doesn’t drive',
-  does_not_start: 'Doesn’t start',
-};
-
-export const colorFamilyLabels: Record<Enums<'color_family'>, string> = {
-  black: 'Black',
-  white: 'White',
-  gray: 'Gray',
-  silver: 'Silver',
-  blue: 'Blue',
-  red: 'Red',
-  green: 'Green',
-  brown: 'Brown',
-  beige: 'Beige',
-  gold: 'Gold',
-  orange: 'Orange',
-  yellow: 'Yellow',
-  purple: 'Purple',
-  other: 'Other',
-};
+// English label maps (the consoles use these directly). Buyer screens use
+// `coreDictionary(locale)` from ./i18n for the same keys in English or Georgian.
+export const bodyTypeLabels: Record<Enums<'body_type'>, string> = en.bodyType;
+export const fuelTypeLabels: Record<Enums<'fuel_type'>, string> = en.fuelType;
+export const drivetrainLabels: Record<Enums<'drivetrain'>, string> = en.drivetrain;
+export const transmissionLabels: Record<Enums<'transmission'>, string> = en.transmission;
+export const conditionLabels: Record<Enums<'vehicle_condition'>, string> = en.condition;
+export const titleStatusLabels: Record<Enums<'title_status'>, string> = en.titleStatus;
+export const damageLevelLabels: Record<Enums<'damage_level'>, string> = en.damageLevel;
+export const damageAreaLabels: Record<Enums<'damage_area'>, string> = en.damageArea;
+export const driveStatusLabels: Record<Enums<'drive_status'>, string> = en.driveStatus;
+export const colorFamilyLabels: Record<Enums<'color_family'>, string> = en.colorFamily;
+export const listingStatusLabels: Record<Enums<'listing_status'>, string> = en.listingStatus;
+export const featureCategoryLabels: Record<Enums<'feature_category'>, string> = en.featureCategory;
 
 /** Swatch colors for the color filter (display only). */
 export const colorFamilySwatches: Record<Enums<'color_family'>, string> = {
@@ -152,30 +75,7 @@ export const HISTORY_FLAGS = [
 ] as const;
 export type HistoryFlag = (typeof HISTORY_FLAGS)[number];
 
-export const historyFlagLabels: Record<HistoryFlag, string> = {
-  no_accidents: 'No accidents reported',
-  one_owner: 'One owner',
-  service_records: 'Service records',
-  clean_history: 'Clean history',
-};
-
-export const listingStatusLabels: Record<Enums<'listing_status'>, string> = {
-  draft: 'Draft',
-  pending_review: 'Pending review',
-  active: 'For sale',
-  reserved: 'Reserved',
-  sold: 'Sold',
-  archived: 'Archived',
-};
-
-export const featureCategoryLabels: Record<Enums<'feature_category'>, string> = {
-  safety: 'Safety & driver assist',
-  comfort: 'Comfort & convenience',
-  technology: 'Technology',
-  exterior: 'Exterior',
-  interior: 'Interior',
-  performance: 'Performance',
-};
+export const historyFlagLabels: Record<HistoryFlag, string> = en.historyFlag;
 
 export const FEATURE_CATEGORY_ORDER: Enums<'feature_category'>[] = [
   'safety',
@@ -238,8 +138,6 @@ export type VehicleSpecSource = Pick<
     model: string;
   };
 
-type Row = [key: string, label: string, value: string | null];
-
 /** A spec row that may be empty: compare tables keep every row so columns line up. */
 export interface SpecCell {
   key: string;
@@ -253,101 +151,136 @@ export interface SpecGrid {
   rows: SpecCell[];
 }
 
-function rows(entries: Row[]): SpecCell[] {
-  return entries.map(([key, label, value]) => ({ key, label, value }));
-}
-
 const str = <T>(value: T | null, fn: (v: T) => string): string | null =>
   value === null ? null : fn(value);
 
-function fuelEconomy(city: number | null, highway: number | null): string | null {
-  if (city !== null && highway !== null) return `${city} city / ${highway} hwy mpg`;
-  if (city !== null) return `${city} city mpg`;
-  if (highway !== null) return `${highway} hwy mpg`;
-  return null;
-}
-
 /** Every spec row in display order, including empty ones (same shape for every vehicle). */
-export function vehicleSpecGrid(v: VehicleSpecSource): SpecGrid[] {
+export function vehicleSpecGrid(v: VehicleSpecSource, locale?: Locale): SpecGrid[] {
+  const d = coreDictionary(locale);
+  const row = (key: keyof typeof d.spec, value: string | null): SpecCell => ({
+    key,
+    label: d.spec[key],
+    value,
+  });
   return [
     {
       id: 'overview',
-      title: 'Overview',
-      rows: rows([
-        ['year', 'Year', String(v.year)],
-        ['make', 'Make', v.make],
-        ['model', 'Model', v.model],
-        ['trim', 'Trim', v.trim],
-        ['condition', 'Condition', conditionLabels[v.condition]],
-        ['mileage', 'Mileage', str(v.mileage, formatMileage)],
-        ['price_cents', 'Price', str(v.price_cents, (c) => formatPrice(c))],
-        ['msrp_cents', 'Original MSRP', str(v.msrp_cents, (c) => formatPrice(c))],
-        ['stock_number', 'Stock #', v.stock_number],
-        ['vin', 'VIN', v.vin],
-      ]),
+      title: d.specGroup.overview,
+      rows: [
+        row('year', String(v.year)),
+        row('make', v.make),
+        row('model', v.model),
+        row('trim', v.trim),
+        row('condition', d.condition[v.condition]),
+        row(
+          'mileage',
+          str(v.mileage, (mi) => formatMileage(mi, locale)),
+        ),
+        row(
+          'price_cents',
+          str(v.price_cents, (c) => formatPrice(c)),
+        ),
+        row(
+          'msrp_cents',
+          str(v.msrp_cents, (c) => formatPrice(c)),
+        ),
+        row('stock_number', v.stock_number),
+        row('vin', v.vin),
+      ],
     },
     {
       id: 'powertrain',
-      title: 'Powertrain',
-      rows: rows([
-        ['fuel_type', 'Fuel type', str(v.fuel_type, (f) => fuelTypeLabels[f])],
-        ['engine', 'Engine', v.engine],
-        ['displacement_l', 'Displacement', str(v.displacement_l, (d) => `${d.toFixed(1)} L`)],
-        ['cylinders', 'Cylinders', str(v.cylinders, String)],
-        ['horsepower', 'Horsepower', str(v.horsepower, (hp) => `${hp} hp`)],
-        ['torque_lbft', 'Torque', str(v.torque_lbft, (t) => `${t} lb-ft`)],
-        ['transmission', 'Transmission', str(v.transmission, (t) => transmissionLabels[t])],
-        ['drivetrain', 'Drivetrain', str(v.drivetrain, (d) => drivetrainLabels[d])],
-        ['mpg', 'Fuel economy', fuelEconomy(v.mpg_city, v.mpg_highway)],
-        ['ev_range_mi', 'Electric range', str(v.ev_range_mi, (mi) => `${mi} mi`)],
-      ]),
+      title: d.specGroup.powertrain,
+      rows: [
+        row(
+          'fuel_type',
+          str(v.fuel_type, (f) => d.fuelType[f]),
+        ),
+        row('engine', v.engine),
+        row(
+          'displacement_l',
+          str(v.displacement_l, (l) => `${l.toFixed(1)} ${d.unit.liters}`),
+        ),
+        row('cylinders', str(v.cylinders, String)),
+        row(
+          'horsepower',
+          str(v.horsepower, (hp) => `${hp} ${d.unit.horsepower}`),
+        ),
+        row(
+          'torque_lbft',
+          str(v.torque_lbft, (t) => `${t} ${d.unit.torque}`),
+        ),
+        row(
+          'transmission',
+          str(v.transmission, (t) => d.transmission[t]),
+        ),
+        row(
+          'drivetrain',
+          str(v.drivetrain, (dt) => d.drivetrain[dt]),
+        ),
+        row(
+          'mpg',
+          v.mpg_city === null && v.mpg_highway === null
+            ? null
+            : d.unit.mpg(v.mpg_city, v.mpg_highway),
+        ),
+        row(
+          'ev_range_mi',
+          str(v.ev_range_mi, (mi) => `${mi} ${d.unit.miles}`),
+        ),
+      ],
     },
     {
       id: 'body_interior',
-      title: 'Body & Interior',
-      rows: rows([
-        ['body_type', 'Body style', str(v.body_type, (b) => bodyTypeLabels[b])],
-        ['exterior_color', 'Exterior color', v.exterior_color],
-        ['interior_color', 'Interior color', v.interior_color],
-        ['doors', 'Doors', str(v.doors, String)],
-        ['seats', 'Seats', str(v.seats, String)],
-      ]),
+      title: d.specGroup.body_interior,
+      rows: [
+        row(
+          'body_type',
+          str(v.body_type, (b) => d.bodyType[b]),
+        ),
+        row('exterior_color', v.exterior_color),
+        row('interior_color', v.interior_color),
+        row('doors', str(v.doors, String)),
+        row('seats', str(v.seats, String)),
+      ],
     },
     {
       id: 'history',
-      title: 'History',
-      rows: rows([
-        ['title_status', 'Title', titleStatusLabels[v.title_status]],
-        [
+      title: d.specGroup.history,
+      rows: [
+        row('title_status', d.titleStatus[v.title_status]),
+        row(
           'owners_count',
-          'Previous owners',
-          str(v.owners_count, (n) => (n === 0 ? 'None' : String(n))),
-        ],
-        [
+          str(v.owners_count, (n) => (n === 0 ? d.value.noOwners : String(n))),
+        ),
+        row(
           'accident_free',
-          'Accident history',
-          str(v.accident_free, (ok) => (ok ? 'No accidents reported' : 'Accident reported')),
-        ],
-        ['damage', 'Damage', str(v.damage ?? null, (d) => damageLevelLabels[d])],
-        [
+          str(v.accident_free, (ok) => (ok ? d.value.noAccidents : d.value.accidentReported)),
+        ),
+        row(
+          'damage',
+          str(v.damage ?? null, (dmg) => d.damageLevel[dmg]),
+        ),
+        row(
           'damage_area',
-          'Primary damage',
-          v.damage === 'none' ? null : str(v.damage_area ?? null, (a) => damageAreaLabels[a]),
-        ],
-        ['drive_status', 'Run & Drive', str(v.drive_status ?? null, (d) => driveStatusLabels[d])],
-        [
+          v.damage === 'none' ? null : str(v.damage_area ?? null, (a) => d.damageArea[a]),
+        ),
+        row(
+          'drive_status',
+          str(v.drive_status ?? null, (ds) => d.driveStatus[ds]),
+        ),
+        row(
           'service_records',
-          'Service records',
-          str(v.service_records ?? null, (ok) => (ok ? 'Available' : 'Not available')),
-        ],
-      ]),
+          str(v.service_records ?? null, (ok) => (ok ? d.value.available : d.value.notAvailable)),
+        ),
+      ],
     },
   ];
 }
 
 /** Overview / Powertrain / Body & Interior / History, omitting empty rows and groups. */
-export function groupVehicleSpecs(v: VehicleSpecSource): SpecGroup[] {
-  return vehicleSpecGrid(v).flatMap(({ id, title, rows: cells }) => {
+export function groupVehicleSpecs(v: VehicleSpecSource, locale?: Locale): SpecGroup[] {
+  return vehicleSpecGrid(v, locale).flatMap(({ id, title, rows: cells }) => {
     const filled = cells.flatMap(({ key, label, value }) =>
       value === null ? [] : [{ key, label, value }],
     );
@@ -364,14 +297,16 @@ export interface FeatureGroup {
 /** Groups features by category in a fixed display order; names sorted within a group. */
 export function groupFeatures(
   features: Pick<Tables<'features'>, 'name' | 'category'>[],
+  locale?: Locale,
 ): FeatureGroup[] {
+  const d = coreDictionary(locale);
   return FEATURE_CATEGORY_ORDER.flatMap((category) => {
     const names = features
       .filter((f) => f.category === category)
       .map((f) => f.name)
-      .sort((a, b) => a.localeCompare(b));
+      .sort((a, b) => a.localeCompare(b, locale));
     return names.length > 0
-      ? [{ category, title: featureCategoryLabels[category], features: names }]
+      ? [{ category, title: d.featureCategory[category], features: names }]
       : [];
   });
 }
@@ -387,32 +322,35 @@ export interface ConditionBadge {
 export function conditionBadges(
   v: Pick<VehicleSpecSource, 'title_status' | 'owners_count' | 'accident_free'> &
     Partial<Pick<VehicleSpecSource, 'damage' | 'drive_status'>>,
+  locale?: Locale,
 ): ConditionBadge[] {
+  const d = coreDictionary(locale);
   const badges: ConditionBadge[] = [];
   if (v.drive_status) {
     badges.push({
       key: 'drive_status',
-      label: driveStatusLabels[v.drive_status],
+      label: d.driveStatus[v.drive_status],
       tone: v.drive_status === 'runs_and_drives' ? 'positive' : 'caution',
     });
   }
   if (v.damage) {
     badges.push({
       key: 'damage',
-      label: damageLevelLabels[v.damage],
+      label: d.damageLevel[v.damage],
       tone: v.damage === 'none' ? 'positive' : 'caution',
     });
   }
   if (v.title_status !== 'unknown') {
     badges.push({
       key: 'title',
-      label: `${titleStatusLabels[v.title_status]} title`,
+      label: d.badge.title(d.titleStatus[v.title_status]),
       tone: v.title_status === 'clean' ? 'positive' : 'caution',
     });
   }
-  if (v.owners_count === 1) badges.push({ key: 'owners', label: '1 owner', tone: 'positive' });
+  if (v.owners_count === 1)
+    badges.push({ key: 'owners', label: d.badge.oneOwner, tone: 'positive' });
   if (v.accident_free === true) {
-    badges.push({ key: 'accidents', label: 'No accidents', tone: 'positive' });
+    badges.push({ key: 'accidents', label: d.badge.noAccidents, tone: 'positive' });
   }
   return badges;
 }
@@ -427,6 +365,11 @@ export function priceDropCents(
 }
 
 /** Image alt text: vehicle title + view, e.g. "2021 BMW X5 – front three-quarter". */
-export function vehicleImageAlt(title: string, view: string | null | undefined, index: number) {
-  return `${title} – ${view?.trim() || `photo ${index + 1}`}`;
+export function vehicleImageAlt(
+  title: string,
+  view: string | null | undefined,
+  index: number,
+  locale?: Locale,
+) {
+  return `${title} – ${view?.trim() || coreDictionary(locale).photo(index + 1)}`;
 }

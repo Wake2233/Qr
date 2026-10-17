@@ -2,16 +2,15 @@
 
 import type { ConsoleDealer } from '@cp/api';
 import { formatPhone } from '@cp/core';
-import { dealerProfileSchema, type BusinessHours, type DealerProfileInput } from '@cp/validators';
+import { dealerProfileSchema, type DealerProfileInput } from '@cp/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useTransition } from 'react';
-import { Controller, useForm, type FieldPath } from 'react-hook-form';
+import { useForm, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { saveDealerProfile } from '@/app/dashboard/dealer/actions';
-import { BusinessHoursEditor } from '@/components/dashboard/business-hours-editor';
-import { Field, firstErrorMessage } from '@/components/dashboard/form-fields';
+import { saveDealerProfile } from '@/app/[locale]/dashboard/dealer/actions';
+import { Field } from '@/components/dashboard/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 type Values = DealerProfileInput;
 
 const FIELDS: {
-  name: keyof Omit<Values, 'business_hours' | 'description'>;
+  name: keyof Omit<Values, 'description'>;
   label: string;
   type?: string;
   span?: boolean;
@@ -52,7 +51,6 @@ export function DealerProfileForm({ dealer }: { dealer: ConsoleDealer }) {
       state: dealer.state ?? '',
       postal_code: dealer.postal_code ?? '',
       description: dealer.description,
-      business_hours: (dealer.business_hours ?? {}) as BusinessHours,
     },
     mode: 'onTouched',
   });
@@ -90,17 +88,6 @@ export function DealerProfileForm({ dealer }: { dealer: ConsoleDealer }) {
           {(p) => <Textarea {...p} {...form.register('description')} rows={4} />}
         </Field>
       </div>
-      <Controller
-        control={form.control}
-        name="business_hours"
-        render={({ field, fieldState }) => (
-          <BusinessHoursEditor
-            value={field.value ?? {}}
-            onChange={field.onChange}
-            error={firstErrorMessage(fieldState.error)}
-          />
-        )}
-      />
       <Button type="submit" disabled={pending || !form.formState.isDirty}>
         {pending ? <Loader2 className="animate-spin" /> : null} Save profile
       </Button>

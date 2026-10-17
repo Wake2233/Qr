@@ -3,6 +3,7 @@
 import { vehicleImageAlt } from '@cp/core';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Car, ChevronLeft, ChevronRight, Expand } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
@@ -30,6 +31,8 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
   const [thumbsRef, thumbs] = useEmblaCarousel({ dragFree: true, containScroll: 'keepSnaps' });
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const t = useTranslations('Vehicle');
+  const locale = useLocale();
 
   useEffect(() => {
     if (!embla) return;
@@ -45,13 +48,14 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
   }, [embla, thumbs]);
 
   const go = useCallback((to: number) => embla?.scrollTo(to), [embla]);
-  const alt = (image: GalleryImage, i: number) => image.alt ?? vehicleImageAlt(title, null, i);
+  const alt = (image: GalleryImage, i: number) =>
+    image.alt ?? vehicleImageAlt(title, null, i, locale);
 
   if (images.length === 0) {
     return (
       <div className="bg-muted text-muted-foreground grid aspect-[4/3] place-items-center rounded-2xl">
         <Car className="size-12" aria-hidden />
-        <span className="sr-only">No photos yet</span>
+        <span className="sr-only">{t('noPhotos')}</span>
       </div>
     );
   }
@@ -61,7 +65,7 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
       <div
         role="region"
         aria-roledescription="carousel"
-        aria-label={`${title} photos`}
+        aria-label={t('photos', { title })}
         className="group bg-muted relative overflow-hidden rounded-2xl"
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') embla?.scrollPrev();
@@ -78,7 +82,7 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
                   className="relative aspect-[4/3] min-w-0 flex-[0_0_100%]"
                   role="group"
                   aria-roledescription="slide"
-                  aria-label={`${i + 1} of ${images.length}`}
+                  aria-label={t('photoOf', { n: i + 1, total: images.length })}
                 >
                   <button
                     type="button"
@@ -86,7 +90,7 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
                     onClick={() => setLightbox(i)}
                     onPointerEnter={() => void loadLightbox()}
                     onTouchStart={() => void loadLightbox()}
-                    aria-label={`Open photo ${i + 1} full screen`}
+                    aria-label={t('openPhoto', { n: i + 1 })}
                     tabIndex={i === index ? 0 : -1}
                   >
                     <Image
@@ -124,13 +128,13 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
 
       {images.length > 1 ? (
         <div ref={thumbsRef} className="overflow-hidden">
-          <ul className="flex gap-2" aria-label="Choose a photo">
+          <ul className="flex gap-2" aria-label={t('choosePhoto')}>
             {images.map((image, i) => (
               <li key={image.id} className="flex-[0_0_22%] sm:flex-[0_0_15%]">
                 <button
                   type="button"
                   onClick={() => go(i)}
-                  aria-label={`Show photo ${i + 1}`}
+                  aria-label={t('showPhoto', { n: i + 1 })}
                   aria-current={i === index}
                   className={cn(
                     'bg-muted focus-visible:ring-ring relative block aspect-[4/3] w-full overflow-hidden rounded-lg outline-none focus-visible:ring-2',
@@ -163,12 +167,13 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
 }
 
 function GalleryArrow({ side, onClick }: { side: 'left' | 'right'; onClick: () => void }) {
+  const t = useTranslations('Vehicle');
   const Icon = side === 'left' ? ChevronLeft : ChevronRight;
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={side === 'left' ? 'Previous photo' : 'Next photo'}
+      aria-label={t(side === 'left' ? 'previousPhoto' : 'nextPhoto')}
       className={cn(
         'bg-background/85 hover:bg-background focus-visible:ring-ring absolute top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full shadow-md backdrop-blur transition outline-none focus-visible:ring-2 sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100',
         side === 'left' ? 'left-3' : 'right-3',

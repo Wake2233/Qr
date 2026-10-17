@@ -1,18 +1,12 @@
 import { vehicleQueries, type VehicleCard as Card } from '@cp/api';
-import {
-  formatMileage,
-  formatPrice,
-  fuelTypeLabels,
-  listingStatusLabels,
-  priceDropCents,
-  vehicleImageAlt,
-} from '@cp/core';
+import { formatMileage, formatPrice, priceDropCents, vehicleImageAlt } from '@cp/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useCoreT, useLocale, useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { Image } from '@/lib/interop';
 import { supabase } from '@/lib/supabase';
@@ -23,12 +17,15 @@ export function VehicleCard({ card, className }: { card: Card; className?: strin
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isSaved, toggle } = useFavorites();
+  const t = useT();
+  const d = useCoreT();
+  const locale = useLocale();
   const saved = isSaved(card.id);
   const drop = priceDropCents(card.previous_price_cents, card.price_cents);
   const live = card.status === 'active';
   const facts = [
-    card.mileage === null ? null : formatMileage(card.mileage),
-    card.fuel_type ? fuelTypeLabels[card.fuel_type] : null,
+    card.mileage === null ? null : formatMileage(card.mileage, locale),
+    card.fuel_type ? d.fuelType[card.fuel_type] : null,
     card.drivetrain?.toUpperCase() ?? null,
   ].filter(Boolean);
 
@@ -51,7 +48,7 @@ export function VehicleCard({ card, className }: { card: Card; className?: strin
             contentFit="cover"
             cachePolicy="memory-disk"
             transition={150}
-            accessibilityLabel={card.cover_alt ?? vehicleImageAlt(card.title, null, 0)}
+            accessibilityLabel={card.cover_alt ?? vehicleImageAlt(card.title, null, 0, locale)}
             className="h-full w-full"
           />
         ) : (
@@ -73,20 +70,22 @@ export function VehicleCard({ card, className }: { card: Card; className?: strin
                   card.status === 'sold' ? 'text-background' : 'text-amber-950',
                 )}
               >
-                {listingStatusLabels[card.status]}
+                {d.listingStatus[card.status]}
               </Text>
             </View>
           ) : null}
           {drop && live ? (
             <View className="rounded-full bg-emerald-600 px-2.5 py-1">
-              <Text className="font-sans-semibold text-xs text-white">{formatPrice(drop)} off</Text>
+              <Text className="font-sans-semibold text-xs text-white">
+                {t.card.off(formatPrice(drop))}
+              </Text>
             </View>
           ) : null}
         </View>
         {card.status !== 'sold' ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={saved ? `Remove ${card.title} from saved` : `Save ${card.title}`}
+            accessibilityLabel={saved ? t.card.unsave(card.title) : t.card.save(card.title)}
             accessibilityState={{ selected: saved }}
             hitSlop={8}
             onPress={() => toggle(card.id)}

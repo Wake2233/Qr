@@ -1,15 +1,19 @@
 import { colors, cssVars, hex, type ColorScheme } from '@cp/design-tokens';
 import { vars } from 'nativewind';
-import { useColorScheme } from 'react-native';
+
+import { usePreferencesStore } from '@/stores/preferences';
 
 const themeVars = {
   light: vars(cssVars('light')),
   dark: vars(cssVars('dark')),
 } as const;
 
-/** Resolves the active scheme plus the NativeWind CSS-variable style for the root view. */
+/**
+ * The active scheme (the user's choice, light by default) plus the NativeWind CSS-variable
+ * style for the root view.
+ */
 export function useAppTheme() {
-  const scheme: ColorScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const scheme: ColorScheme = usePreferencesStore((s) => s.theme);
   const palette = colors[scheme];
   return {
     scheme,

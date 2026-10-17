@@ -1,14 +1,13 @@
 import type { VehicleCard as Card } from '@cp/api';
 import {
+  coreDictionary,
   formatMileage,
   formatPrice,
-  fuelTypeLabels,
-  listingStatusLabels,
   priceDropCents,
-  transmissionLabels,
   vehicleImageAlt,
 } from '@cp/core';
 import { Car, TrendingDown } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 import { blurhashDataUrl } from '@/lib/blurhash';
@@ -36,11 +35,15 @@ export function VehicleCard({
   sizes = GRID_IMAGE_SIZES,
   className,
 }: VehicleCardProps) {
+  const locale = useLocale();
+  const t = useTranslations('Card');
+  const price = useTranslations('Price');
+  const d = coreDictionary(locale);
   const drop = priceDropCents(card.previous_price_cents, card.price_cents);
   const specs = [
-    card.fuel_type ? fuelTypeLabels[card.fuel_type] : null,
+    card.fuel_type ? d.fuelType[card.fuel_type] : null,
     card.drivetrain ? card.drivetrain.toUpperCase() : null,
-    card.transmission ? transmissionLabels[card.transmission] : null,
+    card.transmission ? d.transmission[card.transmission] : null,
   ].filter((v): v is string => v !== null);
   const blur = blurhashDataUrl(card.cover_blurhash);
   const live = card.status === 'active';
@@ -56,7 +59,7 @@ export function VehicleCard({
         {card.cover_url ? (
           <Image
             src={card.cover_url}
-            alt={card.cover_alt ?? vehicleImageAlt(card.title, null, 0)}
+            alt={card.cover_alt ?? vehicleImageAlt(card.title, null, 0, locale)}
             fill
             sizes={sizes}
             priority={priority}
@@ -79,17 +82,18 @@ export function VehicleCard({
                   : 'bg-amber-400 text-amber-950',
               )}
             >
-              {listingStatusLabels[card.status]}
+              {d.listingStatus[card.status]}
             </span>
           ) : null}
           {drop && live ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
-              <TrendingDown className="size-3.5" aria-hidden /> {formatPrice(drop)} off
+              <TrendingDown className="size-3.5" aria-hidden />{' '}
+              {price('off', { amount: formatPrice(drop) })}
             </span>
           ) : null}
           {card.is_featured && live ? (
             <span className="bg-primary text-primary-foreground rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm">
-              Featured
+              {t('featured')}
             </span>
           ) : null}
         </div>
@@ -129,13 +133,13 @@ export function VehicleCard({
           </div>
           {card.mileage !== null ? (
             <p className="text-muted-foreground text-sm tabular-nums">
-              {formatMileage(card.mileage)}
+              {formatMileage(card.mileage, locale)}
             </p>
           ) : null}
         </div>
 
         {specs.length > 0 ? (
-          <ul className="flex flex-wrap gap-1.5" aria-label="Key specs">
+          <ul className="flex flex-wrap gap-1.5" aria-label={t('keySpecs')}>
             {specs.map((spec) => (
               <li key={spec} className="bg-muted rounded-md px-2 py-0.5 text-xs">
                 {spec}
@@ -146,7 +150,7 @@ export function VehicleCard({
 
         {card.dealer_name ? (
           <p className="text-muted-foreground mt-auto truncate text-xs">
-            {card.dealer_is_house ? 'Sold by' : 'Listed by'} {card.dealer_name}
+            {t(card.dealer_is_house ? 'soldBy' : 'listedBy', { dealer: card.dealer_name })}
           </p>
         ) : null}
       </div>

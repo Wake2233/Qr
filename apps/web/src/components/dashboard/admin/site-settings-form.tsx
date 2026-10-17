@@ -1,16 +1,15 @@
 'use client';
 
 import { renderWhatsAppTemplate } from '@cp/core';
-import { siteSettingsSchema, type BusinessHours, type SiteSettingsInput } from '@cp/validators';
+import { siteSettingsSchema, type SiteSettingsInput } from '@cp/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useTransition, type ReactNode } from 'react';
 import { Controller, useForm, useWatch, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { saveSiteSettings } from '@/app/dashboard/settings/actions';
-import { BusinessHoursEditor } from '@/components/dashboard/business-hours-editor';
-import { Field, firstErrorMessage } from '@/components/dashboard/form-fields';
+import { saveSiteSettings } from '@/app/[locale]/dashboard/settings/actions';
+import { Field } from '@/components/dashboard/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -89,20 +88,6 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettingsInput }) {
           </p>
           {preview}
         </div>
-      </Card>
-
-      <Card title="Business hours" description="Shown in the footer and on the contact page.">
-        <Controller
-          control={control}
-          name="business_hours"
-          render={({ field, fieldState }) => (
-            <BusinessHoursEditor
-              value={(field.value ?? {}) as BusinessHours}
-              onChange={field.onChange}
-              error={firstErrorMessage(fieldState.error)}
-            />
-          )}
-        />
       </Card>
 
       <Card title="Listing review">

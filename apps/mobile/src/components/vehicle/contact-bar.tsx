@@ -5,6 +5,7 @@ import { toast } from 'sonner-native';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { contactAbout } from '@/lib/contact';
 
@@ -24,10 +25,11 @@ export function ContactBar({
   phoneE164,
   text,
 }: ContactBarProps) {
+  const t = useT();
   if (!whatsappE164 && !phoneE164) return null;
   const open = (channel: 'whatsapp' | 'call', phone: string) => {
     contactAbout(vehicleId, channel, phone, text).catch(() =>
-      toast.error(channel === 'whatsapp' ? 'Couldn’t open WhatsApp.' : 'Couldn’t start the call.'),
+      toast.error(channel === 'whatsapp' ? t.vehicle.whatsappFailed : t.vehicle.callFailed),
     );
   };
   return (
@@ -45,18 +47,20 @@ export function ContactBar({
         {whatsappE164 ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Contact via WhatsApp"
+            accessibilityLabel={t.vehicle.contactWhatsapp}
             onPress={() => open('whatsapp', whatsappE164)}
             className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-whatsapp active:opacity-85"
           >
             <Icon name="whatsapp" size={18} tone="onWhatsapp" />
-            <Text className="font-sans-semibold text-base text-whatsapp-foreground">WhatsApp</Text>
+            <Text className="font-sans-semibold text-base text-whatsapp-foreground">
+              {t.vehicle.whatsapp}
+            </Text>
           </Pressable>
         ) : null}
         {phoneE164 ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Call us"
+            accessibilityLabel={t.vehicle.callUs}
             onPress={() => open('call', phoneE164)}
             className={cn(
               'h-12 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 active:opacity-85',
@@ -64,7 +68,7 @@ export function ContactBar({
             )}
           >
             <Icon name="call" size={18} />
-            <Text className="font-sans-semibold text-base">Call</Text>
+            <Text className="font-sans-semibold text-base">{t.vehicle.call}</Text>
           </Pressable>
         ) : null}
       </View>

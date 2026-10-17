@@ -6,7 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { changeVehicleStatus } from '@/app/dashboard/inventory/actions';
+import { changeVehicleStatus } from '@/app/[locale]/dashboard/inventory/actions';
 import { ListingStatusBadge } from '@/components/dashboard/status-badge';
 import {
   DropdownMenu,

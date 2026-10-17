@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useLocale, useT } from '@/i18n';
 import { GestureHandlerRootView, Image } from '@/lib/interop';
 
 import { ZoomableImage } from './zoomable-image';
@@ -30,7 +31,10 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
-  const label = (image: GalleryImage, i: number) => image.alt ?? vehicleImageAlt(title, null, i);
+  const t = useT();
+  const locale = useLocale();
+  const label = (image: GalleryImage, i: number) =>
+    image.alt ?? vehicleImageAlt(title, null, i, locale);
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) =>
@@ -59,7 +63,7 @@ export function VehicleGallery({ title, images }: { title: string; images: Galle
         renderItem={({ item, index: i }) => (
           <Pressable
             accessibilityRole="imagebutton"
-            accessibilityLabel={`${label(item, i)}. Photo ${i + 1} of ${images.length}. Opens full screen.`}
+            accessibilityLabel={t.vehicle.photo(label(item, i), i + 1, images.length)}
             onPress={() => setViewerAt(i)}
           >
             <Image
@@ -106,6 +110,7 @@ function PhotoViewer({
   onClose: (lastIndex: number) => void;
 }) {
   const { width } = useWindowDimensions();
+  const t = useT();
   const [index, setIndex] = useState(startAt ?? 0);
   const [zoomed, setZoomed] = useState(false);
   const [openedAt, setOpenedAt] = useState(startAt);
@@ -155,7 +160,7 @@ function PhotoViewer({
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close photos"
+              accessibilityLabel={t.vehicle.closePhotos}
               onPress={() => onClose(index)}
               className="h-11 w-11 items-center justify-center rounded-full bg-white/15"
             >

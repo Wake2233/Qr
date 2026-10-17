@@ -1,14 +1,13 @@
 import type { VehicleCard } from '@cp/api';
 import {
-  drivetrainLabels,
+  coreDictionary,
   formatMileage,
   formatPrice,
-  fuelTypeLabels,
   priceDropCents,
-  transmissionLabels,
   vehicleImageAlt,
 } from '@cp/core';
 import { ArrowRight, Car, TrendingDown } from 'lucide-react';
+import { getLocale, getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 
 import { IntentLink } from '@/components/site/intent-link';
@@ -17,15 +16,21 @@ import { FavoriteButton } from '@/components/vehicle/favorite-button';
 import { blurhashDataUrl } from '@/lib/blurhash';
 
 /** The #1 car on the home page: the admin's first pin, or the newest listing. */
-export function Spotlight({ card }: { card: VehicleCard }) {
+export async function Spotlight({ card }: { card: VehicleCard }) {
+  const [locale, t, price] = await Promise.all([
+    getLocale(),
+    getTranslations('Home'),
+    getTranslations('Price'),
+  ]);
+  const d = coreDictionary(locale);
   const drop = priceDropCents(card.previous_price_cents, card.price_cents);
   const blur = blurhashDataUrl(card.cover_blurhash);
   const href = `/inventory/${card.slug}`;
   const facts = [
-    card.mileage !== null ? formatMileage(card.mileage) : null,
-    card.fuel_type ? fuelTypeLabels[card.fuel_type] : null,
-    card.drivetrain ? drivetrainLabels[card.drivetrain] : null,
-    card.transmission ? transmissionLabels[card.transmission] : null,
+    card.mileage !== null ? formatMileage(card.mileage, locale) : null,
+    card.fuel_type ? d.fuelType[card.fuel_type] : null,
+    card.drivetrain ? d.drivetrain[card.drivetrain] : null,
+    card.transmission ? d.transmission[card.transmission] : null,
   ].filter((v): v is string => v !== null);
 
   return (
@@ -37,7 +42,7 @@ export function Spotlight({ card }: { card: VehicleCard }) {
         {card.cover_url ? (
           <Image
             src={card.cover_url}
-            alt={card.cover_alt ?? vehicleImageAlt(card.title, null, 0)}
+            alt={card.cover_alt ?? vehicleImageAlt(card.title, null, 0, locale)}
             fill
             sizes="(min-width: 1024px) 58vw, 100vw"
             placeholder={blur ? 'blur' : 'empty'}
@@ -56,7 +61,7 @@ export function Spotlight({ card }: { card: VehicleCard }) {
 
       <div className="flex flex-col justify-center gap-5 p-6 sm:p-8">
         <p className="text-primary text-xs font-semibold tracking-widest uppercase">
-          {card.is_featured ? 'Our pick' : 'Just arrived'}
+          {card.is_featured ? t('ourPick') : t('justArrived')}
         </p>
         <div className="space-y-1">
           <h2
@@ -79,7 +84,8 @@ export function Spotlight({ card }: { card: VehicleCard }) {
                 {formatPrice(card.previous_price_cents)}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2 py-0.5 text-xs font-semibold text-white">
-                <TrendingDown className="size-3.5" aria-hidden /> {formatPrice(drop)} off
+                <TrendingDown className="size-3.5" aria-hidden />{' '}
+                {price('off', { amount: formatPrice(drop) })}
               </span>
             </p>
           ) : null}
@@ -89,7 +95,7 @@ export function Spotlight({ card }: { card: VehicleCard }) {
         ) : null}
         <Button asChild size="lg" className="self-start">
           <IntentLink href={href}>
-            See this car <ArrowRight />
+            {t('seeThisCar')} <ArrowRight />
           </IntentLink>
         </Button>
       </div>

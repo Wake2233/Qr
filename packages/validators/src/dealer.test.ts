@@ -48,12 +48,8 @@ describe('dealerApplicationSchema', () => {
 });
 
 describe('dealerProfileSchema', () => {
-  it('accepts business hours and drops the license number', () => {
-    const parsed = dealerProfileSchema.parse({
-      ...application,
-      business_hours: { mon: '09:00-18:00', sun: null },
-    });
-    expect(parsed.business_hours).toEqual({ mon: '09:00-18:00', sun: null });
+  it('drops the license number', () => {
+    const parsed = dealerProfileSchema.parse(application);
     expect(parsed).not.toHaveProperty('license_number');
   });
 });

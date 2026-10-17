@@ -148,7 +148,6 @@ describe.skipIf(!hasTestDb)('inventory queries (local Supabase + seed)', () => {
   it('parses site settings with the business numbers', async () => {
     const settings = await getSiteSettings(client);
     expect(settings.default_whatsapp_e164).toBe('+13473700570');
-    expect(settings.business_hours.sun).toBeNull();
   });
 
   it('round-trips favorites for a signed-in buyer (RLS: own rows only)', async () => {

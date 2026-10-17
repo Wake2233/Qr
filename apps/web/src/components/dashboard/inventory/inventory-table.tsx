@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { bulkVehicleAction } from '@/app/dashboard/inventory/actions';
+import { bulkVehicleAction } from '@/app/[locale]/dashboard/inventory/actions';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
