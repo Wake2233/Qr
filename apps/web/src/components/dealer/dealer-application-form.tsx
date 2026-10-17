@@ -3,7 +3,8 @@
 import { dealerApplicationSchema, type DealerApplicationInput } from '@cp/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, FileUp, Loader2, X } from 'lucide-react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import NextLink from 'next/link';
 import { useId, useState, useTransition } from 'react';
 import { useForm, type FieldPath } from 'react-hook-form';
 
@@ -11,7 +12,7 @@ import {
   recordDocument,
   requestDocumentUpload,
   submitDealerApplication,
-} from '@/app/(storefront)/sell-with-us/actions';
+} from '@/app/[locale]/(storefront)/sell-with-us/actions';
 import { Field } from '@/components/dashboard/form-fields';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -22,42 +23,39 @@ import { env } from '@/lib/env';
 import { uploadWithProgress } from '@/lib/images';
 
 type Values = DealerApplicationInput;
+type TextField = Exclude<keyof Values, 'description'>;
 
 const TEXT_FIELDS: {
-  name: FieldPath<Values>;
-  label: string;
+  name: TextField;
   autoComplete?: string;
   type?: string;
   span?: boolean;
   placeholder?: string;
 }[] = [
-  { name: 'display_name', label: 'Dealership name', autoComplete: 'organization', span: true },
-  { name: 'legal_name', label: 'Legal business name (optional)', span: true },
+  { name: 'display_name', autoComplete: 'organization', span: true },
+  { name: 'legal_name', span: true },
   {
     name: 'phone_e164',
-    label: 'Phone',
     autoComplete: 'tel',
     type: 'tel',
     placeholder: '(908) 555-0142',
   },
   {
     name: 'whatsapp_e164',
-    label: 'WhatsApp number',
     type: 'tel',
-    placeholder: 'Buyers message this number',
+    placeholder: 'whatsapp',
   },
-  { name: 'email', label: 'Business email', autoComplete: 'email', type: 'email' },
+  { name: 'email', autoComplete: 'email', type: 'email' },
   {
     name: 'website',
-    label: 'Website (optional)',
     autoComplete: 'url',
     placeholder: 'yourdealership.com',
   },
-  { name: 'address_line1', label: 'Street address', autoComplete: 'address-line1', span: true },
-  { name: 'city', label: 'City', autoComplete: 'address-level2' },
-  { name: 'state', label: 'State', autoComplete: 'address-level1', placeholder: 'NJ' },
-  { name: 'postal_code', label: 'ZIP code', autoComplete: 'postal-code' },
-  { name: 'license_number', label: 'Dealer license number' },
+  { name: 'address_line1', autoComplete: 'address-line1', span: true },
+  { name: 'city', autoComplete: 'address-level2' },
+  { name: 'state', autoComplete: 'address-level1', placeholder: 'NJ' },
+  { name: 'postal_code', autoComplete: 'postal-code' },
+  { name: 'license_number' },
 ];
 
 export function DealerApplicationForm({ email }: { email: string | null }) {
@@ -67,6 +65,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
   const [progress, setProgress] = useState<string | null>(null);
   const [done, setDone] = useState<{ failedDocs: string[] } | null>(null);
   const filesId = useId();
+  const t = useTranslations('SellWithUs');
 
   const form = useForm<Values>({
     resolver: zodResolver(dealerApplicationSchema),
@@ -90,7 +89,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
     const rejected = picked.filter(
       (f) => !(DOCUMENT_TYPES as readonly string[]).includes(f.type) || f.size > MAX_DOCUMENT_BYTES,
     );
-    if (rejected.length) setError('Documents must be PDF, JPEG or PNG files up to 20 MB.');
+    if (rejected.length) setError(t('documentsInvalid'));
     setFiles((prev) =>
       [...prev, ...picked.filter((f) => !rejected.includes(f))].slice(0, MAX_DOCUMENTS),
     );
@@ -110,7 +109,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
       const { dealerId } = result.data;
       const failedDocs: string[] = [];
       for (const [index, file] of files.entries()) {
-        setProgress(`Uploading ${file.name} (${index + 1}/${files.length})…`);
+        setProgress(t('uploading', { name: file.name, n: index + 1, total: files.length }));
         const target = await requestDocumentUpload({
           dealerId,
           fileId: crypto.randomUUID(),
@@ -150,19 +149,15 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
     return (
       <div className="bg-card space-y-4 rounded-2xl border p-6 sm:p-8" role="status">
         <CheckCircle2 className="text-success size-10" />
-        <h2 className="font-display text-2xl font-semibold">Application received</h2>
-        <p className="text-muted-foreground">
-          We review new dealerships within one business day. In the meantime you can open the
-          console and prepare draft listings. They go live as soon as you are approved.
-        </p>
+        <h2 className="font-display text-2xl font-semibold">{t('receivedTitle')}</h2>
+        <p className="text-muted-foreground">{t('receivedBody')}</p>
         {done.failedDocs.length ? (
           <p className="text-warning text-sm">
-            We could not upload {done.failedDocs.join(', ')}. You can send documents later from your
-            dealer profile.
+            {t('uploadFailed', { names: done.failedDocs.join(', ') })}
           </p>
         ) : null}
         <Button asChild>
-          <Link href="/dashboard/inventory/new">Start a draft listing</Link>
+          <NextLink href="/dashboard/inventory/new">{t('startDraft')}</NextLink>
         </Button>
       </div>
     );
@@ -183,7 +178,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
         {TEXT_FIELDS.map((f) => (
           <Field
             key={f.name}
-            label={f.label}
+            label={t(`fields.${f.name}`)}
             error={errors[f.name as keyof typeof errors]?.message}
             className={f.span ? 'sm:col-span-2' : undefined}
           >
@@ -193,34 +188,29 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
                 {...form.register(f.name)}
                 type={f.type ?? 'text'}
                 autoComplete={f.autoComplete}
-                placeholder={f.placeholder}
+                placeholder={
+                  f.placeholder === 'whatsapp' ? t('whatsappPlaceholder') : f.placeholder
+                }
               />
             )}
           </Field>
         ))}
-        <Field
-          label="About your dealership (optional)"
-          error={errors.description?.message}
-          className="sm:col-span-2"
-        >
+        <Field label={t('about')} error={errors.description?.message} className="sm:col-span-2">
           {(p) => <Textarea {...p} {...form.register('description')} rows={4} />}
         </Field>
       </div>
 
       <div className="space-y-3">
         <div>
-          <p className="text-sm font-medium">Supporting documents (optional)</p>
-          <p className="text-muted-foreground text-sm">
-            Dealer license, insurance or business registration. PDF, JPEG or PNG, up to 20 MB each.
-            Only our review team can see them.
-          </p>
+          <p className="text-sm font-medium">{t('documents')}</p>
+          <p className="text-muted-foreground text-sm">{t('documentsHelp')}</p>
         </div>
         <label
           htmlFor={filesId}
           className="hover:bg-muted/50 focus-within:ring-ring flex cursor-pointer items-center gap-3 rounded-lg border border-dashed px-4 py-3 text-sm focus-within:ring-2"
         >
           <FileUp className="text-muted-foreground size-5" />
-          Choose files
+          {t('chooseFiles')}
           <input
             id={filesId}
             type="file"
@@ -245,7 +235,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={`Remove ${file.name}`}
+                  aria-label={t('removeFile', { name: file.name })}
                   onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
                 >
                   <X />
@@ -258,7 +248,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="lg" disabled={pending}>
-          {pending ? <Loader2 className="animate-spin" /> : null} Submit application
+          {pending ? <Loader2 className="animate-spin" /> : null} {t('submit')}
         </Button>
         {progress ? (
           <span className="text-muted-foreground text-sm" aria-live="polite">
@@ -266,9 +256,7 @@ export function DealerApplicationForm({ email }: { email: string | null }) {
           </span>
         ) : null}
       </div>
-      <p className="text-muted-foreground text-xs">
-        By applying you confirm you are authorized to sell vehicles on behalf of this business.
-      </p>
+      <p className="text-muted-foreground text-xs">{t('consent')}</p>
     </form>
   );
 }

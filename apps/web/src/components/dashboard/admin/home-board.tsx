@@ -25,7 +25,7 @@ import Link from 'next/link';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { saveHomeOrder } from '@/app/dashboard/home/actions';
+import { saveHomeOrder } from '@/app/[locale]/dashboard/home/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';

@@ -8,7 +8,7 @@ import { useTransition, type ReactNode } from 'react';
 import { Controller, useForm, useWatch, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { saveSiteSettings } from '@/app/dashboard/settings/actions';
+import { saveSiteSettings } from '@/app/[locale]/dashboard/settings/actions';
 import { Field } from '@/components/dashboard/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,7 +89,6 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettingsInput }) {
           {preview}
         </div>
       </Card>
-
 
       <Card title="Listing review">
         <div className="flex items-start gap-3">

@@ -3,8 +3,8 @@ import {
   activeFilterChips,
   clearFilters,
   countActiveFilters,
+  featureName,
   SORT_OPTIONS,
-  sortLabels,
   type InventoryFilters,
 } from '@cp/core';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -27,6 +27,7 @@ import { Icon } from '@/components/icon';
 import { FilterSheet } from '@/components/inventory/filter-sheet';
 import { Text } from '@/components/text';
 import { VehicleCard, VehicleCardSkeleton } from '@/components/vehicle/vehicle-card';
+import { useCoreT, useLocale, useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/lib/theme';
 import { useInventoryFilters } from '@/lib/use-inventory-filters';
@@ -35,6 +36,9 @@ const SEARCH_DEBOUNCE_MS = 350;
 
 export default function SearchScreen() {
   const { filters, setFilters } = useInventoryFilters();
+  const t = useT();
+  const locale = useLocale();
+  const sortLabels = useCoreT().sort;
   const listFilters = useMemo(() => withoutPage(filters), [filters]);
   const facetFilters = useMemo(() => withoutSort(listFilters), [listFilters]);
   const vehicles = useInfiniteVehicles(supabase, listFilters);
@@ -52,10 +56,15 @@ export default function SearchScreen() {
     return {
       make: toMap(facets.data?.make),
       model: toMap(facets.data?.model),
-      feature: toMap(facets.data?.feature),
+      feature: Object.fromEntries(
+        (facets.data?.feature ?? []).map((f) => [
+          f.value,
+          featureName({ slug: f.value, name: f.label }, locale),
+        ]),
+      ),
     };
-  }, [facets.data]);
-  const chips = activeFilterChips(filters, labels);
+  }, [facets.data, locale]);
+  const chips = activeFilterChips(filters, labels, locale);
   const activeCount = countActiveFilters(filters);
 
   return (
@@ -68,7 +77,7 @@ export default function SearchScreen() {
         <View className="flex-row items-center gap-2">
           <ToolbarButton
             icon="filters"
-            label={activeCount > 0 ? `Filters (${activeCount})` : 'Filters'}
+            label={activeCount > 0 ? t.search.filtersCount(activeCount) : t.search.filters}
             onPress={() => sheet.current?.present()}
           />
           <ToolbarButton
@@ -77,7 +86,7 @@ export default function SearchScreen() {
             onPress={() => setSortOpen(true)}
           />
           <Text variant="caption" className="ml-auto" accessibilityLiveRegion="polite">
-            {total === undefined ? '' : `${total} ${total === 1 ? 'vehicle' : 'vehicles'}`}
+            {total === undefined ? '' : t.common.count(total)}
           </Text>
         </View>
         {chips.length > 0 ? (
@@ -90,7 +99,7 @@ export default function SearchScreen() {
               <Pressable
                 key={chip.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Remove filter: ${chip.label}`}
+                accessibilityLabel={t.search.removeFilter(chip.label)}
                 onPress={() => setFilters(chip.next)}
                 className="min-h-9 flex-row items-center gap-1 rounded-full bg-muted px-3"
               >
@@ -104,7 +113,7 @@ export default function SearchScreen() {
                 onPress={() => setFilters(clearFilters(filters))}
                 className="min-h-9 justify-center px-2"
               >
-                <Text className="font-sans-semibold text-sm text-primary">Clear all</Text>
+                <Text className="font-sans-semibold text-sm text-primary">{t.search.clearAll}</Text>
               </Pressable>
             ) : null}
           </ScrollView>
@@ -118,9 +127,9 @@ export default function SearchScreen() {
         </View>
       ) : vehicles.isError ? (
         <EmptyState
-          title="We couldn’t load the inventory"
-          body="Check your connection and try again."
-          action={<Button title="Try again" onPress={() => void vehicles.refetch()} />}
+          title={t.search.loadErrorTitle}
+          body={t.search.loadErrorBody}
+          action={<Button title={t.common.tryAgain} onPress={() => void vehicles.refetch()} />}
         />
       ) : (
         <FlashList
@@ -156,11 +165,14 @@ export default function SearchScreen() {
           }
           ListEmptyComponent={
             <EmptyState
-              title="No vehicles match"
-              body="Try removing a filter or widening the price and year range."
+              title={t.search.noMatchTitle}
+              body={t.search.noMatchBody}
               action={
                 activeCount > 0 ? (
-                  <Button title="Clear filters" onPress={() => setFilters(clearFilters(filters))} />
+                  <Button
+                    title={t.search.clearFilters}
+                    onPress={() => setFilters(clearFilters(filters))}
+                  />
                 ) : null
               }
             />
@@ -170,7 +182,7 @@ export default function SearchScreen() {
               <ActivityIndicator className="py-6" />
             ) : cards.length > 0 && !vehicles.hasNextPage ? (
               <Text variant="caption" className="py-6 text-center">
-                You’ve seen all {cards.length} {cards.length === 1 ? 'vehicle' : 'vehicles'}.
+                {t.search.seenAll(cards.length)}
               </Text>
             ) : null
           }
@@ -180,7 +192,7 @@ export default function SearchScreen() {
       <FilterSheet ref={sheet} filters={filters} facets={facets.data} onChange={setFilters} />
       <ActionSheet
         visible={sortOpen}
-        title="Sort by"
+        title={t.search.sortBy}
         onClose={() => setSortOpen(false)}
         actions={SORT_OPTIONS.map((sort) => ({
           label: `${sort === (filters.sort ?? 'newest') ? '✓ ' : ''}${sortLabels[sort]}`,
@@ -206,6 +218,7 @@ function withoutSort(filters: InventoryFilters): InventoryFilters {
 
 function SearchField({ value, onChange }: { value: string; onChange: (q: string) => void }) {
   const { native } = useAppTheme();
+  const t = useT();
   const [draft, setDraft] = useState(value);
   const [synced, setSynced] = useState(value);
   if (value !== synced) {
@@ -228,8 +241,8 @@ function SearchField({ value, onChange }: { value: string; onChange: (q: string)
       <TextInput
         value={draft}
         onChangeText={setDraft}
-        placeholder="Search make, model, trim…"
-        accessibilityLabel="Search inventory"
+        placeholder={t.discover.searchPlaceholder}
+        accessibilityLabel={t.discover.searchLabel}
         returnKeyType="search"
         autoCorrect={false}
         clearButtonMode="while-editing"

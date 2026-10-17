@@ -1,3 +1,5 @@
+import { coreDictionary, type Locale } from './i18n';
+
 export interface FormatPriceOptions {
   currency?: string;
   locale?: string;
@@ -20,9 +22,9 @@ export function formatPrice(
   }).format(cents / 100);
 }
 
-/** Formats an odometer reading, e.g. `42180` → `"42,180 mi"`. */
-export function formatMileage(miles: number, locale = 'en-US'): string {
-  return `${new Intl.NumberFormat(locale).format(Math.round(miles))} mi`;
+/** Formats an odometer reading, e.g. `42180` → `"42,180 mi"` (`"42,180 მილი"` in Georgian). */
+export function formatMileage(miles: number, locale?: Locale): string {
+  return `${new Intl.NumberFormat('en-US').format(Math.round(miles))} ${coreDictionary(locale).unit.miles}`;
 }
 
 /**

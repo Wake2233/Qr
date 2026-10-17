@@ -1,7 +1,9 @@
 import { formatPhone } from '@cp/core';
 import { MapPin, Store } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import Link from 'next/link';
+
+import { Link } from '@/i18n/navigation';
 
 export interface DealerCardData {
   slug: string;
@@ -16,6 +18,7 @@ export interface DealerCardData {
 }
 
 export function DealerCard({ dealer }: { dealer: DealerCardData }) {
+  const t = useTranslations('Vehicle');
   const locality = [dealer.city, [dealer.state, dealer.postal_code].filter(Boolean).join(' ')]
     .filter(Boolean)
     .join(', ');
@@ -31,7 +34,7 @@ export function DealerCard({ dealer }: { dealer: DealerCardData }) {
         </div>
         <div className="min-w-0">
           <p className="text-muted-foreground text-xs">
-            {dealer.is_house ? 'Sold by' : 'Listed by'}
+            {t(dealer.is_house ? 'soldBy' : 'listedBy')}
           </p>
           <h2 id="dealer-title" className="truncate font-semibold">
             <Link href={`/dealers/${dealer.slug}`} className="hover:underline">
@@ -54,7 +57,7 @@ export function DealerCard({ dealer }: { dealer: DealerCardData }) {
         href={`/dealers/${dealer.slug}`}
         className="text-primary text-sm font-medium hover:underline"
       >
-        See all vehicles from this dealer
+        {t('dealerVehicles')}
       </Link>
     </section>
   );

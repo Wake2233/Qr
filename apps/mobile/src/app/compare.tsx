@@ -2,6 +2,7 @@ import { useCompareVehicles, useSiteSettings } from '@cp/api';
 import {
   buildCompareSections,
   FEATURE_INCLUDED,
+  featureName,
   formatPrice,
   MAX_COMPARE,
   onlyDifferences,
@@ -15,6 +16,7 @@ import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-na
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useLocale, useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { contactAbout } from '@/lib/contact';
 import { Image } from '@/lib/interop';
@@ -27,6 +29,8 @@ const VALUE_COL = 'w-44';
 
 /** Side-by-side compare (horizontal scroll), rows that differ highlighted. */
 export default function CompareScreen() {
+  const t = useT();
+  const locale = useLocale();
   const ids = useCompareStore((s) => s.ids);
   const remove = useCompareStore((s) => s.remove);
   const vehicles = useCompareVehicles(supabase, ids);
@@ -38,20 +42,26 @@ export default function CompareScreen() {
     make: v.make.name,
     model: v.model.name,
   }));
-  const all = buildCompareSections(columns);
+  const all = buildCompareSections(
+    columns.map((v) => ({
+      ...v,
+      features: v.features.map((f) => ({ name: featureName(f, locale) })),
+    })),
+    locale,
+  );
   const sections = hideIdentical ? onlyDifferences(all) : all;
 
   if (ids.length === 0) {
     return (
       <View className="flex-1 items-center justify-center gap-3 bg-background px-8">
-        <Stack.Screen options={{ title: 'Compare' }} />
+        <Stack.Screen options={{ title: t.compare.title }} />
         <Icon name="compare" size={36} tone="primary" />
-        <Text variant="heading">Nothing to compare yet</Text>
+        <Text variant="heading">{t.compare.emptyTitle}</Text>
         <Text variant="caption" className="text-center">
-          Open a vehicle and tap the compare icon. Up to {MAX_COMPARE} line up here side by side.
+          {t.compare.emptyBody(MAX_COMPARE)}
         </Text>
         <Link href="/search" asChild>
-          <Button title="Browse inventory" />
+          <Button title={t.common.browseInventory} />
         </Link>
       </View>
     );
@@ -59,13 +69,13 @@ export default function CompareScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: `Compare (${ids.length})` }} />
+      <Stack.Screen options={{ title: t.compare.titleCount(ids.length) }} />
       <View className="flex-row items-center justify-end gap-2 px-4 py-2">
-        <Text variant="label">Hide identical rows</Text>
+        <Text variant="label">{t.compare.hideIdentical}</Text>
         <Switch
           value={hideIdentical}
           onValueChange={setHideIdentical}
-          accessibilityLabel="Hide identical rows"
+          accessibilityLabel={t.compare.hideIdentical}
         />
       </View>
       {vehicles.isPending ? (
@@ -82,7 +92,7 @@ export default function CompareScreen() {
                         vehicle: v,
                         dealer: v.dealer,
                         settings: settings.data,
-                        url: vehicleWebUrl(v.slug ?? ''),
+                        url: vehicleWebUrl(v.slug ?? '', locale),
                       })
                     : null;
                   const cover = v.images[0];
@@ -95,13 +105,15 @@ export default function CompareScreen() {
                             placeholder={cover.blurhash ? { blurhash: cover.blurhash } : undefined}
                             contentFit="cover"
                             cachePolicy="memory-disk"
-                            accessibilityLabel={cover.alt ?? vehicleImageAlt(v.title, null, 0)}
+                            accessibilityLabel={
+                              cover.alt ?? vehicleImageAlt(v.title, null, 0, locale)
+                            }
                             className="h-full w-full"
                           />
                         ) : null}
                         <Pressable
                           accessibilityRole="button"
-                          accessibilityLabel={`Remove ${v.title} from compare`}
+                          accessibilityLabel={t.compare.remove(v.title)}
                           onPress={() => remove(v.id)}
                           className="absolute right-1 top-1 h-9 w-9 items-center justify-center rounded-full bg-background/85"
                         >
@@ -126,7 +138,7 @@ export default function CompareScreen() {
                       {contact?.whatsappE164 && v.status !== 'sold' ? (
                         <Pressable
                           accessibilityRole="button"
-                          accessibilityLabel={`WhatsApp about the ${v.title}`}
+                          accessibilityLabel={t.compare.whatsappAbout(v.title)}
                           onPress={() =>
                             void contactAbout(
                               v.id,
@@ -139,7 +151,7 @@ export default function CompareScreen() {
                         >
                           <Icon name="whatsapp" size={14} tone="onWhatsapp" />
                           <Text className="font-sans-semibold text-sm text-whatsapp-foreground">
-                            WhatsApp
+                            {t.vehicle.whatsapp}
                           </Text>
                         </Pressable>
                       ) : null}
@@ -172,9 +184,9 @@ export default function CompareScreen() {
                           accessible
                           accessibilityLabel={`${columns[i]?.title ?? ''}: ${
                             value === null
-                              ? 'not listed'
+                              ? t.compare.notListed
                               : value === FEATURE_INCLUDED
-                                ? 'included'
+                                ? t.compare.included
                                 : value
                           }`}
                           className={cn(VALUE_COL, 'justify-center px-3 py-2.5')}

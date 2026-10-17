@@ -10,14 +10,14 @@ import {
   type CompareInput,
 } from '@cp/core';
 import { Check, Minus, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ContactActions } from '@/components/vehicle/contact-actions';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useCompareStore } from '@/lib/stores/compare';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +37,8 @@ export interface CompareColumn extends CompareInput {
  */
 export function CompareTable({ columns }: { columns: CompareColumn[] }) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('Compare');
   const switchId = useId();
   const [hideIdentical, setHideIdentical] = useState(false);
   const setTray = useCompareStore((s) => s.setIds);
@@ -47,7 +49,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
     setTray(ids ? ids.split(',') : []);
   }, [ids, setTray]);
 
-  const all = buildCompareSections(columns);
+  const all = buildCompareSections(columns, locale);
   const sections = hideIdentical ? onlyDifferences(all) : all;
   const remove = (id: string) =>
     router.replace(compareHref(columns.filter((c) => c.id !== id).map((c) => c.id)), {
@@ -59,14 +61,14 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
       <div className="flex items-center justify-end gap-2">
         <Switch id={switchId} checked={hideIdentical} onCheckedChange={setHideIdentical} />
         <label htmlFor={switchId} className="text-sm font-medium">
-          Hide identical rows
+          {t('hideIdentical')}
         </label>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border">
         <table className="w-full min-w-[640px] table-fixed border-collapse text-sm">
           <caption className="sr-only">
-            Comparison of {columns.map((c) => c.title).join(', ')}. Highlighted rows differ.
+            {t('caption', { titles: columns.map((c) => c.title).join(', ') })}
           </caption>
           <colgroup>
             <col className="w-40 sm:w-48" />
@@ -77,7 +79,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
           <thead className="bg-background/95 sticky top-16 z-10 backdrop-blur">
             <tr>
               <th scope="col" className="p-3 text-left align-bottom">
-                <span className="sr-only">Spec</span>
+                <span className="sr-only">{t('spec')}</span>
               </th>
               {columns.map((c) => (
                 <th key={c.id} scope="col" className="p-3 text-left align-top font-normal">
@@ -86,7 +88,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
                       {c.coverUrl ? (
                         <Image
                           src={c.coverUrl}
-                          alt={c.coverAlt ?? vehicleImageAlt(c.title, null, 0)}
+                          alt={c.coverAlt ?? vehicleImageAlt(c.title, null, 0, locale)}
                           fill
                           sizes="(min-width: 1024px) 22vw, 40vw"
                           className="object-cover"
@@ -97,7 +99,7 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
                         variant="secondary"
                         className="bg-background/85 absolute top-2 right-2 size-8 rounded-full"
                         onClick={() => remove(c.id)}
-                        aria-label={`Remove ${c.title} from compare`}
+                        aria-label={t('remove', { title: c.title })}
                       >
                         <X className="size-4" />
                       </Button>
@@ -123,7 +125,9 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
                         className="grid-cols-1 xl:grid-cols-2 [&_a]:h-10 [&_a]:text-sm"
                       />
                     ) : (
-                      <p className="text-muted-foreground text-xs font-semibold uppercase">Sold</p>
+                      <p className="text-muted-foreground text-xs font-semibold uppercase">
+                        {t('sold')}
+                      </p>
                     )}
                   </div>
                 </th>
@@ -165,20 +169,19 @@ export function CompareTable({ columns }: { columns: CompareColumn[] }) {
         </table>
       </div>
       {hideIdentical && sections.length === 0 ? (
-        <p className="text-muted-foreground text-center text-sm">
-          These vehicles match on every listed spec.
-        </p>
+        <p className="text-muted-foreground text-center text-sm">{t('allMatch')}</p>
       ) : null}
     </div>
   );
 }
 
 function CompareValue({ value }: { value: string | null }) {
+  const t = useTranslations('Compare');
   if (value === null) {
     return (
       <span className="text-muted-foreground">
         <Minus className="size-4" aria-hidden />
-        <span className="sr-only">Not listed</span>
+        <span className="sr-only">{t('notListed')}</span>
       </span>
     );
   }
@@ -186,7 +189,7 @@ function CompareValue({ value }: { value: string | null }) {
     return (
       <span className="text-primary">
         <Check className="size-4" aria-hidden />
-        <span className="sr-only">Included</span>
+        <span className="sr-only">{t('included')}</span>
       </span>
     );
   }

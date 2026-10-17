@@ -9,7 +9,7 @@ import { useTransition } from 'react';
 import { useForm, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { saveDealerProfile } from '@/app/dashboard/dealer/actions';
+import { saveDealerProfile } from '@/app/[locale]/dashboard/dealer/actions';
 import { Field } from '@/components/dashboard/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

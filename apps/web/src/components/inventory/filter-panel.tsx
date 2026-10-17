@@ -2,30 +2,21 @@
 
 import type { InventoryFacets } from '@cp/api';
 import {
-  bodyTypeLabels,
-  colorFamilyLabels,
   colorFamilySwatches,
-  conditionLabels,
-  damageAreaLabels,
-  damageLevelLabels,
-  driveStatusLabels,
-  drivetrainLabels,
+  coreDictionary,
   ENGINE_STEPS_L,
   FEATURE_CATEGORY_ORDER,
-  featureCategoryLabels,
+  featureName,
   formatMileage,
   formatPrice,
-  fuelTypeLabels,
-  historyFlagLabels,
   MILEAGE_STEPS,
   PRICE_STEPS_CENTS,
-  titleStatusLabels,
   toggleFilterValue,
-  transmissionLabels,
   type FilterListKey,
   type InventoryFilters,
 } from '@cp/core';
 import { ChevronDown } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState, type ReactNode } from 'react';
 
 import { Checkbox } from '@/components/ui/checkbox';
@@ -94,6 +85,11 @@ const setCount = (filters: InventoryFilters, keys: (keyof InventoryFilters)[]) =
   keys.filter((key) => filters[key] !== undefined).length;
 
 export function FilterPanel({ filters, facets, onChange, className }: FilterPanelProps) {
+  const locale = useLocale();
+  const t = useTranslations('Filters');
+  const d = coreDictionary(locale);
+  const liters = (l: number) => t('liters', { value: l.toFixed(1) });
+  const under = (m: number) => d.chip.mileageUnder(formatMileage(m, locale));
   const toggle = (key: FilterListKey, value: string) =>
     onChange(toggleFilterValue(filters, key, value as never));
   const set = (patch: Partial<InventoryFilters>) => {
@@ -120,24 +116,27 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
     facets?.year.min ?? THIS_YEAR - 25,
     facets?.year.max ?? THIS_YEAR + 1,
   );
-  const engineOptions = ENGINE_STEPS_L.map((l) => ({ value: l, label: `${l.toFixed(1)} L` }));
-  const colors = enumOptions(facets?.color, colorFamilyLabels, filters.color).map((o) => ({
+  const engineOptions = ENGINE_STEPS_L.map((l) => ({ value: l, label: liters(l) }));
+  const colors = enumOptions(facets?.color, d.colorFamily, filters.color).map((o) => ({
     ...o,
     swatch: colorFamilySwatches[o.value as keyof typeof colorFamilySwatches],
   }));
-  const features = facets?.feature ?? [];
+  const features = (facets?.feature ?? []).map((f) => ({
+    ...f,
+    label: featureName({ slug: f.value, name: f.label }, locale),
+  }));
 
   return (
     <div className={cn('divide-y', className)}>
       <Group
-        title="Basics"
+        title={t('basics')}
         defaultOpen
         active={
           listCount(filters, ['make', 'model', 'body', 'condition']) +
           setCount(filters, ['priceMinCents', 'priceMaxCents', 'yearMin', 'yearMax', 'mileageMax'])
         }
       >
-        <Section title="Make">
+        <Section title={t('make')}>
           <Checklist
             options={inStockFirst(makes, filters.make)}
             selected={filters.make}
@@ -147,79 +146,79 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
         </Section>
 
         {filters.make?.length ? (
-          <Section title="Model">
+          <Section title={t('model')}>
             <Checklist
               options={inStockFirst(models, filters.model)}
               selected={filters.model}
               onToggle={(v) => toggle('model', v)}
               initialVisible={8}
-              empty="No models in our catalog for this make yet."
+              empty={t('noModels')}
             />
           </Section>
         ) : null}
 
-        <Section title="Price">
+        <Section title={t('price')}>
           <div className="grid grid-cols-2 gap-2">
             <RangeSelect
-              label="Minimum price"
+              label={t('minPrice')}
               value={filters.priceMinCents}
               options={PRICE_STEPS_CENTS.map((c) => ({ value: c, label: formatPrice(c) }))}
               onChange={(priceMinCents) => set({ priceMinCents })}
-              anyLabel="No min"
+              anyLabel={t('noMin')}
               format={(c) => formatPrice(c)}
             />
             <RangeSelect
-              label="Maximum price"
+              label={t('maxPrice')}
               value={filters.priceMaxCents}
               options={PRICE_STEPS_CENTS.map((c) => ({ value: c, label: formatPrice(c) }))}
               onChange={(priceMaxCents) => set({ priceMaxCents })}
-              anyLabel="No max"
+              anyLabel={t('noMax')}
               format={(c) => formatPrice(c)}
             />
           </div>
         </Section>
 
-        <Section title="Year">
+        <Section title={t('year')}>
           <div className="grid grid-cols-2 gap-2">
             <RangeSelect
-              label="Oldest year"
+              label={t('oldestYear')}
               value={filters.yearMin}
               options={yearOptions.map((y) => ({ value: y, label: String(y) }))}
               onChange={(yearMin) => set({ yearMin })}
-              anyLabel="Any"
+              anyLabel={t('any')}
             />
             <RangeSelect
-              label="Newest year"
+              label={t('newestYear')}
               value={filters.yearMax}
               options={[...yearOptions].reverse().map((y) => ({ value: y, label: String(y) }))}
               onChange={(yearMax) => set({ yearMax })}
-              anyLabel="Any"
+              anyLabel={t('any')}
             />
           </div>
         </Section>
 
-        <Section title="Mileage">
+        <Section title={t('mileage')}>
           <RangeSelect
-            label="Maximum mileage"
+            label={t('maxMileage')}
             value={filters.mileageMax}
-            options={MILEAGE_STEPS.map((m) => ({ value: m, label: `Under ${formatMileage(m)}` }))}
+            options={MILEAGE_STEPS.map((m) => ({ value: m, label: under(m) }))}
             onChange={(mileageMax) => set({ mileageMax })}
-            anyLabel="Any mileage"
-            format={(m) => `Under ${formatMileage(m)}`}
+            anyLabel={t('anyMileage')}
+            format={under}
           />
         </Section>
 
-        <Section title="Body style">
+        <Section title={t('bodyStyle')}>
           <Checklist
-            options={enumOptions(facets?.body, bodyTypeLabels, filters.body)}
+            options={enumOptions(facets?.body, d.bodyType, filters.body)}
             selected={filters.body}
             onToggle={(v) => toggle('body', v)}
           />
         </Section>
 
-        <Section title="Condition">
+        <Section title={t('condition')}>
           <Checklist
-            options={enumOptions(facets?.condition, conditionLabels, filters.condition)}
+            options={enumOptions(facets?.condition, d.condition, filters.condition)}
             selected={filters.condition}
             onToggle={(v) => toggle('condition', v)}
           />
@@ -227,52 +226,52 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
       </Group>
 
       <Group
-        title="Engine & drivetrain"
+        title={t('engineDrivetrain')}
         active={
           listCount(filters, ['fuel', 'transmission', 'drivetrain']) +
           setCount(filters, ['engineMinL', 'engineMaxL'])
         }
       >
-        <Section title="Fuel type">
+        <Section title={t('fuelType')}>
           <Checklist
-            options={enumOptions(facets?.fuel, fuelTypeLabels, filters.fuel)}
+            options={enumOptions(facets?.fuel, d.fuelType, filters.fuel)}
             selected={filters.fuel}
             onToggle={(v) => toggle('fuel', v)}
           />
         </Section>
 
-        <Section title="Engine size">
+        <Section title={t('engineSize')}>
           <div className="grid grid-cols-2 gap-2">
             <RangeSelect
-              label="Smallest engine"
+              label={t('smallestEngine')}
               value={filters.engineMinL}
               options={engineOptions}
               onChange={(engineMinL) => set({ engineMinL })}
-              anyLabel="Any"
-              format={(l) => `${l.toFixed(1)} L`}
+              anyLabel={t('any')}
+              format={liters}
             />
             <RangeSelect
-              label="Largest engine"
+              label={t('largestEngine')}
               value={filters.engineMaxL}
               options={engineOptions}
               onChange={(engineMaxL) => set({ engineMaxL })}
-              anyLabel="Any"
-              format={(l) => `${l.toFixed(1)} L`}
+              anyLabel={t('any')}
+              format={liters}
             />
           </div>
         </Section>
 
-        <Section title="Transmission">
+        <Section title={t('transmission')}>
           <Checklist
-            options={enumOptions(facets?.transmission, transmissionLabels, filters.transmission)}
+            options={enumOptions(facets?.transmission, d.transmission, filters.transmission)}
             selected={filters.transmission}
             onToggle={(v) => toggle('transmission', v)}
           />
         </Section>
 
-        <Section title="Drivetrain">
+        <Section title={t('drivetrain')}>
           <Checklist
-            options={enumOptions(facets?.drivetrain, drivetrainLabels, filters.drivetrain)}
+            options={enumOptions(facets?.drivetrain, d.drivetrain, filters.drivetrain)}
             selected={filters.drivetrain}
             onToggle={(v) => toggle('drivetrain', v)}
           />
@@ -280,45 +279,45 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
       </Group>
 
       <Group
-        title="Condition & history"
+        title={t('conditionHistory')}
         active={listCount(filters, ['driveStatus', 'damage', 'damageArea', 'title', 'history'])}
       >
-        <Section title="Run & Drive">
+        <Section title={t('runDrive')}>
           <Checklist
-            options={enumOptions(facets?.drive_status, driveStatusLabels, filters.driveStatus)}
+            options={enumOptions(facets?.drive_status, d.driveStatus, filters.driveStatus)}
             selected={filters.driveStatus}
             onToggle={(v) => toggle('driveStatus', v)}
           />
         </Section>
 
-        <Section title="Damage">
+        <Section title={t('damage')}>
           <Checklist
-            options={enumOptions(facets?.damage, damageLevelLabels, filters.damage)}
+            options={enumOptions(facets?.damage, d.damageLevel, filters.damage)}
             selected={filters.damage}
             onToggle={(v) => toggle('damage', v)}
           />
         </Section>
 
-        <Section title="Primary damage">
+        <Section title={t('primaryDamage')}>
           <Checklist
-            options={enumOptions(facets?.damage_area, damageAreaLabels, filters.damageArea)}
+            options={enumOptions(facets?.damage_area, d.damageArea, filters.damageArea)}
             selected={filters.damageArea}
             onToggle={(v) => toggle('damageArea', v)}
             initialVisible={6}
           />
         </Section>
 
-        <Section title="Title">
+        <Section title={t('title')}>
           <Checklist
-            options={enumOptions(facets?.title, titleStatusLabels, filters.title)}
+            options={enumOptions(facets?.title, d.titleStatus, filters.title)}
             selected={filters.title}
             onToggle={(v) => toggle('title', v)}
           />
         </Section>
 
-        <Section title="History">
+        <Section title={t('history')}>
           <Checklist
-            options={enumOptions(facets?.history, historyFlagLabels, filters.history)}
+            options={enumOptions(facets?.history, d.historyFlag, filters.history)}
             selected={filters.history}
             onToggle={(v) => toggle('history', v)}
           />
@@ -326,10 +325,10 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
       </Group>
 
       <Group
-        title="Exterior & interior"
+        title={t('exteriorInterior')}
         active={listCount(filters, ['color']) + setCount(filters, ['seatsMin'])}
       >
-        <Section title="Exterior color">
+        <Section title={t('exteriorColor')}>
           <Checklist
             options={colors}
             selected={filters.color}
@@ -338,25 +337,28 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
           />
         </Section>
 
-        <Section title="Seats">
+        <Section title={t('seats')}>
           <RangeSelect
-            label="Minimum seats"
+            label={t('minSeats')}
             value={filters.seatsMin}
-            options={[2, 4, 5, 6, 7, 8].map((n) => ({ value: n, label: `${n}+ seats` }))}
+            options={[2, 4, 5, 6, 7, 8].map((n) => ({
+              value: n,
+              label: t('seatsOption', { count: n }),
+            }))}
             onChange={(seatsMin) => set({ seatsMin })}
-            anyLabel="Any"
+            anyLabel={t('any')}
           />
         </Section>
       </Group>
 
-      <Group title="Features" active={listCount(filters, ['feature'])}>
+      <Group title={t('features')} active={listCount(filters, ['feature'])}>
         {FEATURE_CATEGORY_ORDER.map((category) => {
           const options = features
             .filter((f) => f.category === category)
             .map((f) => ({ value: f.value, label: f.label, count: f.count }));
           if (options.length === 0) return null;
           return (
-            <Section key={category} title={featureCategoryLabels[category]} quiet>
+            <Section key={category} title={d.featureCategory[category]} quiet>
               <Checklist
                 options={inStockFirst(options, filters.feature)}
                 selected={filters.feature}
@@ -367,7 +369,7 @@ export function FilterPanel({ filters, facets, onChange, className }: FilterPane
           );
         })}
         {features.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Features are loading…</p>
+          <p className="text-muted-foreground text-sm">{t('featuresLoading')}</p>
         ) : null}
       </Group>
     </div>
@@ -458,7 +460,7 @@ function Checklist({
   selected = [],
   onToggle,
   initialVisible = 12,
-  empty = 'Nothing to choose from yet.',
+  empty,
 }: {
   options: Option[];
   selected?: readonly string[];
@@ -466,9 +468,12 @@ function Checklist({
   initialVisible?: number;
   empty?: string;
 }) {
+  const t = useTranslations('Filters');
   const [expanded, setExpanded] = useState(false);
   const baseId = useId();
-  if (options.length === 0) return <p className="text-muted-foreground text-sm">{empty}</p>;
+  if (options.length === 0) {
+    return <p className="text-muted-foreground text-sm">{empty ?? t('nothingYet')}</p>;
+  }
   const visible = expanded ? options : options.slice(0, initialVisible);
   return (
     <div className="space-y-1">
@@ -519,7 +524,7 @@ function Checklist({
           className="text-primary px-2 text-sm font-medium hover:underline"
           aria-expanded={expanded}
         >
-          {expanded ? 'Show fewer' : `Show all ${options.length}`}
+          {expanded ? t('showFewer') : t('showAll', { count: options.length })}
         </button>
       ) : null}
     </div>

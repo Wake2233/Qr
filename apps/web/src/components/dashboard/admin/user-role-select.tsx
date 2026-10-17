@@ -4,7 +4,7 @@ import type { Enums } from '@cp/types';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { changeUserRole } from '@/app/dashboard/users/actions';
+import { changeUserRole } from '@/app/[locale]/dashboard/users/actions';
 import { OptionSelect } from '@/components/dashboard/form-fields';
 
 const ROLES = [

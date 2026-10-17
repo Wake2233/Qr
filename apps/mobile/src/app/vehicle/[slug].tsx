@@ -1,12 +1,5 @@
 import { recordVehicleView, useSiteSettings, useVehicle, vehicleQueries } from '@cp/api';
-import {
-  formatMileage,
-  formatPrice,
-  listingStatusLabels,
-  MAX_COMPARE,
-  priceDropCents,
-  vehicleContact,
-} from '@cp/core';
+import { formatMileage, formatPrice, MAX_COMPARE, priceDropCents, vehicleContact } from '@cp/core';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
@@ -22,6 +15,7 @@ import { ContactBar } from '@/components/vehicle/contact-bar';
 import { VehicleGallery } from '@/components/vehicle/vehicle-gallery';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
 import { VehicleFeatures, VehicleSpecs } from '@/components/vehicle/vehicle-specs';
+import { useCoreT, useLocale, useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { shareVehicle, vehicleWebUrl } from '@/lib/share';
 import { supabase } from '@/lib/supabase';
@@ -31,6 +25,9 @@ import { useRecentlyViewedStore } from '@/stores/recently-viewed';
 
 export default function VehicleScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const t = useT();
+  const d = useCoreT();
+  const locale = useLocale();
   const vehicle = useVehicle(supabase, slug);
   const settings = useSiteSettings(supabase);
   const v = vehicle.data;
@@ -62,15 +59,15 @@ export default function VehicleScreen() {
   if (!v) {
     return (
       <View className="flex-1 items-center justify-center gap-3 bg-background px-8">
-        <Stack.Screen options={{ title: 'Not found' }} />
+        <Stack.Screen options={{ title: t.vehicle.notFound }} />
         <Text variant="heading" className="text-center">
-          {vehicle.isError ? 'We couldn’t load this vehicle' : 'This vehicle is no longer listed'}
+          {vehicle.isError ? t.vehicle.loadError : t.vehicle.noLongerListed}
         </Text>
         {vehicle.isError ? (
-          <Button title="Try again" onPress={() => void vehicle.refetch()} />
+          <Button title={t.common.tryAgain} onPress={() => void vehicle.refetch()} />
         ) : (
           <Link href="/search" asChild>
-            <Button title="Browse inventory" />
+            <Button title={t.common.browseInventory} />
           </Link>
         )}
       </View>
@@ -82,15 +79,15 @@ export default function VehicleScreen() {
         vehicle: v,
         dealer: v.dealer,
         settings: settings.data,
-        url: vehicleWebUrl(slug),
+        url: vehicleWebUrl(slug, locale),
       })
     : null;
   const drop = priceDropCents(v.previous_price_cents, v.price_cents);
   const sold = v.status === 'sold';
   const facts = [
-    v.mileage === null ? null : formatMileage(v.mileage),
+    v.mileage === null ? null : formatMileage(v.mileage, locale),
     v.exterior_color,
-    v.stock_number ? `Stock #${v.stock_number}` : null,
+    v.stock_number ? t.vehicle.stock(v.stock_number) : null,
   ].filter(Boolean);
   const price = v.price_cents === null ? null : formatPrice(v.price_cents);
 
@@ -129,7 +126,7 @@ export default function VehicleScreen() {
                     sold ? 'text-background' : 'text-amber-950',
                   )}
                 >
-                  {listingStatusLabels[v.status]}
+                  {d.listingStatus[v.status]}
                 </Text>
               </View>
             ) : null}
@@ -149,12 +146,12 @@ export default function VehicleScreen() {
               <View className="flex-row items-center gap-1 self-start rounded-full bg-emerald-600 px-2.5 py-1">
                 <Icon name="priceDrop" size={12} tone="white" />
                 <Text className="font-sans-semibold text-xs text-white">
-                  Price drop {formatPrice(drop)}
+                  {t.vehicle.priceDrop(formatPrice(drop))}
                 </Text>
               </View>
             ) : null}
             {v.msrp_cents !== null ? (
-              <Text variant="caption">Original MSRP {formatPrice(v.msrp_cents)}</Text>
+              <Text variant="caption">{t.vehicle.msrp(formatPrice(v.msrp_cents))}</Text>
             ) : null}
             {facts.length > 0 ? <Text variant="caption">{facts.join(' · ')}</Text> : null}
             <ConditionBadges vehicle={v} />
@@ -162,10 +159,8 @@ export default function VehicleScreen() {
 
           {sold ? (
             <View className="gap-1 rounded-2xl bg-muted p-4">
-              <Text variant="heading">This vehicle has been sold.</Text>
-              <Text variant="caption">
-                See similar vehicles below, or tell us what you’re looking for.
-              </Text>
+              <Text variant="heading">{t.vehicle.soldTitle}</Text>
+              <Text variant="caption">{t.vehicle.soldBody}</Text>
             </View>
           ) : null}
 
@@ -175,7 +170,7 @@ export default function VehicleScreen() {
           {v.description ? (
             <View className="gap-2">
               <Text variant="title" accessibilityRole="header">
-                About this vehicle
+                {t.vehicle.about}
               </Text>
               <Text variant="muted" className="leading-6">
                 {v.description}
@@ -185,7 +180,9 @@ export default function VehicleScreen() {
 
           {v.dealer ? (
             <View className="gap-2 rounded-2xl border border-border p-4">
-              <Text variant="caption">{v.dealer.is_house ? 'Sold by' : 'Listed by'}</Text>
+              <Text variant="caption">
+                {v.dealer.is_house ? t.vehicle.soldBy : t.vehicle.listedBy}
+              </Text>
               <Text variant="heading">{v.dealer.display_name}</Text>
               {v.dealer.address_line1 ? (
                 <Text variant="caption">
@@ -197,7 +194,7 @@ export default function VehicleScreen() {
               <Link href={{ pathname: '/search', params: { dealer: v.dealer.slug } }} asChild>
                 <Pressable accessibilityRole="link" className="min-h-11 justify-center">
                   <Text className="font-sans-semibold text-sm text-primary">
-                    See all vehicles from this dealer
+                    {t.vehicle.dealerVehicles}
                   </Text>
                 </Pressable>
               </Link>
@@ -206,8 +203,8 @@ export default function VehicleScreen() {
         </View>
         <View className="pt-8">
           <VehicleRail
-            title="Similar vehicles"
-            subtitle="Same style or make, similar price."
+            title={t.vehicle.similar}
+            subtitle={t.vehicle.similarSubtitle}
             cards={similar.data ?? []}
           />
         </View>
@@ -244,6 +241,8 @@ function HeaderActions({
   const add = useCompareStore((s) => s.add);
   const remove = useCompareStore((s) => s.remove);
   const saved = isSaved(id);
+  const t = useT();
+  const locale = useLocale();
 
   return (
     <View className="flex-row items-center">
@@ -252,28 +251,28 @@ function HeaderActions({
           <HeaderButton
             icon={saved ? 'heartFill' : 'heart'}
             tone={saved ? 'rose' : 'foreground'}
-            label={saved ? 'Remove from saved' : 'Save'}
+            label={saved ? t.vehicle.unsave : t.vehicle.save}
             selected={saved}
             onPress={() => toggle(id)}
           />
           <HeaderButton
             icon="compare"
             tone={inCompare ? 'primary' : 'foreground'}
-            label={inCompare ? 'Remove from compare' : 'Add to compare'}
+            label={inCompare ? t.vehicle.compareRemove : t.vehicle.compareAdd}
             selected={inCompare}
             onPress={() => {
               void Haptics.selectionAsync();
               if (inCompare) return remove(id);
-              if (add(id) === 'full') toast.error(`You can compare up to ${MAX_COMPARE} vehicles.`);
-              else toast.success('Added to compare');
+              if (add(id) === 'full') toast.error(t.vehicle.compareFull(MAX_COMPARE));
+              else toast.success(t.vehicle.compareAdded);
             }}
           />
         </>
       ) : null}
       <HeaderButton
         icon="share"
-        label="Share"
-        onPress={() => void shareVehicle({ title, price, slug }).catch(() => undefined)}
+        label={t.vehicle.share}
+        onPress={() => void shareVehicle({ title, price, slug, locale }).catch(() => undefined)}
       />
     </View>
   );

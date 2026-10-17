@@ -2,17 +2,17 @@
 
 import { buildTelUrl, buildWhatsAppUrl, formatPhone } from '@cp/core';
 import { Menu, MessageCircle, Phone } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { storefrontNav } from '@/lib/nav';
+import { Link, usePathname } from '@/i18n/navigation';
+import { isActivePath, storefrontNav } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 
-import { isActivePath } from './main-nav';
+import { LanguageOptions } from './language-switch';
 
 interface MobileNavProps {
   brandName: string;
@@ -22,11 +22,12 @@ interface MobileNavProps {
 
 export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations('Header');
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('openMenu')}>
           <Menu className="size-5" />
         </Button>
       </SheetTrigger>
@@ -36,8 +37,12 @@ export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps
         </SheetHeader>
         <MobileNavLinks onNavigate={() => setOpen(false)} />
         <div className="text-muted-foreground flex items-center justify-between border-t px-5 py-2 text-base font-medium">
-          Appearance
+          {t('appearance')}
           <ThemeToggle />
+        </div>
+        <div className="text-muted-foreground flex items-center justify-between gap-3 border-t px-5 py-3 text-base font-medium">
+          {t('language')}
+          <LanguageOptions />
         </div>
         <div className="mt-auto flex flex-col gap-2 p-4">
           {whatsappE164 ? (
@@ -47,7 +52,7 @@ export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps
               className="bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
             >
               <a href={buildWhatsAppUrl(whatsappE164)} target="_blank" rel="noopener noreferrer">
-                <MessageCircle /> WhatsApp us
+                <MessageCircle /> {t('whatsappUs')}
               </a>
             </Button>
           ) : null}
@@ -67,8 +72,9 @@ export function MobileNav({ brandName, phoneE164, whatsappE164 }: MobileNavProps
 /** Mounted only while the sheet is open, so reading the pathname never blocks prerendering. */
 function MobileNavLinks({ onNavigate }: { onNavigate: () => void }) {
   const pathname = usePathname();
+  const t = useTranslations('Nav');
   return (
-    <nav aria-label="Mobile" className="flex flex-col px-2">
+    <nav aria-label={t('mobile')} className="flex flex-col px-2">
       {storefrontNav.map((item) => {
         const active = isActivePath(pathname, item.href);
         return (
@@ -82,7 +88,7 @@ function MobileNavLinks({ onNavigate }: { onNavigate: () => void }) {
               active ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
-            {item.label}
+            {t(item.label)}
           </Link>
         );
       })}

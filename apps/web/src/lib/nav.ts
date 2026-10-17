@@ -13,12 +13,17 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-/** Storefront primary navigation. */
+/** Storefront primary navigation (`label` is a key in the `Nav` messages). */
 export const storefrontNav = [
-  { href: '/inventory', label: 'Inventory' },
-  { href: '/sell-with-us', label: 'Sell with us' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/inventory', label: 'inventory' },
+  { href: '/sell-with-us', label: 'sellWithUs' },
+  { href: '/contact', label: 'contact' },
 ] as const;
+
+/** True on the section's page and its children (`/inventory`, `/inventory/<slug>`). */
+export function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 /** Console section → route and icon. */
 export const consoleRoutes: Record<ConsoleSection, { href: string; icon: LucideIcon }> = {

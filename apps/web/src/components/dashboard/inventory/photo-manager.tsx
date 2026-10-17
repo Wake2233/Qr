@@ -29,7 +29,7 @@ import {
   registerPhotos,
   reorderPhotos,
   requestPhotoUploads,
-} from '@/app/dashboard/inventory/actions';
+} from '@/app/[locale]/dashboard/inventory/actions';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { env } from '@/lib/env';

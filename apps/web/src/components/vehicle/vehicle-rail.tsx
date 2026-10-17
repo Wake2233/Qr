@@ -1,6 +1,8 @@
 import type { VehicleCard as Card } from '@cp/api';
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+
+import { Link } from '@/i18n/navigation';
 
 import { VehicleCard } from './vehicle-card';
 
@@ -13,15 +15,16 @@ interface VehicleRailProps {
 }
 
 /** Horizontally scrolling row of cards (scroll-snap; keyboard reachable via the links). */
-export function VehicleRail({
+export async function VehicleRail({
   title,
   description,
   cards,
   href,
-  linkLabel = 'See all',
+  linkLabel,
 }: VehicleRailProps) {
   if (cards.length === 0) return null;
-  const headingId = `rail-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const t = await getTranslations('Home');
+  const headingId = `rail-${title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-')}`;
   return (
     <section aria-labelledby={headingId} className="space-y-4">
       <div className="flex items-end justify-between gap-4">
@@ -36,7 +39,7 @@ export function VehicleRail({
             href={href}
             className="text-primary inline-flex shrink-0 items-center gap-1 text-sm font-medium hover:underline"
           >
-            {linkLabel} <ArrowRight className="size-4" aria-hidden />
+            {linkLabel ?? t('seeAll')} <ArrowRight className="size-4" aria-hidden />
           </Link>
         ) : null}
       </div>

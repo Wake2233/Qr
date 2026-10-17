@@ -1,6 +1,7 @@
 'use client';
 
 import { Heart } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { useFavorites } from '@/lib/favorites/use-favorites';
@@ -21,13 +22,14 @@ export function FavoriteButton({
 }: FavoriteButtonProps) {
   const { isSaved, toggle, ready } = useFavorites();
   const saved = isSaved(vehicleId);
+  const t = useTranslations('Card');
   return (
     <Button
       type="button"
       size={variant === 'overlay' ? 'icon' : 'default'}
       variant={variant === 'overlay' ? 'secondary' : 'outline'}
       aria-pressed={saved}
-      aria-label={saved ? `Remove ${title} from saved` : `Save ${title}`}
+      aria-label={t(saved ? 'unsaveTitle' : 'saveTitle', { title })}
       disabled={!ready}
       onClick={() => toggle(vehicleId)}
       className={cn(
@@ -37,7 +39,7 @@ export function FavoriteButton({
       )}
     >
       <Heart className={cn('size-5', saved && 'fill-rose-500 text-rose-500')} />
-      {variant === 'outline' ? (saved ? 'Saved' : 'Save') : null}
+      {variant === 'outline' ? t(saved ? 'saved' : 'save') : null}
     </Button>
   );
 }

@@ -24,4 +24,3 @@ describe('siteSettingsSchema', () => {
     ).toBe(false);
   });
 });
-

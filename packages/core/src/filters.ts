@@ -8,21 +8,9 @@
 import { Constants, type Enums } from '@cp/types';
 
 import { formatMileage, formatPrice } from './format';
-import {
-  bodyTypeLabels,
-  colorFamilyLabels,
-  conditionLabels,
-  damageAreaLabels,
-  damageLevelLabels,
-  driveStatusLabels,
-  drivetrainLabels,
-  fuelTypeLabels,
-  historyFlagLabels,
-  HISTORY_FLAGS,
-  titleStatusLabels,
-  transmissionLabels,
-  type HistoryFlag,
-} from './vehicle';
+import { coreDictionary, type CoreDictionary, type Locale } from './i18n';
+import { en } from './i18n/en';
+import { HISTORY_FLAGS, type HistoryFlag } from './vehicle';
 
 const E = Constants.public.Enums;
 
@@ -36,13 +24,8 @@ export const SORT_OPTIONS = [
 export type InventorySort = (typeof SORT_OPTIONS)[number];
 export const DEFAULT_SORT: InventorySort = 'newest';
 
-export const sortLabels: Record<InventorySort, string> = {
-  newest: 'Newest listings',
-  price_asc: 'Price: low to high',
-  price_desc: 'Price: high to low',
-  mileage_asc: 'Lowest mileage',
-  year_desc: 'Newest model year',
-};
+/** English sort labels (`coreDictionary(locale).sort` for other languages). */
+export const sortLabels: Record<InventorySort, string> = en.sort;
 
 export interface InventoryFilters {
   q?: string;
@@ -433,21 +416,23 @@ export interface FilterChip {
   next: InventoryFilters;
 }
 
-const LIST_LABELS: Record<ListKey, (value: string, labels: FilterLabels) => string> = {
+type Dict = CoreDictionary;
+
+const LIST_LABELS: Record<ListKey, (value: string, labels: FilterLabels, d: Dict) => string> = {
   make: (v, l) => l.make?.[v] ?? v,
   model: (v, l) => l.model?.[v] ?? v,
-  body: (v) => bodyTypeLabels[v as Enums<'body_type'>],
-  fuel: (v) => fuelTypeLabels[v as Enums<'fuel_type'>],
-  drivetrain: (v) => drivetrainLabels[v as Enums<'drivetrain'>],
-  transmission: (v) => transmissionLabels[v as Enums<'transmission'>],
-  condition: (v) => conditionLabels[v as Enums<'vehicle_condition'>],
-  color: (v) => colorFamilyLabels[v as Enums<'color_family'>],
+  body: (v, _, d) => d.bodyType[v as Enums<'body_type'>],
+  fuel: (v, _, d) => d.fuelType[v as Enums<'fuel_type'>],
+  drivetrain: (v, _, d) => d.drivetrain[v as Enums<'drivetrain'>],
+  transmission: (v, _, d) => d.transmission[v as Enums<'transmission'>],
+  condition: (v, _, d) => d.condition[v as Enums<'vehicle_condition'>],
+  color: (v, _, d) => d.colorFamily[v as Enums<'color_family'>],
   feature: (v, l) => l.feature?.[v] ?? v,
-  damage: (v) => damageLevelLabels[v as Enums<'damage_level'>],
-  damageArea: (v) => `${damageAreaLabels[v as Enums<'damage_area'>]} damage`,
-  driveStatus: (v) => driveStatusLabels[v as Enums<'drive_status'>],
-  title: (v) => `${titleStatusLabels[v as Enums<'title_status'>]} title`,
-  history: (v) => historyFlagLabels[v as HistoryFlag],
+  damage: (v, _, d) => d.damageLevel[v as Enums<'damage_level'>],
+  damageArea: (v, _, d) => d.chip.damageArea(d.damageArea[v as Enums<'damage_area'>]),
+  driveStatus: (v, _, d) => d.driveStatus[v as Enums<'drive_status'>],
+  title: (v, _, d) => d.chip.title(d.titleStatus[v as Enums<'title_status'>]),
+  history: (v, _, d) => d.historyFlag[v as HistoryFlag],
 };
 
 type ScalarKey =
@@ -464,17 +449,17 @@ type ScalarKey =
 
 const SCALAR_LABELS: Record<
   ScalarKey,
-  (filters: InventoryFilters, labels: FilterLabels) => string
+  (filters: InventoryFilters, labels: FilterLabels, d: Dict, locale?: Locale) => string
 > = {
   q: (f) => `“${f.q ?? ''}”`,
-  yearMin: (f) => `${f.yearMin} or newer`,
-  yearMax: (f) => `${f.yearMax} or older`,
-  priceMinCents: (f) => `From ${formatPrice(f.priceMinCents ?? 0)}`,
-  priceMaxCents: (f) => `Up to ${formatPrice(f.priceMaxCents ?? 0)}`,
-  mileageMax: (f) => `Under ${formatMileage(f.mileageMax ?? 0)}`,
-  seatsMin: (f) => `${f.seatsMin}+ seats`,
-  engineMinL: (f) => `Engine ${(f.engineMinL ?? 0).toFixed(1)}L+`,
-  engineMaxL: (f) => `Engine up to ${(f.engineMaxL ?? 0).toFixed(1)}L`,
+  yearMin: (f, _, d) => d.chip.yearMin(f.yearMin ?? 0),
+  yearMax: (f, _, d) => d.chip.yearMax(f.yearMax ?? 0),
+  priceMinCents: (f, _, d) => d.chip.priceFrom(formatPrice(f.priceMinCents ?? 0)),
+  priceMaxCents: (f, _, d) => d.chip.priceUpTo(formatPrice(f.priceMaxCents ?? 0)),
+  mileageMax: (f, _, d, locale) => d.chip.mileageUnder(formatMileage(f.mileageMax ?? 0, locale)),
+  seatsMin: (f, _, d) => d.chip.seatsMin(f.seatsMin ?? 0),
+  engineMinL: (f, _, d) => d.chip.engineMin((f.engineMinL ?? 0).toFixed(1)),
+  engineMaxL: (f, _, d) => d.chip.engineMax((f.engineMaxL ?? 0).toFixed(1)),
   dealer: (f, l) => l.dealer?.[f.dealer ?? ''] ?? f.dealer ?? '',
 };
 
@@ -482,22 +467,29 @@ const SCALAR_LABELS: Record<
 export function activeFilterChips(
   filters: InventoryFilters,
   labels: FilterLabels = {},
+  locale?: Locale,
 ): FilterChip[] {
+  const d = coreDictionary(locale);
   const { page: _page, ...base } = filters;
   const chips: FilterChip[] = [];
-  if (base.q) chips.push({ id: 'q', label: SCALAR_LABELS.q(base, labels), next: omit(base, 'q') });
+  if (base.q)
+    chips.push({ id: 'q', label: SCALAR_LABELS.q(base, labels, d), next: omit(base, 'q') });
   for (const key of Object.keys(LIST_PARAMS) as ListKey[]) {
     for (const value of base[key] ?? []) {
       chips.push({
         id: `${key}:${value}`,
-        label: LIST_LABELS[key](value, labels),
+        label: LIST_LABELS[key](value, labels, d),
         next: toggleFilterValue(base, key, value as never),
       });
     }
   }
   for (const key of Object.keys(SCALAR_LABELS) as ScalarKey[]) {
     if (key === 'q' || base[key] === undefined) continue;
-    chips.push({ id: key, label: SCALAR_LABELS[key](base, labels), next: omit(base, key) });
+    chips.push({
+      id: key,
+      label: SCALAR_LABELS[key](base, labels, d, locale),
+      next: omit(base, key),
+    });
   }
   return chips;
 }

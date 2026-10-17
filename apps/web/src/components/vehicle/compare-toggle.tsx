@@ -2,6 +2,7 @@
 
 import { MAX_COMPARE } from '@cp/core';
 import { GitCompareArrows } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,12 @@ export function CompareToggle({
   const selected = useCompareStore((s) => s.ids.includes(vehicleId));
   const add = useCompareStore((s) => s.add);
   const remove = useCompareStore((s) => s.remove);
+  const t = useTranslations('Card');
 
   const onClick = () => {
     if (selected) return remove(vehicleId);
     if (add(vehicleId) === 'full') {
-      toast.error(`You can compare up to ${MAX_COMPARE} vehicles. Remove one first.`);
+      toast.error(t('compareFull', { max: MAX_COMPARE }));
     }
   };
 
@@ -39,7 +41,7 @@ export function CompareToggle({
       size={variant === 'overlay' ? 'icon' : 'default'}
       variant={variant === 'overlay' ? 'secondary' : 'outline'}
       aria-pressed={selected}
-      aria-label={selected ? `Remove ${title} from compare` : `Add ${title} to compare`}
+      aria-label={t(selected ? 'compareRemove' : 'compareAdd', { title })}
       onClick={onClick}
       className={cn(
         variant === 'overlay' &&
@@ -49,7 +51,7 @@ export function CompareToggle({
       )}
     >
       <GitCompareArrows className="size-5" />
-      {variant === 'outline' ? (selected ? 'In compare' : 'Compare') : null}
+      {variant === 'outline' ? t(selected ? 'inCompare' : 'compare') : null}
     </Button>
   );
 }

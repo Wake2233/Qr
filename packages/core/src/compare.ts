@@ -5,6 +5,7 @@
  */
 import type { Tables } from '@cp/types';
 
+import { coreDictionary, type Locale } from './i18n';
 import { vehicleSpecGrid, type VehicleSpecSource } from './vehicle';
 
 export interface CompareInput extends VehicleSpecSource {
@@ -28,14 +29,18 @@ export interface CompareSection {
 /** Spec keys shown in the sticky column headers instead of as rows. */
 const HEADER_KEYS = new Set(['year', 'make', 'model', 'trim', 'price_cents']);
 
+/** Cell value for a feature the vehicle has (rendered as a check mark, never as text). */
 export const FEATURE_INCLUDED = 'Included';
 
 const differs = (values: (string | null)[]) =>
   values.length > 1 && new Set(values.map((v) => v ?? '')).size > 1;
 
-export function buildCompareSections(vehicles: readonly CompareInput[]): CompareSection[] {
+export function buildCompareSections(
+  vehicles: readonly CompareInput[],
+  locale?: Locale,
+): CompareSection[] {
   if (vehicles.length === 0) return [];
-  const grids = vehicles.map(vehicleSpecGrid);
+  const grids = vehicles.map((v) => vehicleSpecGrid(v, locale));
   const [first] = grids;
   if (!first) return [];
 
@@ -51,11 +56,11 @@ export function buildCompareSections(vehicles: readonly CompareInput[]): Compare
   }));
 
   const featureNames = [...new Set(vehicles.flatMap((v) => v.features.map((f) => f.name)))].sort(
-    (a, b) => a.localeCompare(b),
+    (a, b) => a.localeCompare(b, locale),
   );
   const featureSection: CompareSection = {
     id: 'features',
-    title: 'Features',
+    title: coreDictionary(locale).specGroup.features,
     rows: featureNames.map((name) => {
       const values = vehicles.map((v) =>
         v.features.some((f) => f.name === name) ? FEATURE_INCLUDED : null,

@@ -8,9 +8,14 @@ import { log } from '@/lib/log';
 /**
  * Refreshes the Supabase session on every matched request and writes rotated tokens back to
  * both the forwarded request and the response. Returns the verified user id (or null).
+ * `rewrite` serves another route for this URL (the proxy's `/en/...` language rewrite).
  */
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+export async function updateSession(request: NextRequest, rewrite: URL | null = null) {
+  const pass = () =>
+    rewrite
+      ? NextResponse.rewrite(rewrite, { request: { headers: request.headers } })
+      : NextResponse.next({ request });
+  let response = pass();
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -20,7 +25,7 @@ export async function updateSession(request: NextRequest) {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet, headers) => {
           for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-          response = NextResponse.next({ request });
+          response = pass();
           for (const { name, value, options } of cookiesToSet) {
             response.cookies.set(name, value, options);
           }

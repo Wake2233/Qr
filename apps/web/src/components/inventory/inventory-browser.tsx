@@ -6,16 +6,19 @@ import {
   buildTelUrl,
   buildWhatsAppUrl,
   clearFilters,
+  coreDictionary,
   countActiveFilters,
+  featureName,
   SORT_OPTIONS,
-  sortLabels,
   suggestCatalog,
+  type Locale,
   type Catalog,
   type CatalogSuggestion,
   type InventoryFilters,
   type InventorySort,
 } from '@cp/core';
 import { Loader2, MessageCircle, Phone, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from '@/components/providers/auth-provider';
@@ -59,6 +62,9 @@ interface InventoryBrowserProps {
 /** Inventory search: URL-synced filters, live facet counts and an infinite grid. */
 export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBrowserProps) {
   const { supabase } = useAuth();
+  const locale = useLocale();
+  const t = useTranslations('Inventory');
+  const sortLabels = coreDictionary(locale).sort;
   const { filters, setFilters } = useInventoryFilters();
   const listFilters = useMemo(() => listFiltersOf(filters), [filters]);
   const facetFilters = useMemo(() => facetFiltersOf(filters), [filters]);
@@ -71,8 +77,11 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
     [vehicles.data],
   );
 
-  const labels = useMemo(() => labelsOf(facets.data, dealerLabels), [facets.data, dealerLabels]);
-  const chips = activeFilterChips(filters, labels);
+  const labels = useMemo(
+    () => labelsOf(facets.data, dealerLabels, locale),
+    [facets.data, dealerLabels, locale],
+  );
+  const chips = activeFilterChips(filters, labels, locale);
   const activeCount = countActiveFilters(filters);
   const desktop = useMediaQuery('(min-width: 1024px)');
   const firstPageCount = vehicles.data?.pages[0]?.items.length ?? 0;
@@ -96,10 +105,10 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
   return (
     <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside
-        aria-label="Filters"
+        aria-label={t('filters')}
         className="hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-2"
       >
-        <h2 className="sr-only">Filters</h2>
+        <h2 className="sr-only">{t('filters')}</h2>
         {/* Phones use the sheet; mounting the rail only on desktop keeps it out of their hydration. */}
         {desktop ? (
           <FilterPanel
@@ -113,7 +122,7 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
       </aside>
 
       <div className="min-w-0 space-y-5">
-        <h2 className="sr-only">Results</h2>
+        <h2 className="sr-only">{t('results')}</h2>
         <div className="flex flex-wrap items-center gap-3">
           <SearchBox
             catalog={catalog ?? null}
@@ -149,7 +158,7 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
             }}
           >
             <SelectTrigger
-              aria-label="Sort by"
+              aria-label={t('sortBy')}
               className="w-auto min-w-0 flex-1 sm:w-52 sm:flex-none"
             >
               <SelectValue>{sortLabels[filters.sort ?? 'newest']}</SelectValue>
@@ -167,11 +176,11 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
         <div className="flex flex-wrap items-center gap-2" aria-live="polite">
           <p className="text-muted-foreground mr-2 text-sm">
             {total === undefined ? (
-              'Loading vehicles…'
+              t('loading')
             ) : (
               <>
                 <span className="text-foreground font-semibold tabular-nums">{total}</span>{' '}
-                {total === 1 ? 'vehicle' : 'vehicles'}
+                {t('count', { count: total })}
               </>
             )}
           </p>
@@ -182,7 +191,7 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
               size="sm"
               className="h-8 rounded-full"
               onClick={() => void setFilters(chip.next)}
-              aria-label={`Remove filter: ${chip.label}`}
+              aria-label={t('removeFilter', { label: chip.label })}
             >
               {chip.label} <X className="size-3.5" aria-hidden />
             </Button>
@@ -194,7 +203,7 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
               className="h-8"
               onClick={() => void setFilters(clearFilters(filters))}
             >
-              Clear all
+              {t('clearAll')}
             </Button>
           ) : null}
         </div>
@@ -207,20 +216,20 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
           </Grid>
         ) : vehicles.isError ? (
           <EmptyState
-            title="We couldn’t load the inventory"
-            body="Check your connection and try again."
-            action={<Button onClick={() => void vehicles.refetch()}>Try again</Button>}
+            title={t('loadErrorTitle')}
+            body={t('loadErrorBody')}
+            action={<Button onClick={() => void vehicles.refetch()}>{t('tryAgain')}</Button>}
           />
         ) : cards.length === 0 && activeCount === 0 ? (
           <NewArrivals contact={contact} />
         ) : cards.length === 0 ? (
           <EmptyState
-            title="No vehicles match these filters"
-            body="Try removing a filter or widening the price and year range."
+            title={t('noMatchTitle')}
+            body={t('noMatchBody')}
             action={
               activeCount > 0 ? (
                 <Button onClick={() => void setFilters(clearFilters(filters))}>
-                  Clear filters
+                  {t('clearFilters')}
                 </Button>
               ) : null
             }
@@ -250,11 +259,11 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
                   disabled={isFetchingNextPage}
                 >
                   {isFetchingNextPage ? <Loader2 className="animate-spin" /> : null}
-                  Show more vehicles
+                  {t('showMore')}
                 </Button>
               ) : (
                 <p className="text-muted-foreground text-sm">
-                  You’ve seen all {cards.length} {cards.length === 1 ? 'vehicle' : 'vehicles'}.
+                  {t('seenAll', { count: cards.length })}
                 </p>
               )}
             </div>
@@ -265,13 +274,22 @@ export function InventoryBrowser({ dealerLabels, catalog, contact }: InventoryBr
   );
 }
 
-function labelsOf(facets: InventoryFacets | undefined, dealer?: Record<string, string>) {
+function labelsOf(
+  facets: InventoryFacets | undefined,
+  dealer: Record<string, string> | undefined,
+  locale: Locale,
+) {
   const toMap = (items: { value: string; label: string }[] = []) =>
     Object.fromEntries(items.map((item) => [item.value, item.label]));
   return {
     make: toMap(facets?.make),
     model: toMap(facets?.model),
-    feature: toMap(facets?.feature),
+    feature: Object.fromEntries(
+      (facets?.feature ?? []).map((f) => [
+        f.value,
+        featureName({ slug: f.value, name: f.label }, locale),
+      ]),
+    ),
     dealer,
   };
 }
@@ -314,14 +332,12 @@ function EmptyState({
 
 /** Shown when nothing is listed at all: no dead end, a direct line to the team instead. */
 function NewArrivals({ contact }: { contact: InventoryBrowserProps['contact'] }) {
-  const text = 'Hi! I’m looking for a car. Can you help me find one?';
+  const t = useTranslations('Inventory');
+  const text = t('newArrivalsMessage');
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed px-6 py-16 text-center">
-      <h2 className="font-display text-2xl font-semibold">New arrivals are on the way</h2>
-      <p className="text-muted-foreground max-w-md">
-        Tell us the make, model and budget you have in mind, and we’ll let you know as soon as a
-        match comes in.
-      </p>
+      <h2 className="font-display text-2xl font-semibold">{t('newArrivalsTitle')}</h2>
+      <p className="text-muted-foreground max-w-md">{t('newArrivalsBody')}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {contact?.whatsappE164 ? (
           <Button
@@ -334,14 +350,14 @@ function NewArrivals({ contact }: { contact: InventoryBrowserProps['contact'] })
               target="_blank"
               rel="noopener noreferrer"
             >
-              <MessageCircle /> WhatsApp us
+              <MessageCircle /> {t('whatsappUs')}
             </a>
           </Button>
         ) : null}
         {contact?.phoneE164 ? (
           <Button asChild size="lg" variant="outline">
             <a href={buildTelUrl(contact.phoneE164)}>
-              <Phone /> Call us
+              <Phone /> {t('callUs')}
             </a>
           </Button>
         ) : null}
@@ -365,6 +381,7 @@ function SearchBox({
   catalog: Catalog | null;
   onPick: (pick: CatalogSuggestion) => void;
 }) {
+  const t = useTranslations('Inventory');
   const [draft, setDraft] = useState(value);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -435,8 +452,8 @@ function SearchBox({
             setOpen(false);
           }
         }}
-        placeholder="Search make, model, trim…"
-        aria-label="Search inventory"
+        placeholder={t('searchPlaceholder')}
+        aria-label={t('searchLabel')}
         role="combobox"
         aria-expanded={showList}
         aria-controls={listId}
@@ -450,7 +467,7 @@ function SearchBox({
         <ul
           id={listId}
           role="listbox"
-          aria-label="Suggestions"
+          aria-label={t('suggestions')}
           className="bg-popover text-popover-foreground absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-xl border p-1 shadow-lg"
         >
           {suggestions.map((suggestion, index) => (
@@ -472,7 +489,7 @@ function SearchBox({
             >
               <span className="truncate">{suggestion.label}</span>
               <span className="text-muted-foreground shrink-0 text-xs">
-                {suggestion.kind === 'make' ? 'Make' : 'Model'}
+                {t(suggestion.kind === 'make' ? 'suggestionMake' : 'suggestionModel')}
               </span>
             </li>
           ))}
@@ -495,11 +512,12 @@ function MobileFilters({
   activeCount: number;
   onChange: (next: InventoryFilters) => void;
 }) {
+  const t = useTranslations('Inventory');
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="outline" className="lg:hidden">
-          <SlidersHorizontal /> Filters
+          <SlidersHorizontal /> {t('filters')}
           {activeCount > 0 ? (
             <span className="bg-primary text-primary-foreground grid size-5 place-items-center rounded-full text-xs">
               {activeCount}
@@ -509,8 +527,8 @@ function MobileFilters({
       </SheetTrigger>
       <SheetContent side="bottom" className="flex h-[88dvh] flex-col gap-0 rounded-t-2xl p-0">
         <SheetHeader className="border-b">
-          <SheetTitle>Filters</SheetTitle>
-          <SheetDescription>Results update as you choose.</SheetDescription>
+          <SheetTitle>{t('filters')}</SheetTitle>
+          <SheetDescription>{t('sheetDescription')}</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-4 pt-5">
           <FilterPanel filters={filters} facets={facets} onChange={onChange} />
@@ -522,11 +540,11 @@ function MobileFilters({
             onClick={() => onChange(clearFilters(filters))}
             disabled={activeCount === 0}
           >
-            Clear
+            {t('clear')}
           </Button>
           <SheetClose asChild>
             <Button className="flex-1">
-              {total === undefined ? 'Show results' : `Show ${total} results`}
+              {total === undefined ? t('showResults') : t('showCountResults', { count: total })}
             </Button>
           </SheetClose>
         </SheetFooter>

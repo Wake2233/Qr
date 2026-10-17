@@ -33,7 +33,7 @@ import {
   decodeVinAction,
   saveAndPublishVehicle,
   saveVehicle,
-} from '@/app/dashboard/inventory/actions';
+} from '@/app/[locale]/dashboard/inventory/actions';
 import {
   Field,
   MoneyInput,

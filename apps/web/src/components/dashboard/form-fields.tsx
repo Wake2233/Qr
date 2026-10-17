@@ -187,4 +187,3 @@ export function OptionSelect<T extends string | number>({
 /** `{ a: 'A' }` → `[{ value: 'a', label: 'A' }]` for enum label maps. */
 export const optionsOf = <T extends string>(labels: Record<T, string>) =>
   (Object.entries(labels) as [T, string][]).map(([value, label]) => ({ value, label }));
-

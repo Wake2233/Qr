@@ -1,8 +1,8 @@
 'use client';
 
 import { Heart, LayoutDashboard, LogOut, UserRound } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import NextLink from 'next/link';
 
 import { useAuth } from '@/components/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -14,17 +14,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Link, useRouter } from '@/i18n/navigation';
 
 /** Header auth control. Client-side so public pages stay statically renderable. */
 export function AccountButton() {
   const { user, context, supabase } = useAuth();
   const router = useRouter();
+  const t = useTranslations('Header');
 
   if (user === undefined) return <div className="h-9 w-20" aria-hidden />;
   if (!user) {
     return (
       <Button asChild size="sm">
-        <Link href="/login">Sign in</Link>
+        <NextLink href="/login">{t('signIn')}</NextLink>
       </Button>
     );
   }
@@ -32,8 +34,8 @@ export function AccountButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" aria-label="Account menu">
-          <UserRound /> <span className="hidden sm:inline">Account</span>
+        <Button variant="outline" size="sm" aria-label={t('accountMenu')}>
+          <UserRound /> <span className="hidden sm:inline">{t('account')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -41,14 +43,14 @@ export function AccountButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/account/favorites">
-            <Heart /> Saved vehicles
+            <Heart /> {t('savedVehicles')}
           </Link>
         </DropdownMenuItem>
         {context?.canAccessConsole ? (
           <DropdownMenuItem asChild>
-            <Link href="/dashboard">
-              <LayoutDashboard /> Dashboard
-            </Link>
+            <NextLink href="/dashboard">
+              <LayoutDashboard /> {t('dashboard')}
+            </NextLink>
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
@@ -61,7 +63,7 @@ export function AccountButton() {
             });
           }}
         >
-          <LogOut /> Sign out
+          <LogOut /> {t('signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

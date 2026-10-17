@@ -75,6 +75,16 @@ export {
   type SearchParamsInput,
 } from './filters';
 export {
+  coreDictionary,
+  DEFAULT_LOCALE,
+  featureName,
+  isLocale,
+  LOCALES,
+  localeNames,
+  type CoreDictionary,
+  type Locale,
+} from './i18n';
+export {
   centsToDollarInput,
   formatMileage,
   formatPhone,

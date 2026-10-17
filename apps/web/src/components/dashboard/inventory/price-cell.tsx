@@ -5,7 +5,7 @@ import { Pencil } from 'lucide-react';
 import { useEffect, useOptimistic, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { changeVehiclePrice } from '@/app/dashboard/inventory/actions';
+import { changeVehiclePrice } from '@/app/[locale]/dashboard/inventory/actions';
 import { Input } from '@/components/ui/input';
 
 /** Click-to-edit price. Enter saves, Escape cancels; the price-history trigger logs the change. */

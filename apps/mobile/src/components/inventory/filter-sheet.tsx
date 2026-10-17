@@ -1,26 +1,15 @@
 import type { InventoryFacets } from '@cp/api';
 import {
-  bodyTypeLabels,
   clearFilters,
-  colorFamilyLabels,
-  conditionLabels,
   countActiveFilters,
-  damageAreaLabels,
-  damageLevelLabels,
-  driveStatusLabels,
-  drivetrainLabels,
   ENGINE_STEPS_L,
   FEATURE_CATEGORY_ORDER,
-  featureCategoryLabels,
+  featureName,
   formatMileage,
   formatPrice,
-  fuelTypeLabels,
-  historyFlagLabels,
   MILEAGE_STEPS,
   PRICE_STEPS_CENTS,
-  titleStatusLabels,
   toggleFilterValue,
-  transmissionLabels,
   type FilterListKey,
   type InventoryFilters,
 } from '@cp/core';
@@ -40,6 +29,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { Text } from '@/components/text';
+import { useCoreT, useLocale, useT } from '@/i18n';
 
 interface Option {
   value: string;
@@ -60,6 +50,10 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   { filters, facets, onChange },
   ref,
 ) {
+  const t = useT();
+  const f = t.filters;
+  const d = useCoreT();
+  const locale = useLocale();
   const toggle = (key: FilterListKey, value: string) =>
     onChange(toggleFilterValue(filters, key, value as never));
   const set = (patch: Partial<InventoryFilters>) => {
@@ -87,14 +81,14 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
         <SafeAreaView edges={['bottom']} className="border-t border-border bg-card">
           <View className="flex-row gap-3 px-4 py-3">
             <Button
-              title="Clear"
+              title={t.common.clear}
               variant="outline"
               className="flex-1"
               disabled={countActiveFilters(filters) === 0}
               onPress={() => onChange(clearFilters(filters))}
             />
             <Button
-              title={total === undefined ? 'Show results' : `Show ${total} results`}
+              title={total === undefined ? f.showResults : f.showCount(total)}
               className="flex-[2]"
               onPress={close}
             />
@@ -102,7 +96,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
         </SafeAreaView>
       </BottomSheetFooter>
     ),
-    [filters, total, onChange, close],
+    [filters, total, onChange, close, f, t.common.clear],
   );
 
   const enumOptions = (
@@ -136,14 +130,14 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
       footerComponent={renderFooter}
       backgroundComponent={SheetBackground}
       handleComponent={SheetHandle}
-      accessibilityLabel="Filters"
+      accessibilityLabel={t.search.filters}
     >
       <BottomSheetScrollView>
         <View className="gap-6 px-4 pb-32">
           <Text variant="title" accessibilityRole="header">
-            Filters
+            {t.search.filters}
           </Text>
-          <Section title="Make">
+          <Section title={f.make}>
             <ChipList
               options={inStockFirst(
                 withSelected(
@@ -162,7 +156,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
             />
           </Section>
           {filters.make?.length ? (
-            <Section title="Model">
+            <Section title={f.model}>
               <ChipList
                 options={inStockFirst(
                   withSelected(
@@ -176,24 +170,24 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               />
             </Section>
           ) : null}
-          <Section title="Max price">
+          <Section title={f.maxPrice}>
             <StepChips
               steps={PRICE_STEPS_CENTS}
               value={filters.priceMaxCents}
-              label={(c) => `Up to ${formatPrice(c)}`}
+              label={(c) => f.upTo(formatPrice(c))}
               onChange={(priceMaxCents) => set({ priceMaxCents })}
             />
           </Section>
-          <Section title="Min price">
+          <Section title={f.minPrice}>
             <StepChips
               steps={PRICE_STEPS_CENTS}
               value={filters.priceMinCents}
-              label={(c) => `From ${formatPrice(c)}`}
+              label={(c) => f.from(formatPrice(c))}
               onChange={(priceMinCents) => set({ priceMinCents })}
             />
           </Section>
           {years.length > 0 ? (
-            <Section title="Model year (or newer)">
+            <Section title={f.yearMin}>
               <StepChips
                 steps={years}
                 value={filters.yearMin}
@@ -202,104 +196,104 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               />
             </Section>
           ) : null}
-          <Section title="Mileage">
+          <Section title={f.mileage}>
             <StepChips
               steps={MILEAGE_STEPS}
               value={filters.mileageMax}
-              label={(m) => `Under ${formatMileage(m)}`}
+              label={(m) => d.chip.mileageUnder(formatMileage(m, locale))}
               onChange={(mileageMax) => set({ mileageMax })}
             />
           </Section>
-          <Section title="Body style">
+          <Section title={f.bodyStyle}>
             <ChipList
-              options={enumOptions(facets?.body, bodyTypeLabels, filters.body)}
+              options={enumOptions(facets?.body, d.bodyType, filters.body)}
               selected={filters.body}
               onToggle={(v) => toggle('body', v)}
             />
           </Section>
-          <Section title="Condition">
+          <Section title={f.condition}>
             <ChipList
-              options={enumOptions(facets?.condition, conditionLabels, filters.condition)}
+              options={enumOptions(facets?.condition, d.condition, filters.condition)}
               selected={filters.condition}
               onToggle={(v) => toggle('condition', v)}
             />
           </Section>
-          <GroupTitle title="Engine & drivetrain" />
-          <Section title="Engine size (or larger)">
+          <GroupTitle title={f.engineDrivetrain} />
+          <Section title={f.engineMin}>
             <StepChips
               steps={ENGINE_STEPS_L}
               value={filters.engineMinL}
-              label={(l) => `${l.toFixed(1)} L+`}
+              label={(l) => f.liters(l.toFixed(1))}
               onChange={(engineMinL) => set({ engineMinL })}
             />
           </Section>
-          <Section title="Fuel type">
+          <Section title={f.fuelType}>
             <ChipList
-              options={enumOptions(facets?.fuel, fuelTypeLabels, filters.fuel)}
+              options={enumOptions(facets?.fuel, d.fuelType, filters.fuel)}
               selected={filters.fuel}
               onToggle={(v) => toggle('fuel', v)}
             />
           </Section>
-          <Section title="Drivetrain">
+          <Section title={f.drivetrain}>
             <ChipList
-              options={enumOptions(facets?.drivetrain, drivetrainLabels, filters.drivetrain)}
+              options={enumOptions(facets?.drivetrain, d.drivetrain, filters.drivetrain)}
               selected={filters.drivetrain}
               onToggle={(v) => toggle('drivetrain', v)}
             />
           </Section>
-          <Section title="Transmission">
+          <Section title={f.transmission}>
             <ChipList
-              options={enumOptions(facets?.transmission, transmissionLabels, filters.transmission)}
+              options={enumOptions(facets?.transmission, d.transmission, filters.transmission)}
               selected={filters.transmission}
               onToggle={(v) => toggle('transmission', v)}
             />
           </Section>
-          <GroupTitle title="Condition & history" />
-          <Section title="Run & Drive">
+          <GroupTitle title={f.conditionHistory} />
+          <Section title={f.runDrive}>
             <ChipList
-              options={enumOptions(facets?.drive_status, driveStatusLabels, filters.driveStatus)}
+              options={enumOptions(facets?.drive_status, d.driveStatus, filters.driveStatus)}
               selected={filters.driveStatus}
               onToggle={(v) => toggle('driveStatus', v)}
             />
           </Section>
-          <Section title="Damage">
+          <Section title={f.damage}>
             <ChipList
-              options={enumOptions(facets?.damage, damageLevelLabels, filters.damage)}
+              options={enumOptions(facets?.damage, d.damageLevel, filters.damage)}
               selected={filters.damage}
               onToggle={(v) => toggle('damage', v)}
             />
           </Section>
-          <Section title="Primary damage">
+          <Section title={f.primaryDamage}>
             <ChipList
-              options={enumOptions(facets?.damage_area, damageAreaLabels, filters.damageArea)}
+              options={enumOptions(facets?.damage_area, d.damageArea, filters.damageArea)}
               selected={filters.damageArea}
               onToggle={(v) => toggle('damageArea', v)}
               initialVisible={6}
             />
           </Section>
-          <Section title="Title">
+          <Section title={f.title}>
             <ChipList
-              options={enumOptions(facets?.title, titleStatusLabels, filters.title)}
+              options={enumOptions(facets?.title, d.titleStatus, filters.title)}
               selected={filters.title}
               onToggle={(v) => toggle('title', v)}
             />
           </Section>
-          <Section title="History">
+          <Section title={f.history}>
             <ChipList
-              options={enumOptions(facets?.history, historyFlagLabels, filters.history)}
+              options={enumOptions(facets?.history, d.historyFlag, filters.history)}
               selected={filters.history}
               onToggle={(v) => toggle('history', v)}
             />
           </Section>
-          <GroupTitle title="Exterior & interior" />
-          <Section title="Exterior color">
+          <GroupTitle title={f.exteriorInterior} />
+          <Section title={f.exteriorColor}>
             <ChipList
-              options={enumOptions(facets?.color, colorFamilyLabels, filters.color)}
+              options={enumOptions(facets?.color, d.colorFamily, filters.color)}
               selected={filters.color}
               onToggle={(v) => toggle('color', v)}
             />
           </Section>
-          <Section title="Seats">
+          <Section title={f.seats}>
             <StepChips
               steps={[4, 5, 6, 7, 8]}
               value={filters.seatsMin}
@@ -307,14 +301,18 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               onChange={(seatsMin) => set({ seatsMin })}
             />
           </Section>
-          <GroupTitle title="Features" />
+          <GroupTitle title={f.features} />
           {FEATURE_CATEGORY_ORDER.map((category) => {
             const options = (facets?.feature ?? [])
-              .filter((f) => f.category === category)
-              .map((f) => ({ value: f.value, label: f.label, count: f.count }));
+              .filter((feature) => feature.category === category)
+              .map((feature) => ({
+                value: feature.value,
+                label: featureName({ slug: feature.value, name: feature.label }, locale),
+                count: feature.count,
+              }));
             if (options.length === 0) return null;
             return (
-              <Section key={category} title={featureCategoryLabels[category]}>
+              <Section key={category} title={d.featureCategory[category]}>
                 <ChipList
                   options={inStockFirst(options, filters.feature)}
                   selected={filters.feature}
@@ -384,9 +382,10 @@ function ChipList({
   onToggle: (value: string) => void;
   initialVisible?: number;
 }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   if (options.length === 0) {
-    return <Text variant="caption">Nothing to choose from yet.</Text>;
+    return <Text variant="caption">{t.filters.nothingYet}</Text>;
   }
   const visible = expanded ? options : options.slice(0, initialVisible);
   return (
@@ -409,7 +408,7 @@ function ChipList({
           className="min-h-11 justify-center self-start"
         >
           <Text className="font-sans-semibold text-sm text-primary">
-            {expanded ? 'Show fewer' : `Show all ${options.length}`}
+            {expanded ? t.filters.showFewer : t.filters.showAll(options.length)}
           </Text>
         </Pressable>
       ) : null}

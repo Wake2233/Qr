@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, type ComponentProps } from 'react';
 
+import { Link } from '@/i18n/navigation';
+
 /**
- * A `<Link>` that prefetches on intent (hover, touch, focus) instead of on entering the viewport.
+ * A locale-aware `<Link>` that prefetches on intent (hover, touch, focus) instead of on entering the viewport.
  * For grids and rails of cards, where viewport prefetching would fetch every visible card's route.
  */
 export function IntentLink({

@@ -13,11 +13,12 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Appearance, View } from 'react-native';
+import { Appearance, Platform, View } from 'react-native';
 import { Toaster } from 'sonner-native';
 
 import { ErrorFallback } from '@/components/error-fallback';
 import { FavoritesSync } from '@/components/favorites-sync';
+import { useT } from '@/i18n';
 import { appFonts } from '@/lib/fonts';
 import { GestureHandlerRootView } from '@/lib/interop';
 import { persistOptions, queryClient } from '@/lib/query-client';
@@ -33,6 +34,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 export default function RootLayout() {
   const { scheme, rootStyle, native } = useAppTheme();
+  const t = useT();
   const navTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
   // Render with system fonts if loading fails rather than blocking the app.
   const [fontsLoaded, fontError] = useFonts(appFonts);
@@ -43,8 +45,9 @@ export default function RootLayout() {
   }, [ready]);
 
   // Native pieces (alerts, keyboards, date pickers) follow the app's theme, not the phone's.
+  // (react-native-web has no setColorScheme.)
   useEffect(() => {
-    Appearance.setColorScheme(scheme);
+    if (Platform.OS !== 'web') Appearance.setColorScheme(scheme);
   }, [scheme]);
 
   if (!ready) return null;
@@ -75,13 +78,16 @@ export default function RootLayout() {
                   <Stack.Screen name="manage" options={{ headerShown: false }} />
                   <Stack.Screen
                     name="sell-with-us"
-                    options={{ headerShown: true, title: 'Sell with us' }}
+                    options={{ headerShown: true, title: t.sell.title }}
                   />
                   <Stack.Screen
                     name="vehicle/[slug]"
-                    options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
+                    options={{ headerShown: true, title: '', headerBackTitle: t.common.back }}
                   />
-                  <Stack.Screen name="compare" options={{ headerShown: true, title: 'Compare' }} />
+                  <Stack.Screen
+                    name="compare"
+                    options={{ headerShown: true, title: t.compare.title }}
+                  />
                 </Stack>
               </BottomSheetModalProvider>
             </View>
