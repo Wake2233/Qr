@@ -1,5 +1,5 @@
 import { DEFAULT_WHATSAPP_TEMPLATE, formatPhone } from '@cp/core';
-import { businessHoursSchema, type SiteSettingsInput } from '@cp/validators';
+import type { SiteSettingsInput } from '@cp/validators';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
@@ -15,7 +15,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Site settings"
-        description="Brand, contact numbers, WhatsApp message and hours."
+        description="Brand, contact numbers, and WhatsApp message."
       />
       <Suspense fallback={<Skeleton className="h-[70vh] w-full" />}>
         <Settings />
@@ -35,7 +35,6 @@ async function Settings() {
       ? formatPhone(data.default_whatsapp_e164)
       : '',
     whatsapp_template: data.whatsapp_template || DEFAULT_WHATSAPP_TEMPLATE,
-    business_hours: businessHoursSchema.catch({}).parse(data.business_hours),
     require_listing_review: data.require_listing_review,
   };
   return <SiteSettingsForm initial={initial} />;

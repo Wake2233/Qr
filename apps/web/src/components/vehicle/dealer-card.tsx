@@ -1,11 +1,7 @@
 import { formatPhone } from '@cp/core';
-import { businessHoursSchema } from '@cp/validators';
-import type { Json } from '@cp/types';
 import { MapPin, Store } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-
-import { BusinessHours } from '@/components/site/business-hours';
 
 export interface DealerCardData {
   slug: string;
@@ -17,11 +13,9 @@ export interface DealerCardData {
   city: string | null;
   state: string | null;
   postal_code: string | null;
-  business_hours: Json;
 }
 
 export function DealerCard({ dealer }: { dealer: DealerCardData }) {
-  const hours = businessHoursSchema.catch({}).parse(dealer.business_hours ?? {});
   const locality = [dealer.city, [dealer.state, dealer.postal_code].filter(Boolean).join(' ')]
     .filter(Boolean)
     .join(', ');
@@ -56,14 +50,6 @@ export function DealerCard({ dealer }: { dealer: DealerCardData }) {
         </p>
       ) : null}
       {dealer.phone_e164 ? <p className="text-sm">{formatPhone(dealer.phone_e164)}</p> : null}
-      {Object.keys(hours).length > 0 ? (
-        <details className="text-sm">
-          <summary className="cursor-pointer font-medium">Business hours</summary>
-          <div className="mt-2">
-            <BusinessHours hours={hours} />
-          </div>
-        </details>
-      ) : null}
       <Link
         href={`/dealers/${dealer.slug}`}
         className="text-primary text-sm font-medium hover:underline"

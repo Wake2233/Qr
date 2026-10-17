@@ -14,14 +14,13 @@ const FALLBACK: { settings: SiteSettings; house: null } = {
     default_whatsapp_e164: null,
     default_phone_e164: null,
     whatsapp_template: DEFAULT_WHATSAPP_TEMPLATE,
-    business_hours: {},
     require_listing_review: false,
   },
   house: null,
 };
 
 /**
- * Brand, contact numbers, hours and the house dealership's address for the header/footer.
+ * Brand, contact numbers and the house dealership's address for the header/footer.
  * Cached for hours; admins' settings edits revalidate the tag. If Supabase is unreachable
  * (e.g. a CI build without a database) it falls back briefly instead of failing the page.
  */

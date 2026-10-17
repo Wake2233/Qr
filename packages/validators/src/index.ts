@@ -30,14 +30,7 @@ export {
 export { inventoryFiltersSchema } from './filters';
 export { leadSubmitSchema, type LeadSubmit, type LeadSubmitInput } from './lead';
 export { phoneE164, phoneE164Schema } from './phone';
-export {
-  businessHoursSchema,
-  siteSettingsSchema,
-  WEEKDAYS,
-  type BusinessHours,
-  type SiteSettingsInput,
-  type Weekday,
-} from './settings';
+export { siteSettingsSchema, type SiteSettingsInput } from './settings';
 export {
   maxModelYear,
   PUBLISH_REQUIRED_FIELDS,

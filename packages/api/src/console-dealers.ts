@@ -199,10 +199,9 @@ export async function updateDealerProfile(
   dealerId: string,
   profile: DealerProfile,
 ) {
-  const { business_hours, ...fields } = profile;
   const { data, error } = await client
     .from('dealers')
-    .update({ ...fields, business_hours })
+    .update(profile)
     .eq('id', dealerId)
     .select('id');
   if (error) throw error;

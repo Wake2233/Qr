@@ -6,7 +6,6 @@ import { storefrontNav } from '@/lib/nav';
 import { getSiteInfo } from '@/lib/site';
 
 import { BrandMark } from './brand-mark';
-import { BusinessHours } from './business-hours';
 
 export async function SiteFooter() {
   const { settings, house } = await getSiteInfo();
@@ -25,7 +24,7 @@ export async function SiteFooter() {
 
   return (
     <footer className="bg-card mt-24 border-t">
-      <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr]">
         <div className="space-y-4">
           <BrandMark name={settings.brand_name} />
           <ul className="text-muted-foreground space-y-2 text-sm">
@@ -77,11 +76,6 @@ export async function SiteFooter() {
               </li>
             ))}
           </ul>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold">Hours</h2>
-          <BusinessHours hours={settings.business_hours} />
         </div>
       </div>
       <div className="text-muted-foreground mx-auto max-w-[1440px] border-t px-4 py-6 text-xs sm:px-6">

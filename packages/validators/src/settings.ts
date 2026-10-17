@@ -3,22 +3,6 @@ import { z } from 'zod';
 import { phoneE164 } from './phone';
 import { requiredText } from './shared';
 
-export const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
-export type Weekday = (typeof WEEKDAYS)[number];
-
-const HOURS = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
-
-/** `{"mon":"09:00-19:00", …, "sun": null}` — null means closed. */
-export const businessHoursSchema = z.partialRecord(
-  z.enum(WEEKDAYS),
-  z
-    .string()
-    .regex(HOURS, 'Use HH:MM-HH:MM')
-    .refine((range) => range.slice(0, 5) < range.slice(6), 'Closing time must be after opening')
-    .nullable(),
-);
-export type BusinessHours = z.infer<typeof businessHoursSchema>;
-
 const TEMPLATE_KEYS = /\{(title|price|stock|vin|url)\}/g;
 
 /** Admin site-settings form (the single `site_settings` row). */
@@ -32,7 +16,6 @@ export const siteSettingsSchema = z.object({
       (t) => (t.match(/\{[^}]*\}/g) ?? []).every((token) => token.match(TEMPLATE_KEYS)),
       'Use only {title}, {price}, {stock}, {vin} and {url}',
     ),
-  business_hours: businessHoursSchema,
   require_listing_review: z.boolean(),
 });
 

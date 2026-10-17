@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import { emailSchema } from './auth';
 import { phoneE164 } from './phone';
-import { businessHoursSchema } from './settings';
 import { optionalText, requiredText, uuid } from './shared';
 
 const website = z
@@ -36,9 +35,7 @@ export type DealerApplicationInput = z.input<typeof dealerApplicationSchema>;
 export type DealerApplication = z.output<typeof dealerApplicationSchema>;
 
 /** Dealer profile edits by owners/managers (status and approval columns are not updatable). */
-export const dealerProfileSchema = dealerApplicationSchema
-  .omit({ license_number: true })
-  .extend({ business_hours: businessHoursSchema.default({}) });
+export const dealerProfileSchema = dealerApplicationSchema.omit({ license_number: true });
 
 export type DealerProfileInput = z.input<typeof dealerProfileSchema>;
 export type DealerProfile = z.output<typeof dealerProfileSchema>;

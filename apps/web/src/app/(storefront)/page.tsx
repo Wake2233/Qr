@@ -1,6 +1,6 @@
 import type { VehicleCard as VehicleCardData } from '@cp/api';
 import type { Catalog } from '@cp/core';
-import { ArrowRight, BadgeDollarSign, ClipboardList, MessageCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 import { BodyTypeTiles } from '@/components/home/body-type-tiles';
@@ -11,24 +11,6 @@ import { VehicleCard } from '@/components/vehicle/vehicle-card';
 import { VehicleRail } from '@/components/vehicle/vehicle-rail';
 import { getSiteInfo } from '@/lib/site';
 import { getHomeData, getStorefrontCatalog } from '@/lib/storefront';
-
-const TRUST = [
-  {
-    icon: BadgeDollarSign,
-    title: 'The exact price, always',
-    body: 'Every listing shows its real price — no “call for price”.',
-  },
-  {
-    icon: ClipboardList,
-    title: 'Full specs and history',
-    body: 'Powertrain, features, owners, title and accident history up front.',
-  },
-  {
-    icon: MessageCircle,
-    title: 'Talk to a person',
-    body: 'Message us on WhatsApp or call — no checkout, no runaround.',
-  },
-] as const;
 
 export default async function HomePage() {
   const [{ settings }, home, catalog] = await Promise.all([
@@ -83,19 +65,6 @@ export default async function HomePage() {
         </>
       ) : null}
 
-      <section aria-labelledby="why-us" className="grid gap-4 md:grid-cols-3">
-        <h2 id="why-us" className="sr-only">
-          Why buy with us
-        </h2>
-        {TRUST.map(({ icon: Icon, title, body }) => (
-          <div key={title} className="bg-card space-y-2 rounded-2xl border p-6">
-            <Icon className="text-primary size-6" aria-hidden />
-            <h3 className="font-semibold">{title}</h3>
-            <p className="text-muted-foreground text-sm">{body}</p>
-          </div>
-        ))}
-      </section>
-
       {home ? (
         <VehicleRail
           title="Recently sold"
@@ -104,30 +73,13 @@ export default async function HomePage() {
         />
       ) : null}
 
-      <section className="bg-card relative overflow-hidden rounded-3xl border p-8 sm:p-12">
-        <div className="max-w-2xl space-y-4">
-          <MessageCircle className="text-primary size-8" aria-hidden />
-          <h2 className="font-display text-3xl font-semibold tracking-tight">
-            Looking for something specific?
-          </h2>
-          <p className="text-muted-foreground">
-            Tell us the make, model and budget you have in mind. We&apos;ll let you know when the
-            right car arrives.
-          </p>
-          <Button asChild size="lg">
-            <Link href="/contact">
-              Contact us <ArrowRight />
-            </Link>
-          </Button>
-        </div>
-      </section>
     </div>
   );
 }
 
 /**
  * The admin's pins in order (#1 is the spotlight), then every other car, newest first.
- * Nothing listed yet: nothing to show here (the hero and the contact block still are).
+ * Nothing listed yet: nothing to show here (the hero still is).
  */
 function InStock({ cards, total }: { cards: VehicleCardData[]; total: number }) {
   const [spotlight, ...rest] = cards;

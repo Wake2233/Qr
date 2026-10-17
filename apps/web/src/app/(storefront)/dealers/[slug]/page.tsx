@@ -1,5 +1,4 @@
 import { buildTelUrl, buildWhatsAppUrl, formatPhone, inventoryHref } from '@cp/core';
-import { businessHoursSchema } from '@cp/validators';
 import { MapPin, MessageCircle, Phone, Store } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -7,7 +6,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { BusinessHours } from '@/components/site/business-hours';
 import { Button } from '@/components/ui/button';
 import { VehicleCard, VehicleCardSkeleton } from '@/components/vehicle/vehicle-card';
 import { getSiteInfo } from '@/lib/site';
@@ -41,7 +39,6 @@ async function DealerStorefrontView({ slug }: { slug: string }) {
   const [storefront, { settings }] = await Promise.all([getDealerStorefront(slug), getSiteInfo()]);
   if (!storefront) notFound();
   const { dealer, inventory } = storefront;
-  const hours = businessHoursSchema.catch({}).parse(dealer.business_hours ?? {});
   const whatsapp = dealer.whatsapp_e164 ?? settings.default_whatsapp_e164;
   const phone = dealer.phone_e164 ?? settings.default_phone_e164;
   const locality = [dealer.city, [dealer.state, dealer.postal_code].filter(Boolean).join(' ')]
@@ -50,7 +47,7 @@ async function DealerStorefrontView({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-10 py-8">
-      <header className="bg-card grid gap-6 rounded-3xl border p-6 sm:p-8 md:grid-cols-[1fr_auto]">
+      <header className="bg-card rounded-3xl border p-6 sm:p-8">
         <div className="flex gap-5">
           <div className="bg-muted relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl">
             {dealer.logo_url ? (
@@ -96,12 +93,6 @@ async function DealerStorefrontView({ slug }: { slug: string }) {
             </div>
           </div>
         </div>
-        {Object.keys(hours).length > 0 ? (
-          <div className="space-y-2 md:min-w-64">
-            <h2 className="font-semibold">Hours</h2>
-            <BusinessHours hours={hours} />
-          </div>
-        ) : null}
       </header>
 
       <section aria-labelledby="dealer-inventory" className="space-y-5">

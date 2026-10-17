@@ -2,7 +2,6 @@ import { buildTelUrl, buildWhatsAppUrl, formatPhone } from '@cp/core';
 import { MapPin, MessageCircle, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 
-import { BusinessHours } from '@/components/site/business-hours';
 import { Button } from '@/components/ui/button';
 import { getSiteInfo } from '@/lib/site';
 
@@ -18,8 +17,7 @@ export default async function ContactPage() {
       <div className="space-y-6">
         <h1 className="font-display text-4xl font-semibold tracking-tight">Talk to us</h1>
         <p className="text-muted-foreground text-lg">
-          The fastest way to reach us is WhatsApp. Prefer to talk? Give us a call during business
-          hours.
+          The fastest way to reach us is WhatsApp. Prefer to talk? Give us a call.
         </p>
         <div className="flex flex-wrap gap-3">
           {whatsapp ? (
@@ -59,10 +57,6 @@ export default async function ContactPage() {
             </address>
           </div>
         ) : null}
-        <div className="space-y-2">
-          <h2 className="font-semibold">Hours</h2>
-          <BusinessHours hours={settings.business_hours} />
-        </div>
       </div>
     </section>
   );

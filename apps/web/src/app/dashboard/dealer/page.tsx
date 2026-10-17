@@ -42,7 +42,7 @@ async function DealerProfile({
     <div className="space-y-6">
       <PageHeader
         title="Dealer profile"
-        description="This is what buyers see on your listings: name, phone, WhatsApp, address and hours."
+        description="This is what buyers see on your listings: name, phone, WhatsApp, and address."
       />
       {managed.length > 1 ? (
         <nav className="flex flex-wrap gap-2" aria-label="Choose dealership">
